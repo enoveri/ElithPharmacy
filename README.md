@@ -6,18 +6,40 @@ A modern pharmacy management system built with React and Python, designed to str
 
 ```
 Elith Pharmacy/
-├── frontend/           # React frontend application
+├── frontend/                    # React frontend application
+│   ├── public/                  # Static files (favicon, logo, robots.txt)
+│   │   └── manifest.json        # PWA manifest
 │   ├── src/
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   ├── index.css
-│   │   └── assets/
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.js
-├── backend/            # Python backend API
-│   └── requirements.txt
-└── README.md
+│   │   ├── assets/              # Images, fonts, icons
+│   │   ├── components/          # Global reusable UI components
+│   │   │   └── ui/              # Tailwind-based UI primitives
+│   │   ├── features/            # Domain-driven feature modules
+│   │   │   ├── auth/            # Authentication & session management
+│   │   │   ├── products/        # Product management & inventory
+│   │   │   ├── sales/           # Sales processing & transactions
+│   │   │   ├── reports/         # Analytics and reporting
+│   │   │   └── users/           # User and staff management
+│   │   ├── layout/              # AppShell, Navbar, Sidebar components
+│   │   ├── pages/               # Route-level page components
+│   │   ├── routes/              # React Router configuration
+│   │   ├── lib/                 # Shared utilities and configurations
+│   │   │   ├── supabase/        # Supabase client & database methods
+│   │   │   ├── db/              # Dexie.js offline storage
+│   │   │   ├── utils/           # Utility functions & formatters
+│   │   │   ├── validators/      # Form validation schemas
+│   │   │   └── config.js        # Environment-based app settings
+│   │   ├── services/            # Business logic & API wrappers
+│   │   ├── store/               # Zustand state management
+│   │   ├── hooks/               # Custom React hooks
+│   │   ├── App.jsx              # Root application component
+│   │   └── main.jsx             # Vite entry point
+│   ├── .env                     # Environment variables
+│   ├── package.json             # Dependencies and scripts
+│   ├── vite.config.js           # Vite configuration
+│   └── eslint.config.js         # ESLint configuration
+├── backend/                     # Python backend API
+│   └── requirements.txt         # Python dependencies
+└── README.md                    # Project documentation
 ```
 
 ## 🚀 Tech Stack
@@ -28,8 +50,7 @@ Elith Pharmacy/
 - **Tailwind CSS 4.1.8** - Utility-first CSS framework
 - **ESLint** - Code linting and formatting
 
-### Backend
-- **Python** - Backend API (to be implemented)
+
 
 ## ✨ Features
 
@@ -111,15 +132,29 @@ The project uses Tailwind CSS for styling with a focus on:
 - Proper error handling and validation
 
 ### Project Status
-🚧 **Currently in development** - This is an early-stage project with basic React setup completed.
+✅ **Frontend Structure Complete** - Comprehensive React application structure with:
+- Domain-driven feature organization
+- Complete dependency setup (React 19, Vite 6, Tailwind CSS 4)
+- State management with Zustand
+- Offline capabilities with Dexie.js
+- Database integration ready with Supabase
+- Modern development tooling (ESLint, Prettier)
+
+🚧 **Backend** - Python API implementation pending
 
 ## 📦 Dependencies
 
 ### Frontend Dependencies
-- React & React DOM for UI
-- Tailwind CSS for styling
+- React & React DOM for UI framework
+- React Router DOM for navigation
+- Tailwind CSS for styling with @tailwindcss/forms
+- Zustand for state management
+- Supabase JS for backend services
+- Dexie for offline storage
+- HTML2PDF for receipt generation
+- clsx for conditional class names
 - Vite for development and build tooling
-- ESLint for code quality
+- ESLint and Prettier for code quality
 
 ### Upcoming Backend Dependencies
 - Flask/FastAPI for REST API
