@@ -1,2 +1,4 @@
 // UI components index
-export {};
+import StatCard from './StatCard';
+
+export { StatCard };
