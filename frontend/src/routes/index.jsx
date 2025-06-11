@@ -11,6 +11,9 @@ import POS from '../pages/POS';
 import ProductList from '../pages/ProductList';
 import AddProduct from '../pages/AddProduct';
 import EditProduct from '../pages/EditProduct';
+import SalesHistory from '../pages/SalesHistory';
+import SaleDetails from '../pages/SaleDetails';
+import Refunds from '../pages/Refunds';
 
 export const router = createBrowserRouter([
   {
@@ -40,6 +43,18 @@ export const router = createBrowserRouter([
       {
         path: '/products/edit/:id',
         element: <EditProduct />,
+      },
+      {
+        path: '/sales-history',
+        element: <SalesHistory />,
+      },
+      {
+        path: '/sales/:id',
+        element: <SaleDetails />,
+      },
+      {
+        path: '/refunds',
+        element: <Refunds />,
       },
     ],
   },

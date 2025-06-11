@@ -77,459 +77,78 @@ const Dashboard = () => {
             Export
           </button>
         </div>
+      )}
+      
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard Overview</h1>
+        <p className="text-gray-600">Welcome to the pharmacy management system</p>
       </div>
-
-      {/* Top Row - Three Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr 1fr",
-          gap: "24px",
-          marginBottom: "24px",
-        }}
-      >
-        {/* Sales Overview */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#1f2937",
-              marginBottom: "20px",
-              margin: "0 0 20px 0",
-            }}
-          >
-            Sales Overview
-          </h3>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#dbeafe",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiShoppingCart color="#3b82f6" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Total Sales
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                786
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#fef3c7",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiDollarSign color="#f59e0b" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Revenue
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                17584
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#fed7d7",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiTrendingUp color="#ef4444" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Cost
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                12487
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#d1fae5",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiBarChart color="#10b981" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Profit
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                5097
-              </div>
+      
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+        <StatCard 
+          title="Expired Products" 
+          value={stats.expiredProducts}
+          icon="hourglass_empty" 
+          color="red" 
+        />
+        <StatCard 
+          title="Total Sales Made" 
+          value={`GH₵${stats.totalSales.toLocaleString()}`}
+          icon="payments" 
+          color="orange" 
+        />
+        <StatCard 
+          title="Drugs Added" 
+          value={stats.drugsAdded}
+          icon="medication" 
+          color="blue" 
+        />
+        <StatCard 
+          title="Low Stock Drugs" 
+          value={stats.lowStockDrugs}
+          icon="inventory_2" 
+          color="teal" 
+        />
+        <StatCard 
+          title="Profit Current Month" 
+          value={`GH₵${stats.profitCurrentMonth.toLocaleString()}`}
+          icon="trending_up" 
+          color="purple" 
+        />
+        <StatCard 
+          title="Total Profit Made" 
+          value={`GH₵${stats.totalProfit.toLocaleString()}`}
+          icon="account_balance" 
+          color="green" 
+        />
+      </div>
+      
+      {/* Sales charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+          <h2 className="text-lg font-semibold mb-6 text-gray-800 flex items-center">
+            <span className="material-icons mr-2 text-blue-500">bar_chart</span>
+            Sales Person Sales Chart
+          </h2>
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+            {/* Chart will be implemented later */}
+            <div className="text-center">
+              <span className="material-icons text-5xl text-gray-300 mb-2">insert_chart</span>
+              <p className="text-gray-500">Sales chart data will appear here</p>
             </div>
           </div>
         </div>
-
-        {/* Purchase Overview */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#1f2937",
-              margin: "0 0 20px 0",
-            }}
-          >
-            Purchase Overview
-          </h3>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: "16px",
-            }}
-          >
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#e0e7ff",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiPackage color="#8b5cf6" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                No of Purchase
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                45
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#fecaca",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiX color="#ef4444" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Cancel Order
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                04
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#fed7aa",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiDollarSign color="#f97316" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Cost
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                786
-              </div>
-            </div>
-            <div style={{ textAlign: "center" }}>
-              <div
-                style={{
-                  width: "48px",
-                  height: "48px",
-                  backgroundColor: "#fce7f3",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  margin: "0 auto 12px",
-                }}
-              >
-                <FiArrowDown color="#ec4899" size={24} />
-              </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "#6b7280",
-                  marginBottom: "4px",
-                }}
-              >
-                Returns
-              </div>
-              <div
-                style={{
-                  fontSize: "24px",
-                  fontWeight: "bold",
-                  color: "#1f2937",
-                }}
-              >
-                07
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Inventory Overview */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h3
-            style={{
-              fontSize: "18px",
-              fontWeight: "600",
-              color: "#1f2937",
-              margin: "0 0 20px 0",
-            }}
-          >
-            Inventory Overview
-          </h3>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "16px",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "16px",
-                backgroundColor: "#f9fafb",
-                borderRadius: "8px",
-              }}
-            >
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  backgroundColor: "#d1fae5",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <FiPackage color="#10b981" size={20} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                  }}
-                >
-                  Quantity in Hand
-                </div>
-                <div
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    color: "#1f2937",
-                  }}
-                >
-                  214
-                </div>
-              </div>
-            </div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "16px",
-                backgroundColor: "#f9fafb",
-                borderRadius: "8px",
-              }}
-            >
-              <div
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  backgroundColor: "#fecaca",
-                  borderRadius: "50%",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <FiArrowDown color="#ef4444" size={20} />
-              </div>
-              <div>
-                <div
-                  style={{
-                    fontSize: "12px",
-                    color: "#6b7280",
-                  }}
-                >
-                  Will be Received
-                </div>
-                <div
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "bold",
-                    color: "#1f2937",
-                  }}
-                >
-                  64
-                </div>
-              </div>
+        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
+          <h2 className="text-lg font-semibold mb-6 text-gray-800 flex items-center">
+            <span className="material-icons mr-2 text-blue-500">pie_chart</span>
+            Sales Person Sales Chart
+          </h2>
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
+            {/* Chart will be implemented later */}
+            <div className="text-center">
+              <span className="material-icons text-5xl text-gray-300 mb-2">donut_large</span>
+              <p className="text-gray-500">Sales chart data will appear here</p>
             </div>
           </div>
         </div>
@@ -906,6 +525,6 @@ const Dashboard = () => {
       </div>
     </div>
   );
-};
+}
 
 export default Dashboard;
