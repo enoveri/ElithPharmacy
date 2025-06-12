@@ -1,188 +1,273 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiDownload, FiEye, FiShoppingCart } from 'react-icons/fi';
-import { mockData, mockHelpers } from '../lib/mockData';
+import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { FiDollarSign, FiCalendar, FiUser, FiPackage, FiAlertCircle } from "react-icons/fi";
+import { mockData, mockHelpers } from "../lib/mockData";
 
 function SalesHistory() {
+  const location = useLocation();
   const navigate = useNavigate();
-  const [transactions, setTransactions] = useState([]);
-  const [filteredTransactions, setFilteredTransactions] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateRange, setDateRange] = useState({ start: '', end: '' });
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [sales, setSales] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [highlightedSale, setHighlightedSale] = useState(null);
 
-  const handleSearch = () => {
-    // Trigger search effect
-    setSearchTerm(searchTerm);
-  };
-
+  // Initialize sales data with error handling
   useEffect(() => {
-    // In a real app, this would fetch from your backend
-    setTransactions(mockData.recentTransactions);
-    setFilteredTransactions(mockData.recentTransactions);
+    try {
+      setLoading(true);
+      // Ensure mockData.sales exists and is an array
+      const salesData = Array.isArray(mockData.sales) ? mockData.sales : [];
+      setSales(salesData);
+      setError(null);
+    } catch (err) {
+      console.error('Error loading sales data:', err);
+      setError('Failed to load sales data');
+      setSales([]);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  // Handle navigation from notifications
   useEffect(() => {
-    let filtered = [...transactions];
-
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(t => 
-        t.customer.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.id.toString().includes(searchTerm)
-      );
+    if (location.state?.saleId) {
+      setHighlightedSale(location.state.saleId);
+      const saleElement = document.getElementById(`sale-${location.state.saleId}`);
+      if (saleElement) {
+        saleElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(() => {
+          setHighlightedSale(null);
+        }, 3000);
+      }
     }
+  }, [location.state]);
 
-    // Apply date range filter
-    if (dateRange.start && dateRange.end) {
-      filtered = filtered.filter(t => {
-        const date = new Date(t.date);
-        return date >= new Date(dateRange.start) && date <= new Date(dateRange.end);
-      });
+  const getCustomerName = (customerId) => {
+    if (!customerId) return "Walk-in Customer";
+    try {
+      const customer = mockHelpers.getCustomerById(customerId);
+      return customer ? `${customer.firstName} ${customer.lastName}` : "Unknown Customer";
+    } catch (err) {
+      console.error('Error getting customer name:', err);
+      return "Unknown Customer";
     }
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(t => t.status === statusFilter);
-    }
-
-    setFilteredTransactions(filtered);
-  }, [searchTerm, dateRange, statusFilter, transactions]);
-
-  const exportTransactions = () => {
-    // In a real app, this would generate a CSV/PDF
-    console.log('Exporting transactions:', filteredTransactions);
   };
 
-  return (    <div className="p-6 pl-8 max-w-[1600px] mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">Sales History</h2>
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: 'var(--color-bg-main)'
+      }}>
+        <div style={{
+          width: '48px',
+          height: '48px',
+          border: '4px solid #f3f4f6',
+          borderTop: '4px solid #3b82f6',
+          borderRadius: '50%',
+          animation: 'spin 1s linear infinite'
+        }} />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div style={{ 
+        padding: '24px',
+        backgroundColor: 'var(--color-bg-main)',
+        minHeight: '100vh'
+      }}>
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '60vh',
+          textAlign: 'center'
+        }}>
+          <FiAlertCircle size={64} style={{ color: '#ef4444', marginBottom: '16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: 'bold', color: '#374151', marginBottom: '8px' }}>
+            Error Loading Sales Data
+          </h2>
+          <p style={{ color: '#6b7280', marginBottom: '24px' }}>
+            {error}
+          </p>
           <button
-            onClick={() => navigate('/pos')}
-            className="btn btn-outline btn-sm flex items-center gap-2"
+            onClick={() => window.location.reload()}
+            style={{
+              padding: '12px 20px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer'
+            }}
           >
-            <FiShoppingCart />
-            Back to Point of Sale
+            Retry
           </button>
         </div>
-        <button
-          onClick={exportTransactions}
-          className="btn btn-outline flex items-center gap-2"
-        >
-          <FiDownload />
-          Export
-        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ 
+      padding: '24px',
+      backgroundColor: 'var(--color-bg-main)',
+      minHeight: '100vh'
+    }}>
+      <div style={{ marginBottom: '32px' }}>
+        <h1 style={{
+          fontSize: '28px',
+          fontWeight: 'bold',
+          color: 'var(--color-text-primary)',
+          marginBottom: '8px'
+        }}>
+          Sales History
+        </h1>
+        <p style={{ color: 'var(--color-text-secondary)' }}>
+          View and manage your sales transactions
+        </p>
       </div>
 
-      <div className="bg-[var(--color-bg-card)] p-4 rounded-lg shadow-[var(--shadow-card)]">
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-6 mb-6">
-          <div className="w-[320px] flex gap-2">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FiSearch className="text-gray-400" />
-              </div>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder="   Search transactions..."
-                className="form-input w-full pl-10 pr-4 py-2"
-              />
-            </div>
-            <button 
-              onClick={handleSearch}
-              className="btn btn-primary px-4"
-            >
-              Search
-            </button>
+      <div style={{
+        backgroundColor: 'white',
+        borderRadius: '12px',
+        padding: '24px',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        {sales.length === 0 ? (
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '48px',
+            textAlign: 'center'
+          }}>
+            <FiPackage size={48} style={{ color: '#9ca3af', marginBottom: '16px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#374151', marginBottom: '8px' }}>
+              No Sales Found
+            </h3>
+            <p style={{ color: '#6b7280' }}>
+              No sales transactions have been recorded yet.
+            </p>
           </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-                className="form-input py-2"
-              />
-              <span className="text-gray-500">to</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-                className="form-input py-2"
-              />
-            </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {sales.map(sale => {
+              // Ensure sale object has required properties
+              if (!sale || !sale.id) {
+                console.warn('Invalid sale object:', sale);
+                return null;
+              }
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="form-select py-2 border-gray-300"
-            >
-              <option value="all">All Status</option>
-              <option value="completed">Completed</option>
-              <option value="pending">Pending</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
-          </div>        </div>
-
-        {/* Transactions Table */}
-        <div className="overflow-x-auto mt-8 border-t border-gray-200 pt-6">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-[var(--color-border-light)]">
-                <th className="py-3 px-4 text-left">ID</th>
-                <th className="py-3 px-4 text-left">Date</th>
-                <th className="py-3 px-4 text-left">Customer</th>
-                <th className="py-3 px-4 text-left">Amount</th>
-                <th className="py-3 px-4 text-left">Status</th>
-                <th className="py-3 px-4 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredTransactions.map((transaction) => (
-                <tr
-                  key={transaction.id}
-                  className="border-b border-[var(--color-border-light)] hover:bg-[var(--color-bg-hover)]"
+              return (
+                <div
+                  key={sale.id}
+                  id={`sale-${sale.id}`}
+                  onClick={() => navigate(`/sales/${sale.id}`)}
+                  style={{
+                    padding: '16px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backgroundColor: highlightedSale === sale.id ? '#fef3c7' : 'transparent',
+                    transition: 'all 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.backgroundColor = highlightedSale === sale.id ? '#fef3c7' : '#f9fafb';
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 4px 6px rgba(0,0,0,0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.backgroundColor = highlightedSale === sale.id ? '#fef3c7' : 'transparent';
+                    e.target.style.transform = 'translateY(0)';
+                    e.target.style.boxShadow = 'none';
+                  }}
                 >
-                  <td className="py-3 px-4">{transaction.id}</td>
-                  <td className="py-3 px-4">
-                    {new Date(transaction.date).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-4">{transaction.customer}</td>
-                  <td className="py-3 px-4">
-                    {mockHelpers.formatCurrency(transaction.amount)}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs ${
-                        mockHelpers.getStatusColor(transaction.status) === 'green'
-                          ? 'bg-green-100 text-green-800'
-                          : mockHelpers.getStatusColor(transaction.status) === 'yellow'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {transaction.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <button
-                      onClick={() => navigate(`/sales/${transaction.id}`)}
-                      className="btn btn-icon"
-                      title="View Details"
-                    >
-                      <FiEye />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '12px'
+                  }}>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1f2937' }}>
+                        {sale.transactionNumber || `Transaction #${sale.id}`}
+                      </h3>
+                      <p style={{ fontSize: '14px', color: '#6b7280' }}>
+                        {sale.date ? new Date(sale.date).toLocaleDateString() : 'Unknown date'} 
+                        {sale.date && ` at ${new Date(sale.date).toLocaleTimeString()}`}
+                      </p>
+                    </div>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#10b981' }}>
+                      ₦{(sale.totalAmount || 0).toFixed(2)}
+                    </div>
+                  </div>
+                  
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', fontSize: '14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiUser color="#6b7280" size={16} />
+                      <div>
+                        <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                          {getCustomerName(sale.customerId)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Customer
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiPackage color="#6b7280" size={16} />
+                      <div>
+                        <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                          {sale.items ? sale.items.length : 0} item(s)
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Products
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FiDollarSign color="#6b7280" size={16} />
+                      <div>
+                        <div style={{ fontWeight: '500', color: '#1f2937' }}>
+                          ₦{(sale.subtotal || 0).toFixed(2)}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Subtotal
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '50%',
+                        backgroundColor: (sale.paymentMethod === 'cash') ? '#10b981' : '#3b82f6'
+                      }} />
+                      <div>
+                        <div style={{ fontWeight: '500', color: '#1f2937', textTransform: 'capitalize' }}>
+                          {sale.paymentMethod || 'Unknown'}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#6b7280' }}>
+                          Payment
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            }).filter(Boolean)} {/* Filter out null values */}
+          </div>
+        )}
       </div>
     </div>
   );

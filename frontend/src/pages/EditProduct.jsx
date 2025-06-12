@@ -175,7 +175,7 @@ function EditProduct() {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Show success message or navigate
-      navigate("/products", {
+      navigate("/inventory", {
         state: { message: "Product updated successfully!" },
       });
     } catch (error) {
@@ -562,12 +562,26 @@ function EditProduct() {
         <div className="topbar">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate("/products")}
-              className="btn btn-outline"
+              onClick={() => navigate("/inventory")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 16px",
+                backgroundColor: "white",
+                color: "var(--color-text-secondary)",
+                border: "1px solid var(--color-border-light)",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                marginRight: "16px",
+              }}
             >
-              <FiArrowLeft className="w-4 h-4" />
-              Back to Products
+              <FiArrowLeft size={16} />
+              Back to Inventory
             </button>
+
             <div>
               <h1
                 className="text-2xl font-bold"

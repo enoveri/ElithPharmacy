@@ -23,7 +23,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/pos", label: "Point of Sale", icon: FiPlus },
     { path: "/inventory", label: "Inventory", icon: FiPackage },
-    { path: "/products", label: "Products", icon: FiList },
+    { path: "/sales", label: "Sales", icon: FiList },
     { path: "/customers", label: "Customers", icon: FiUser },
     { path: "/reports", label: "Reports", icon: FiBarChart },
     { path: "/settings", label: "Settings", icon: FiRotateCcw },

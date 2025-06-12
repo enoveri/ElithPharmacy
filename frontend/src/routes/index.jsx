@@ -7,10 +7,9 @@ import { MainLayout } from "../components/layout";
 import Dashboard from "../pages/Dashboard";
 import Login from "../pages/Login";
 import Inventory from "../pages/Inventory";
-import POS from "../pages/POS";
-import ProductList from "../pages/ProductList";
 import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
+import POS from "../pages/POS";
 import SalesHistory from "../pages/SalesHistory";
 import SaleDetails from "../pages/SaleDetails";
 import Refunds from "../pages/Refunds";
@@ -18,6 +17,7 @@ import Customers from "../pages/Customers";
 import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
 import Reports from "../pages/Reports";
+import ViewProduct from "../pages/ViewProduct";
 
 export const router = createBrowserRouter([
   {
@@ -33,23 +33,23 @@ export const router = createBrowserRouter([
         element: <Inventory />,
       },
       {
+        path: "/inventory/view/:id",
+        element: <ViewProduct />,
+      },
+      {
+        path: "/inventory/add",
+        element: <AddProduct />,
+      },
+      {
+        path: "/inventory/edit/:id",
+        element: <EditProduct />,
+      },
+      {
         path: "/pos",
         element: <POS />,
       },
       {
-        path: "/products",
-        element: <ProductList />,
-      },
-      {
-        path: "/products/add",
-        element: <AddProduct />,
-      },
-      {
-        path: "/products/edit/:id",
-        element: <EditProduct />,
-      },
-      {
-        path: "/sales-history",
+        path: "/sales",
         element: <SalesHistory />,
       },
       {

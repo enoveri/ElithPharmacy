@@ -1,35 +1,86 @@
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiPackage,
   FiAlertTriangle,
   FiTrendingUp,
   FiSearch,
   FiFilter,
+  FiPlus,
+  FiEdit,
+  FiTrash2,
+  FiEye,
+  FiDownload,
+  FiUpload,
+  FiGrid,
+  FiList,
+  FiClock,
+  FiDollarSign,
 } from "react-icons/fi";
 import { mockData, mockHelpers } from "../lib/mockData";
 
 // Inventory page
 function Inventory() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [products] = useState(mockData.products);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
+  const [viewMode, setViewMode] = useState("table"); // "table" or "grid"
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.batchNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      statusFilter === "all" ||
-      (statusFilter === "low-stock" &&
-        product.quantity <= product.minStockLevel) ||
-      (statusFilter === "out-of-stock" && product.quantity === 0) ||
-      (statusFilter === "in-stock" && product.quantity > product.minStockLevel);
-    const matchesCategory =
-      categoryFilter === "all" || product.category === categoryFilter;
+  // Handle navigation from notifications
+  useEffect(() => {
+    if (location.state?.filter) {
+      setStatusFilter(
+        location.state.filter === "low-stock" ? "low-stock" : "expiring"
+      );
+    }
+  }, [location.state]);
 
-    return matchesSearch && matchesStatus && matchesCategory;
-  });
+  const filteredProducts = products
+    .filter((product) => {
+      const matchesSearch =
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.batchNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.manufacturer.toLowerCase().includes(searchTerm.toLowerCase());
+
+      let matchesStatus = true;
+      if (statusFilter === "low-stock") {
+        matchesStatus = product.quantity <= product.minStockLevel;
+      } else if (statusFilter === "out-of-stock") {
+        matchesStatus = product.quantity === 0;
+      } else if (statusFilter === "in-stock") {
+        matchesStatus = product.quantity > product.minStockLevel;
+      } else if (statusFilter === "expiring") {
+        const daysUntilExpiry = Math.ceil(
+          (new Date(product.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+        );
+        matchesStatus = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+      }
+
+      const matchesCategory =
+        categoryFilter === "all" || product.category === categoryFilter;
+
+      return matchesSearch && matchesStatus && matchesCategory;
+    })
+    .sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+
+      if (sortBy === "price" || sortBy === "costPrice" || sortBy === "quantity") {
+        aValue = Number(aValue);
+        bValue = Number(bValue);
+      }
+
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
 
   const lowStockProducts = mockHelpers.getLowStockProducts();
   const outOfStockProducts = products.filter((p) => p.quantity === 0);
@@ -37,30 +88,425 @@ function Inventory() {
     (sum, p) => sum + p.quantity * p.costPrice,
     0
   );
+  const expiringProducts = products.filter((p) => {
+    const daysUntilExpiry = Math.ceil(
+      (new Date(p.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+    );
+    return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+  });
+
+  const getStockStatus = (product) => {
+    if (product.quantity === 0)
+      return {
+        status: "out-of-stock",
+        color: "#ef4444",
+        text: "Out of Stock",
+      };
+    if (product.quantity <= product.minStockLevel)
+      return { status: "low-stock", color: "#f59e0b", text: "Low Stock" };
+    return { status: "in-stock", color: "#10b981", text: "In Stock" };
+  };
+
+  const renderTableView = () => (
+    <div style={{ overflowX: "auto" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <thead>
+          <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Product
+            </th>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Category
+            </th>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Price
+            </th>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Stock
+            </th>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Status
+            </th>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+              }}
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredProducts.map((product) => {
+            const stockStatus = getStockStatus(product);
+
+            return (
+              <tr
+                key={product.id}
+                id={`product-${product.id}`}
+                style={{
+                  borderBottom: "1px solid #f3f4f6",
+                  transition: "background-color 0.3s ease",
+                }}
+              >
+                <td style={{ padding: "16px 12px" }}>
+                  <div>
+                    <div
+                      style={{
+                        fontWeight: "600",
+                        color: "#1f2937",
+                        fontSize: "14px",
+                      }}
+                    >
+                      {product.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        marginTop: "2px",
+                      }}
+                    >
+                      {product.manufacturer}
+                    </div>
+                  </div>
+                </td>
+                <td style={{ padding: "16px 12px" }}>
+                  <span
+                    style={{
+                      padding: "4px 8px",
+                      backgroundColor: "#f3f4f6",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      color: "#374151",
+                      fontWeight: "500",
+                    }}
+                  >
+                    {product.category}
+                  </span>
+                </td>
+                <td style={{ padding: "16px 12px" }}>
+                  <div
+                    style={{
+                      fontWeight: "600",
+                      color: "#10b981",
+                      fontSize: "14px",
+                    }}
+                  >
+                    ₦{product.price.toFixed(2)}
+                  </div>
+                </td>
+                <td style={{ padding: "16px 12px" }}>
+                  <div
+                    style={{
+                      fontWeight: "600",
+                      color: stockStatus.color,
+                      fontSize: "14px",
+                    }}
+                  >
+                    {product.quantity} units
+                  </div>
+                </td>
+                <td style={{ padding: "16px 12px" }}>
+                  <span
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      backgroundColor: `${stockStatus.color}20`,
+                      color: stockStatus.color,
+                    }}
+                  >
+                    {stockStatus.text}
+                  </span>
+                </td>
+                <td style={{ padding: "16px 12px" }}>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      onClick={() => navigate(`/inventory/view/${product.id}`)}
+                      style={{
+                        padding: "6px",
+                        backgroundColor: "#f0fdf4",
+                        color: "#10b981",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                      }}
+                      title="View Product"
+                    >
+                      <FiEye size={14} />
+                    </button>
+                    <button
+                      onClick={() => navigate(`/inventory/edit/${product.id}`)}
+                      style={{
+                        padding: "6px",
+                        backgroundColor: "#dbeafe",
+                        color: "#3b82f6",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                      }}
+                      title="Edit Product"
+                    >
+                      <FiEdit size={14} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const renderGridView = () => (
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+        gap: "20px",
+      }}
+    >
+      {filteredProducts.map((product) => {
+        const stockStatus = getStockStatus(product);
+        const expiryStatus = getExpiryStatus(product);
+
+        return (
+          <div
+            key={product.id}
+            id={`product-${product.id}`}
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "16px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              transition: "transform 0.3s ease",
+            }}
+          >
+            <div style={{ marginBottom: "12px" }}>
+              <div
+                style={{
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  fontSize: "16px",
+                  marginBottom: "4px",
+                }}
+              >
+                {product.name}
+              </div>
+              <div
+                style={{
+                  fontSize: "14px",
+                  color: "#6b7280",
+                  marginBottom: "8px",
+                }}
+              >
+                {product.manufacturer}
+              </div>
+              <div
+                style={{
+                  fontWeight: "600",
+                  color: "#10b981",
+                  fontSize: "16px",
+                }}
+              >
+                ₦{product.price.toFixed(2)}
+              </div>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "12px",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Stock
+                </div>
+                <div
+                  style={{
+                    fontWeight: "600",
+                    color: stockStatus.color,
+                    fontSize: "14px",
+                  }}
+                >
+                  {product.quantity} units
+                </div>
+              </div>
+              <div>
+                <div
+                  style={{
+                    fontSize: "12px",
+                    color: "#6b7280",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Status
+                </div>
+                <span
+                  style={{
+                    padding: "4px 8px",
+                    borderRadius: "12px",
+                    fontSize: "12px",
+                    fontWeight: "500",
+                    backgroundColor: `${stockStatus.color}20`,
+                    color: stockStatus.color,
+                  }}
+                >
+                  {stockStatus.text}
+                </span>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button
+                onClick={() => navigate(`/inventory/view/${product.id}`)}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  backgroundColor: "#f0fdf4",
+                  color: "#10b981",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                }}
+              >
+                <FiEye size={14} style={{ marginRight: "4px" }} />
+                View
+              </button>
+              <button
+                onClick={() => navigate(`/inventory/edit/${product.id}`)}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  backgroundColor: "#dbeafe",
+                  color: "#3b82f6",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                }}
+              >
+                <FiEdit size={14} style={{ marginRight: "4px" }} />
+                Edit
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div
       style={{
         padding: "24px",
-        backgroundColor: "var(--color-bg-main)",
+        backgroundColor: "#f8fafc",
         minHeight: "100vh",
       }}
     >
       {/* Header */}
-      <div style={{ marginBottom: "32px" }}>
-        <h1
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "32px",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: "bold",
+              color: "#1f2937",
+              marginBottom: "8px",
+            }}
+          >
+            Inventory Management
+          </h1>
+          <p style={{ color: "#6b7280" }}>
+            Manage your product inventory and stock levels
+          </p>
+        </div>
+
+        <button
+          onClick={() => navigate("/inventory/add")}
           style={{
-            fontSize: "28px",
-            fontWeight: "bold",
-            color: "var(--color-text-primary)",
-            marginBottom: "8px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
           }}
         >
-          Inventory Management
-        </h1>
-        <p style={{ color: "var(--color-text-secondary)" }}>
-          Track and manage your pharmacy stock levels
-        </p>
+          <FiPlus size={16} />
+          Add Product
+        </button>
       </div>
 
       {/* Statistics Cards */}
@@ -80,13 +526,7 @@ function Inventory() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div
               style={{
                 width: "48px",
@@ -126,13 +566,7 @@ function Inventory() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div
               style={{
                 width: "48px",
@@ -149,7 +583,7 @@ function Inventory() {
             </div>
             <div>
               <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                Low Stock Items
+                Low Stock
               </div>
               <div
                 style={{
@@ -172,13 +606,7 @@ function Inventory() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div
               style={{
                 width: "48px",
@@ -218,13 +646,7 @@ function Inventory() {
             boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
-            }}
-          >
+          <div style={{ display: "flex", alignItems: "center" }}>
             <div
               style={{
                 width: "48px",
@@ -237,7 +659,7 @@ function Inventory() {
                 marginRight: "12px",
               }}
             >
-              <FiPackage color="#10b981" size={24} />
+              <FiDollarSign color="#10b981" size={24} />
             </div>
             <div>
               <div style={{ fontSize: "12px", color: "#6b7280" }}>
@@ -270,7 +692,7 @@ function Inventory() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 200px 200px 150px",
+            gridTemplateColumns: "1fr 200px 200px auto",
             gap: "16px",
             alignItems: "end",
           }}
@@ -289,7 +711,7 @@ function Inventory() {
             <div style={{ position: "relative" }}>
               <input
                 type="text"
-                placeholder="Search by name, batch number..."
+                placeholder="Search by name, manufacturer..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 style={{
@@ -352,7 +774,7 @@ function Inventory() {
                 marginBottom: "8px",
               }}
             >
-              Stock Status
+              Status
             </label>
             <select
               value={statusFilter}
@@ -381,7 +803,7 @@ function Inventory() {
               textAlign: "center",
             }}
           >
-            Showing {filteredProducts.length} items
+            {filteredProducts.length} products
           </div>
         </div>
       </div>
@@ -395,177 +817,7 @@ function Inventory() {
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
       >
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead>
-              <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Product
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Category
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Current Stock
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Min Level
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Value
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "12px",
-                    textAlign: "left",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                  }}
-                >
-                  Expiry
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map((product) => {
-                const stockStatus =
-                  product.quantity === 0
-                    ? "out-of-stock"
-                    : product.quantity <= product.minStockLevel
-                      ? "low-stock"
-                      : "in-stock";
-                const stockColor =
-                  stockStatus === "out-of-stock"
-                    ? "#ef4444"
-                    : stockStatus === "low-stock"
-                      ? "#f59e0b"
-                      : "#10b981";
-
-                return (
-                  <tr
-                    key={product.id}
-                    style={{ borderBottom: "1px solid #f3f4f6" }}
-                  >
-                    <td style={{ padding: "16px 12px" }}>
-                      <div>
-                        <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                          {product.name}
-                        </div>
-                        <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                          {product.manufacturer} • {product.batchNumber}
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <span
-                        style={{
-                          padding: "4px 8px",
-                          backgroundColor: "#f3f4f6",
-                          borderRadius: "12px",
-                          fontSize: "12px",
-                          color: "#374151",
-                        }}
-                      >
-                        {product.category}
-                      </span>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <div style={{ fontWeight: "600", color: stockColor }}>
-                        {product.quantity} units
-                      </div>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <div style={{ color: "#6b7280" }}>
-                        {product.minStockLevel} units
-                      </div>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                        ₦
-                        {(
-                          product.quantity * product.costPrice
-                        ).toLocaleString()}
-                      </div>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <span
-                        style={{
-                          padding: "4px 8px",
-                          borderRadius: "12px",
-                          fontSize: "12px",
-                          fontWeight: "500",
-                          backgroundColor:
-                            stockStatus === "out-of-stock"
-                              ? "#fecaca"
-                              : stockStatus === "low-stock"
-                                ? "#fed7aa"
-                                : "#d1fae5",
-                          color: stockColor,
-                        }}
-                      >
-                        {stockStatus === "out-of-stock"
-                          ? "Out of Stock"
-                          : stockStatus === "low-stock"
-                            ? "Low Stock"
-                            : "In Stock"}
-                      </span>
-                    </td>
-                    <td style={{ padding: "16px 12px" }}>
-                      <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                        {new Date(product.expiryDate).toLocaleDateString()}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {viewMode === "table" ? renderTableView() : renderGridView()}
       </div>
     </div>
   );
