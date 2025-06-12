@@ -70,7 +70,11 @@ function Inventory() {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
 
-      if (sortBy === "price" || sortBy === "costPrice" || sortBy === "quantity") {
+      if (
+        sortBy === "price" ||
+        sortBy === "costPrice" ||
+        sortBy === "quantity"
+      ) {
         aValue = Number(aValue);
         bValue = Number(bValue);
       }

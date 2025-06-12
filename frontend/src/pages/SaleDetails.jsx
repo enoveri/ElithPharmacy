@@ -29,7 +29,7 @@ function SaleDetails() {
   const [error, setError] = useState(null);
   const [showShareModal, setShowShareModal] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
-  const [sharingMethod, setSharingMethod] = useState(''); // 'whatsapp' or 'email'
+  const [sharingMethod, setSharingMethod] = useState(""); // 'whatsapp' or 'email'
 
   useEffect(() => {
     try {
@@ -80,18 +80,21 @@ function SaleDetails() {
       Date: ${new Date(sale.date).toLocaleDateString()}
       Time: ${new Date(sale.date).toLocaleTimeString()}
       
-      ${customer ? `Customer: ${customer.firstName} ${customer.lastName}` : 'Customer: Walk-in'}
+      ${customer ? `Customer: ${customer.firstName} ${customer.lastName}` : "Customer: Walk-in"}
       
       ITEMS:
       ------
-      ${sale.items.map(item => 
-        `${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`
-      ).join('\n')}
+      ${sale.items
+        .map(
+          (item) =>
+            `${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`
+        )
+        .join("\n")}
       
       ------
       Subtotal: ₦${sale.subtotal.toFixed(2)}
       Tax: ₦${sale.tax.toFixed(2)}
-      ${sale.discount > 0 ? `Discount: -₦${sale.discount.toFixed(2)}` : ''}
+      ${sale.discount > 0 ? `Discount: -₦${sale.discount.toFixed(2)}` : ""}
       Total: ₦${sale.totalAmount.toFixed(2)}
       
       Payment Method: ${sale.paymentMethod.toUpperCase()}
@@ -100,9 +103,9 @@ function SaleDetails() {
       Thank you for your business!
     `;
 
-    const blob = new Blob([receiptContent], { type: 'text/plain' });
+    const blob = new Blob([receiptContent], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `receipt_${sale.transactionNumber}.txt`;
     document.body.appendChild(a);
@@ -113,7 +116,7 @@ function SaleDetails() {
 
   const generateReceiptPDF = async () => {
     setGeneratingPDF(true);
-    
+
     try {
       // Create receipt HTML content for PDF
       const receiptHTML = `
@@ -220,13 +223,17 @@ function SaleDetails() {
               <div><strong>Payment:</strong> ${sale.paymentMethod.toUpperCase()}</div>
             </div>
 
-            ${customer ? `
+            ${
+              customer
+                ? `
               <div class="customer-info">
                 <div><strong>Customer:</strong> ${customer.firstName} ${customer.lastName}</div>
                 <div><strong>Phone:</strong> ${customer.phone}</div>
                 <div><strong>Email:</strong> ${customer.email}</div>
               </div>
-            ` : ''}
+            `
+                : ""
+            }
 
             <table class="items-table">
               <thead>
@@ -238,14 +245,18 @@ function SaleDetails() {
                 </tr>
               </thead>
               <tbody>
-                ${sale.items.map(item => `
+                ${sale.items
+                  .map(
+                    (item) => `
                   <tr>
                     <td>${getProductName(item.productId)}</td>
                     <td>${item.quantity}</td>
                     <td>₦${item.price.toFixed(2)}</td>
                     <td>₦${item.total.toFixed(2)}</td>
                   </tr>
-                `).join('')}
+                `
+                  )
+                  .join("")}
               </tbody>
             </table>
 
@@ -258,12 +269,16 @@ function SaleDetails() {
                 <span>Tax:</span>
                 <span>₦${sale.tax.toFixed(2)}</span>
               </div>
-              ${sale.discount > 0 ? `
+              ${
+                sale.discount > 0
+                  ? `
                 <div class="total-row">
                   <span>Discount:</span>
                   <span>-₦${sale.discount.toFixed(2)}</span>
                 </div>
-              ` : ''}
+              `
+                  : ""
+              }
               <div class="total-row final">
                 <span>TOTAL:</span>
                 <span>₦${sale.totalAmount.toFixed(2)}</span>
@@ -283,56 +298,54 @@ function SaleDetails() {
       `;
 
       // Create a new window for PDF generation
-      const printWindow = window.open('', '_blank');
+      const printWindow = window.open("", "_blank");
       printWindow.document.write(receiptHTML);
       printWindow.document.close();
-      
+
       // Wait a moment for content to load, then show print dialog
       setTimeout(() => {
         printWindow.print();
         setShowShareModal(true);
       }, 500);
-
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF receipt');
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF receipt");
     } finally {
       setGeneratingPDF(false);
     }
   };
 
   const shareViaWhatsApp = () => {
-    setSharingMethod('whatsapp');
+    setSharingMethod("whatsapp");
     setGeneratingPDF(true);
-    
+
     try {
-      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ₦${sale.totalAmount.toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName} ${customer.lastName}\n` : ''}Items:\n${sale.items.map(item => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join('\n')}\n\nThank you for choosing Elith Pharmacy!`;
-      
-      const phoneNumber = customer?.phone?.replace(/[^\d]/g, '') || '';
+      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ₦${sale.totalAmount.toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName} ${customer.lastName}\n` : ""}Items:\n${sale.items.map((item) => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
+
+      const phoneNumber = customer?.phone?.replace(/[^\d]/g, "") || "";
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-      
+
       // Simulate processing time
       setTimeout(() => {
-        window.open(whatsappURL, '_blank');
+        window.open(whatsappURL, "_blank");
         setGeneratingPDF(false);
-        setSharingMethod('');
+        setSharingMethod("");
       }, 1000);
-      
     } catch (error) {
-      console.error('Error sharing via WhatsApp:', error);
-      alert('Failed to share via WhatsApp');
+      console.error("Error sharing via WhatsApp:", error);
+      alert("Failed to share via WhatsApp");
       setGeneratingPDF(false);
-      setSharingMethod('');
+      setSharingMethod("");
     }
   };
 
   const shareViaEmail = () => {
-    setSharingMethod('email');
+    setSharingMethod("email");
     setGeneratingPDF(true);
-    
+
     try {
       const subject = `Receipt from Elith Pharmacy - ${sale.transactionNumber}`;
-      const body = `Dear ${customer ? `${customer.firstName} ${customer.lastName}` : 'Valued Customer'},
+      const body = `Dear ${customer ? `${customer.firstName} ${customer.lastName}` : "Valued Customer"},
 
 Thank you for your purchase at Elith Pharmacy!
 
@@ -342,11 +355,11 @@ Date: ${new Date(sale.date).toLocaleDateString()}
 Time: ${new Date(sale.date).toLocaleTimeString()}
 
 ITEMS PURCHASED:
-${sale.items.map(item => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join('\n')}
+${sale.items.map((item) => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join("\n")}
 
 PAYMENT SUMMARY:
 Subtotal: ₦${sale.subtotal.toFixed(2)}
-Tax: ₦${sale.tax.toFixed(2)}${sale.discount > 0 ? `\nDiscount: -₦${sale.discount.toFixed(2)}` : ''}
+Tax: ₦${sale.tax.toFixed(2)}${sale.discount > 0 ? `\nDiscount: -₦${sale.discount.toFixed(2)}` : ""}
 TOTAL: ₦${sale.totalAmount.toFixed(2)}
 
 Payment Method: ${sale.paymentMethod.toUpperCase()}
@@ -360,17 +373,16 @@ Email: info@elithpharmacy.com`;
 
       // Simulate processing time
       setTimeout(() => {
-        const emailURL = `mailto:${customer?.email || ''}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        const emailURL = `mailto:${customer?.email || ""}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = emailURL;
         setGeneratingPDF(false);
-        setSharingMethod('');
+        setSharingMethod("");
       }, 1000);
-      
     } catch (error) {
-      console.error('Error sharing via Email:', error);
-      alert('Failed to share via Email');
+      console.error("Error sharing via Email:", error);
+      alert("Failed to share via Email");
       setGeneratingPDF(false);
-      setSharingMethod('');
+      setSharingMethod("");
     }
   };
 
@@ -591,31 +603,36 @@ Email: info@elithpharmacy.com`;
               borderRadius: "8px",
               fontSize: "14px",
               fontWeight: "500",
-              cursor: generatingPDF && sharingMethod === 'whatsapp' ? 'not-allowed' : 'pointer',
-              opacity: generatingPDF && sharingMethod === 'whatsapp' ? 0.7 : 1,
-              transition: 'all 0.2s ease'
+              cursor:
+                generatingPDF && sharingMethod === "whatsapp"
+                  ? "not-allowed"
+                  : "pointer",
+              opacity: generatingPDF && sharingMethod === "whatsapp" ? 0.7 : 1,
+              transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              if (!(generatingPDF && sharingMethod === 'whatsapp')) {
-                e.target.style.backgroundColor = '#128C7E';
+              if (!(generatingPDF && sharingMethod === "whatsapp")) {
+                e.target.style.backgroundColor = "#128C7E";
               }
             }}
             onMouseLeave={(e) => {
-              if (!(generatingPDF && sharingMethod === 'whatsapp')) {
-                e.target.style.backgroundColor = '#25D366';
+              if (!(generatingPDF && sharingMethod === "whatsapp")) {
+                e.target.style.backgroundColor = "#25D366";
               }
             }}
           >
-            {generatingPDF && sharingMethod === 'whatsapp' ? (
+            {generatingPDF && sharingMethod === "whatsapp" ? (
               <>
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '2px solid white',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                <div
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid white",
+                    borderTop: "2px solid transparent",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
                 Sharing...
               </>
             ) : (
@@ -625,46 +642,51 @@ Email: info@elithpharmacy.com`;
               </>
             )}
           </button>
-          
+
           <button
             onClick={shareViaEmail}
             disabled={generatingPDF}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 16px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: generatingPDF && sharingMethod === 'email' ? 'not-allowed' : 'pointer',
-              opacity: generatingPDF && sharingMethod === 'email' ? 0.7 : 1,
-              transition: 'all 0.2s ease'
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 16px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor:
+                generatingPDF && sharingMethod === "email"
+                  ? "not-allowed"
+                  : "pointer",
+              opacity: generatingPDF && sharingMethod === "email" ? 0.7 : 1,
+              transition: "all 0.2s ease",
             }}
             onMouseEnter={(e) => {
-              if (!(generatingPDF && sharingMethod === 'email')) {
-                e.target.style.backgroundColor = '#2563eb';
+              if (!(generatingPDF && sharingMethod === "email")) {
+                e.target.style.backgroundColor = "#2563eb";
               }
             }}
             onMouseLeave={(e) => {
-              if (!(generatingPDF && sharingMethod === 'email')) {
-                e.target.style.backgroundColor = '#3b82f6';
+              if (!(generatingPDF && sharingMethod === "email")) {
+                e.target.style.backgroundColor = "#3b82f6";
               }
             }}
           >
-            {generatingPDF && sharingMethod === 'email' ? (
+            {generatingPDF && sharingMethod === "email" ? (
               <>
-                <div style={{
-                  width: '16px',
-                  height: '16px',
-                  border: '2px solid white',
-                  borderTop: '2px solid transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
-                }} />
+                <div
+                  style={{
+                    width: "16px",
+                    height: "16px",
+                    border: "2px solid white",
+                    borderTop: "2px solid transparent",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
                 Sending...
               </>
             ) : (
@@ -754,7 +776,10 @@ Email: info@elithpharmacy.com`;
                 </thead>
                 <tbody>
                   {sale.items.map((item, index) => (
-                    <tr key={index} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                    <tr
+                      key={index}
+                      style={{ borderBottom: "1px solid #f3f4f6" }}
+                    >
                       <td style={{ padding: "16px 12px" }}>
                         <div
                           style={{
@@ -929,7 +954,9 @@ Email: info@elithpharmacy.com`;
                 </span>
               </div>
               {sale.discount > 0 && (
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
                   <span style={{ color: "#6b7280" }}>Discount:</span>
                   <span style={{ fontWeight: "600", color: "#ef4444" }}>
                     -₦{sale.discount.toFixed(2)}
@@ -1085,7 +1112,11 @@ Email: info@elithpharmacy.com`;
                     gap: "12px",
                   }}
                 >
-                  <FiMapPin size={20} color="#6b7280" style={{ marginTop: "2px" }} />
+                  <FiMapPin
+                    size={20}
+                    color="#6b7280"
+                    style={{ marginTop: "2px" }}
+                  />
                   <div>
                     <div
                       style={{

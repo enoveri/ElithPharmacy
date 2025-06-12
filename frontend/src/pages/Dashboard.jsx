@@ -314,7 +314,9 @@ const Dashboard = () => {
           >
             Recent Sales
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
             {recentSales.map((sale, index) => (
               <div
                 key={index}
@@ -362,7 +364,9 @@ const Dashboard = () => {
           >
             Low Stock Alerts
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
             {lowStockProducts.slice(0, 3).map((product, index) => (
               <div
                 key={index}
@@ -470,7 +474,9 @@ const Dashboard = () => {
           >
             Top Customers
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
             {topCustomers.map((customer, index) => (
               <div
                 key={index}
