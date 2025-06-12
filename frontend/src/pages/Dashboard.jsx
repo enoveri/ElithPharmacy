@@ -6,13 +6,18 @@ import {
   FiPackage,
   FiTrendingUp,
   FiBarChart,
-  FiX,
-  FiArrowDown,
   FiDownload,
 } from "react-icons/fi";
+import { mockData, mockHelpers } from "../lib/mockData";
 
 const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
+
+  // Use centralized mock data
+  const stats = mockData.dashboardStats;
+  const recentSales = mockHelpers.getRecentSales(3);
+  const lowStockProducts = mockHelpers.getLowStockProducts();
+  const topCustomers = mockHelpers.getTopCustomers(3);
 
   return (
     <div
@@ -76,6 +81,200 @@ const Dashboard = () => {
             <FiDownload size={16} />
             Export
           </button>
+        </div>
+      </div>
+
+      {/* Key Metrics using mockData.dashboardStats */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "24px",
+          marginBottom: "32px",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#dbeafe",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiDollarSign color="#3b82f6" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Today's Sales
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                ₦{stats.todaysSales.toLocaleString()}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#d1fae5",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiShoppingCart color="#10b981" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Transactions
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.todaysTransactions}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#fef3c7",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiUsers color="#f59e0b" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Total Customers
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.totalCustomers}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#fed7aa",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiPackage color="#f97316" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Low Stock Items
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.lowStockItems}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

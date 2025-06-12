@@ -13,6 +13,18 @@ import {
   FiAlertCircle,
   FiCheck,
 } from "react-icons/fi";
+import {
+  exportToCSV,
+  exportToExcel,
+  exportToPDF,
+  formatProductDataForExport,
+} from "../utils/exportUtils";
+import {
+  validateProductData,
+  transformImportedProductData,
+} from "../utils/importUtils";
+import ImportModal from "../components/ImportModal";
+import { mockData, mockHelpers } from "../lib/mockData";
 
 // Product List page
 function ProductList() {
@@ -24,94 +36,16 @@ function ProductList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
+  const [showImportModal, setShowImportModal] = useState(false);
 
-  const categories = [
-    "Pain Relief",
-    "Antibiotics",
-    "Vitamins & Supplements",
-    "Cold & Flu",
-    "Digestive Health",
-    "Heart & Blood Pressure",
-    "Diabetes Care",
-    "Skin Care",
-    "Eye Care",
-    "Other",
-  ];
-
-  // Mock data
-  const mockProducts = [
-    {
-      id: 1,
-      name: "Paracetamol 500mg",
-      category: "Pain Relief",
-      price: 25.5,
-      costPrice: 18.0,
-      quantity: 150,
-      minStockLevel: 20,
-      status: "active",
-      manufacturer: "PharmaCorp Ltd",
-      expiryDate: "2025-12-31",
-      batchNumber: "PC2024001",
-    },
-    {
-      id: 2,
-      name: "Amoxicillin 250mg",
-      category: "Antibiotics",
-      price: 45.0,
-      costPrice: 32.0,
-      quantity: 8,
-      minStockLevel: 15,
-      status: "active",
-      manufacturer: "MediPharm",
-      expiryDate: "2024-06-30",
-      batchNumber: "MP2023045",
-    },
-    {
-      id: 3,
-      name: "Vitamin C 1000mg",
-      category: "Vitamins & Supplements",
-      price: 35.75,
-      costPrice: 25.0,
-      quantity: 200,
-      minStockLevel: 30,
-      status: "active",
-      manufacturer: "HealthPlus",
-      expiryDate: "2025-03-15",
-      batchNumber: "HP2024012",
-    },
-    {
-      id: 4,
-      name: "Cough Syrup 100ml",
-      category: "Cold & Flu",
-      price: 28.0,
-      costPrice: 20.0,
-      quantity: 0,
-      minStockLevel: 10,
-      status: "inactive",
-      manufacturer: "CureMed",
-      expiryDate: "2024-08-20",
-      batchNumber: "CM2023078",
-    },
-    {
-      id: 5,
-      name: "Ibuprofen 400mg",
-      category: "Pain Relief",
-      price: 32.25,
-      costPrice: 22.5,
-      quantity: 75,
-      minStockLevel: 25,
-      status: "active",
-      manufacturer: "PharmaCorp Ltd",
-      expiryDate: "2025-01-10",
-      batchNumber: "PC2024015",
-    },
-  ];
+  // Use centralized categories
+  const categories = mockData.categories.map((cat) => cat.name);
 
   useEffect(() => {
-    // Simulate API call
+    // Simulate API call using centralized mock data
     setTimeout(() => {
-      setProducts(mockProducts);
-      setFilteredProducts(mockProducts);
+      setProducts(mockData.products);
+      setFilteredProducts(mockData.products);
       setLoading(false);
     }, 1000);
 
@@ -189,6 +123,40 @@ function ProductList() {
     }
   };
 
+  const handleExport = (format) => {
+    const exportData = formatProductDataForExport(filteredProducts);
+    const filename = `products_${new Date().toISOString().split("T")[0]}`;
+
+    switch (format) {
+      case "csv":
+        exportToCSV(exportData, `${filename}.csv`);
+        break;
+      case "excel":
+        exportToExcel(exportData, `${filename}.xlsx`);
+        break;
+      case "pdf":
+        exportToPDF(exportData, `${filename}.pdf`, "Product List");
+        break;
+      default:
+        exportToCSV(exportData, `${filename}.csv`);
+    }
+  };
+
+  const handleImport = async (importedData) => {
+    // Simulate API call to import products
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    // Add imported products to existing list
+    const newProducts = importedData.map((product, index) => ({
+      ...product,
+      id: products.length + index + 1,
+      expiryDate: product.expiryDate || "2025-12-31",
+    }));
+
+    setProducts([...products, ...newProducts]);
+    setShowImportModal(false);
+  };
+
   if (loading) {
     return (
       <div
@@ -224,14 +192,33 @@ function ProductList() {
               </p>
             </div>
             <div className="flex gap-3">
-              <button className="btn btn-outline">
-                <FiDownload className="w-4 h-4" />
-                Export
-              </button>
-              <button className="btn btn-outline">
+              {/* Export Dropdown */}
+              <select
+                onChange={(e) => {
+                  if (e.target.value) {
+                    handleExport(e.target.value);
+                    e.target.value = "";
+                  }
+                }}
+                className="btn btn-outline"
+              >
+                <option value="">
+                  <FiDownload className="w-4 h-4" />
+                  Export
+                </option>
+                <option value="csv">Export as CSV</option>
+                <option value="excel">Export as Excel</option>
+                <option value="pdf">Export as PDF</option>
+              </select>
+
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="btn btn-outline"
+              >
                 <FiUpload className="w-4 h-4" />
                 Import
               </button>
+
               <button
                 onClick={() => navigate("/products/add")}
                 className="btn btn-primary"
@@ -561,6 +548,16 @@ function ProductList() {
             </div>
           </div>
         )}
+
+        {/* Import Modal */}
+        <ImportModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImport}
+          type="products"
+          validateData={validateProductData}
+          transformData={transformImportedProductData}
+        />
       </div>
     </div>
   );
