@@ -12,6 +12,7 @@ import {
   FiInfo,
   FiMenu,
   FiX,
+  FiTruck,
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
 
@@ -23,6 +24,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/pos", label: "Point of Sale", icon: FiPlus },
     { path: "/inventory", label: "Inventory", icon: FiPackage },
+    { path: "/purchases", label: "Purchases", icon: FiTruck },
     { path: "/sales", label: "Sales", icon: FiList },
     { path: "/customers", label: "Customers", icon: FiUser },
     { path: "/reports", label: "Reports", icon: FiBarChart },

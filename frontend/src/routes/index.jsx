@@ -18,6 +18,8 @@ import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
 import Reports from "../pages/Reports";
 import ViewProduct from "../pages/ViewProduct";
+import Purchases from "../pages/Purchases";
+import PurchaseDetails from "../pages/PurchaseDetails";
 
 export const router = createBrowserRouter([
   {
@@ -75,6 +77,14 @@ export const router = createBrowserRouter([
       {
         path: "/reports",
         element: <Reports />,
+      },
+      {
+        path: "/purchases",
+        element: <Purchases />,
+      },
+      {
+        path: "/purchases/:id",
+        element: <PurchaseDetails />,
       },
     ],
   },

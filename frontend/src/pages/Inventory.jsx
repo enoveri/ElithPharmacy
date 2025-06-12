@@ -499,7 +499,7 @@ function Inventory() {
             alignItems: "center",
             gap: "8px",
             padding: "12px 20px",
-            backgroundColor: "#3b82f6",
+            backgroundColor: "var(--color-primary-600)",
             color: "white",
             border: "none",
             borderRadius: "8px",
