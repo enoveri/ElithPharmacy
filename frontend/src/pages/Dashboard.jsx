@@ -1,227 +1,512 @@
-import { useState, useEffect } from 'react';
-import { StatCard } from '../components/ui';
-import { supabase, isDevelopment } from '../lib/supabase';
+import { useState } from "react";
+import {
+  FiDollarSign,
+  FiShoppingCart,
+  FiUsers,
+  FiPackage,
+  FiTrendingUp,
+  FiBarChart,
+  FiDownload,
+  FiX,
+  FiArrowUp,
+  FiArrowDown,
+  FiPlus,
+} from "react-icons/fi";
+import { mockData, mockHelpers } from "../lib/mockData";
 
-// Dashboard page
-function Dashboard() {
-  const [stats, setStats] = useState({
-    drugsAdded: 0,
-    lowStockDrugs: 0,
-    expiredProducts: 0,
-    totalSales: 0,
-    profitCurrentMonth: 0,
-    totalProfit: 0
-  });
-  
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const Dashboard = () => {
+  const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
 
-  useEffect(() => {
-    async function fetchDashboardData() {
-      try {
-        setLoading(true);
-        
-        // Skip actual data fetching if we're in development mode without proper Supabase setup
-        if (isDevelopment) {
-          // Check if Supabase connection is valid by making a simple query
-          try {
-            const { error: testError } = await supabase.from('drugs').select('id').limit(1);
-            
-            // If there's an error with the connection, use mock data instead
-            if (testError) {
-              console.warn('Using mock data due to Supabase connection error:', testError.message);
-              // We'll use the default mock data from useState
-              setLoading(false);
-              return;
-            }
-          } catch (connectionError) {
-            console.warn('Using mock data due to Supabase connection error:', connectionError.message);
-            // We'll use the default mock data from useState
-            setLoading(false);
-            return;
-          }
-        }
-        
-        // If we get here, Supabase connection is working, so fetch real data
-        try {
-          // Fetch drugs count
-          const { data: drugsData, error: drugsError } = await supabase
-            .from('drugs')
-            .select('id')
-            .limit(1000);
-            
-          if (drugsError) throw drugsError;
-          
-          // Fetch low stock drugs
-          const { data: lowStockData, error: lowStockError } = await supabase
-            .from('drugs')
-            .select('id')
-            .lt('quantity', 10) // Assuming low stock is less than 10
-            .limit(1000);
-            
-          if (lowStockError) throw lowStockError;
-          
-          // Fetch expired products
-          const today = new Date().toISOString().split('T')[0];
-          const { data: expiredData, error: expiredError } = await supabase
-            .from('drugs')
-            .select('id')
-            .lt('expiry_date', today)
-            .limit(1000);
-            
-          if (expiredError) throw expiredError;
-          
-          // Fetch total sales
-          const { data: salesData, error: salesError } = await supabase
-            .from('sales')
-            .select('amount')
-            .limit(1000);
-            
-          if (salesError) throw salesError;
-          
-          const totalSales = salesData?.reduce((sum, sale) => sum + (sale.amount || 0), 0) || 0;
-          
-          // Fetch current month profit
-          const startOfMonth = new Date();
-          startOfMonth.setDate(1);
-          startOfMonth.setHours(0, 0, 0, 0);
-          
-          const { data: profitData, error: profitError } = await supabase
-            .from('sales')
-            .select('profit')
-            .gte('created_at', startOfMonth.toISOString())
-            .limit(1000);
-            
-          if (profitError) throw profitError;
-          
-          const monthlyProfit = profitData?.reduce((sum, sale) => sum + (sale.profit || 0), 0) || 0;
-          
-          // Fetch total profit
-          const { data: totalProfitData, error: totalProfitError } = await supabase
-            .from('sales')
-            .select('profit')
-            .limit(1000);
-            
-          if (totalProfitError) throw totalProfitError;
-          
-          const totalProfit = totalProfitData?.reduce((sum, sale) => sum + (sale.profit || 0), 0) || 0;
-          
-          setStats({
-            drugsAdded: drugsData?.length || 0,
-            lowStockDrugs: lowStockData?.length || 0,
-            expiredProducts: expiredData?.length || 0,
-            totalSales: totalSales,
-            profitCurrentMonth: monthlyProfit,
-            totalProfit: totalProfit
-          });
-        } catch (dataError) {
-          console.error('Error fetching specific data:', dataError);
-          // We'll continue with the mock data already set in state
-        }
-      } catch (err) {
-        console.error('Error in dashboard data fetching:', err);
-        // Don't set error state, just log it - we'll use mock data
-      } finally {
-        setLoading(false);
-      }
-    }
-    
-    fetchDashboardData();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
+  // Use centralized mock data
+  const stats = mockData.dashboardStats;
+  const recentSales = mockHelpers.getRecentSales(3);
+  const lowStockProducts = mockHelpers.getLowStockProducts();
+  const topCustomers = mockHelpers.getTopCustomers(3);
 
   return (
-    <div className="px-4 py-6 max-w-7xl mx-auto">
-      {error && (
-        <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md" role="alert">
-          <p className="font-bold">Note</p>
-          <p>Using demo data. {error}</p>
+    <div
+      style={{
+        padding: "24px",
+        backgroundColor: "var(--color-bg-main)",
+        minHeight: "100vh",
+      }}
+    >
+      {/* Header Section */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "32px",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: "bold",
+              color: "var(--color-text-primary)",
+              margin: "0 0 8px 0",
+            }}
+          >
+            Dashboard
+          </h1>
         </div>
-      )}
-      
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-2">Dashboard Overview</h1>
-        <p className="text-gray-600">Welcome to the pharmacy management system</p>
+
+        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            style={{
+              padding: "8px 16px",
+              borderRadius: "8px",
+              border: "1px solid var(--color-border-light)",
+              backgroundColor: "white",
+              fontSize: "14px",
+            }}
+          >
+            <option>Month to date</option>
+            <option>Year to date</option>
+            <option>Today</option>
+            <option>This week</option>
+          </select>
+
+          <button
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 16px",
+              backgroundColor: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            <FiDownload size={16} />
+            Export
+          </button>
+        </div>
       </div>
-      
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-        <StatCard 
-          title="Expired Products" 
-          value={stats.expiredProducts}
-          icon="hourglass_empty" 
-          color="red" 
-        />
-        <StatCard 
-          title="Total Sales Made" 
-          value={`GH₵${stats.totalSales.toLocaleString()}`}
-          icon="payments" 
-          color="orange" 
-        />
-        <StatCard 
-          title="Drugs Added" 
-          value={stats.drugsAdded}
-          icon="medication" 
-          color="blue" 
-        />
-        <StatCard 
-          title="Low Stock Drugs" 
-          value={stats.lowStockDrugs}
-          icon="inventory_2" 
-          color="teal" 
-        />
-        <StatCard 
-          title="Profit Current Month" 
-          value={`GH₵${stats.profitCurrentMonth.toLocaleString()}`}
-          icon="trending_up" 
-          color="purple" 
-        />
-        <StatCard 
-          title="Total Profit Made" 
-          value={`GH₵${stats.totalProfit.toLocaleString()}`}
-          icon="account_balance" 
-          color="green" 
-        />
-      </div>
-      
-      {/* Sales charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <h2 className="text-lg font-semibold mb-6 text-gray-800 flex items-center">
-            <span className="material-icons mr-2 text-blue-500">bar_chart</span>
-            Sales Person Sales Chart
-          </h2>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            {/* Chart will be implemented later */}
-            <div className="text-center">
-              <span className="material-icons text-5xl text-gray-300 mb-2">insert_chart</span>
-              <p className="text-gray-500">Sales chart data will appear here</p>
+
+      {/* Key Metrics using mockData.dashboardStats */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: "24px",
+          marginBottom: "32px",
+        }}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#dbeafe",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiDollarSign color="#3b82f6" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Today's Sales
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                ₦{stats.todaysSales.toLocaleString()}
+              </div>
             </div>
           </div>
         </div>
-        <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-          <h2 className="text-lg font-semibold mb-6 text-gray-800 flex items-center">
-            <span className="material-icons mr-2 text-blue-500">pie_chart</span>
-            Sales Person Sales Chart
-          </h2>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            {/* Chart will be implemented later */}
-            <div className="text-center">
-              <span className="material-icons text-5xl text-gray-300 mb-2">donut_large</span>
-              <p className="text-gray-500">Sales chart data will appear here</p>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#d1fae5",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiShoppingCart color="#10b981" size={24} />
             </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Transactions
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.todaysTransactions}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#fef3c7",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiUsers color="#f59e0b" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Total Customers
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.totalCustomers}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginBottom: "16px",
+            }}
+          >
+            <div
+              style={{
+                width: "48px",
+                height: "48px",
+                backgroundColor: "#fed7aa",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiPackage color="#f97316" size={24} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Low Stock Items
+              </div>
+              <div
+                style={{
+                  fontSize: "24px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {stats.lowStockItems}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Activity Section */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: "24px",
+          marginBottom: "32px",
+        }}
+      >
+        {/* Recent Sales */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#1f2937",
+              marginBottom: "20px",
+            }}
+          >
+            Recent Sales
+          </h3>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
+            {recentSales.map((sale, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "12px",
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "8px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                    {sale.transactionNumber}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                    {new Date(sale.date).toLocaleDateString()}
+                  </div>
+                </div>
+                <div style={{ fontWeight: "bold", color: "#10b981" }}>
+                  ₦{sale.totalAmount.toFixed(2)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Low Stock Alerts */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#1f2937",
+              marginBottom: "20px",
+            }}
+          >
+            Low Stock Alerts
+          </h3>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
+            {lowStockProducts.slice(0, 3).map((product, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "12px",
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  borderRadius: "8px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                    {product.name}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                    Min: {product.minStockLevel} units
+                  </div>
+                </div>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#dc2626",
+                    fontWeight: "600",
+                  }}
+                >
+                  {product.quantity} left
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Charts Section */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "2fr 1fr",
+          gap: "24px",
+        }}
+      >
+        {/* Sales Chart */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#1f2937",
+              marginBottom: "20px",
+            }}
+          >
+            Sales Overview
+          </h3>
+          {/* Simple bar chart */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "end",
+              justifyContent: "space-between",
+              height: "200px",
+              padding: "20px 0",
+            }}
+          >
+            {[40, 60, 80, 100, 70, 90, 120].map((height, index) => (
+              <div
+                key={index}
+                style={{
+                  width: "30px",
+                  height: `${height}px`,
+                  backgroundColor: "#10b981",
+                  borderRadius: "4px 4px 0 0",
+                  margin: "0 4px",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Top Customers */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <h3
+            style={{
+              fontSize: "18px",
+              fontWeight: "600",
+              color: "#1f2937",
+              marginBottom: "20px",
+            }}
+          >
+            Top Customers
+          </h3>
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+          >
+            {topCustomers.map((customer, index) => (
+              <div
+                key={index}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "12px",
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "8px",
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                    {customer.firstName} {customer.lastName}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                    {customer.totalPurchases} purchases
+                  </div>
+                </div>
+                <div style={{ fontWeight: "bold", color: "#10b981" }}>
+                  ₦{customer.totalSpent.toLocaleString()}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
     </div>
   );
-}
+};
 
 export default Dashboard;

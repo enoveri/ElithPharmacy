@@ -1,4 +1,6 @@
-const StatCard = ({ title, value, icon, color }) => {
+import { FiTrendingUp } from 'react-icons/fi';
+
+const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
   // Define background colors based on the color prop
   const bgColors = {
     blue: 'bg-blue-50 border-blue-200',
@@ -46,13 +48,19 @@ const StatCard = ({ title, value, icon, color }) => {
         <div>
           <h3 className="text-sm font-medium text-gray-500">{title}</h3>
           <div className={`mt-2 text-3xl font-semibold ${textColor}`}>{value}</div>
+          {trend && (
+            <div className={`mt-2 flex items-center text-sm ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+              <FiTrendingUp className={trend === 'down' ? 'rotate-180' : ''} size={16} />
+              <span className="ml-1">{trendValue}%</span>
+            </div>
+          )}
         </div>
         <div className={`${iconBgColor} rounded-full p-3`}>
-          <span className={`material-icons text-2xl ${textColor}`}>{icon}</span>
+          <Icon className={`text-2xl ${textColor}`} size={24} />
         </div>
       </div>
     </div>
   );
 };
 
-export default StatCard; 
+export default StatCard;
