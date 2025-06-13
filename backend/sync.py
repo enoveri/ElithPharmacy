@@ -11,7 +11,7 @@ import time
 import schedule
 from loguru import logger
 from supabase import create_client, Client
-
+_
 from config import LOCAL_SUPABASE_KEY, LOCAL_SUPABASE_URL, REMOTE_SUPABASE_KEY,\
     REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES
 
@@ -40,7 +40,7 @@ class PharmacyDatabaseSync:
     def connect_to_supabase(self):
         """Establish connections to both Supabase instances"""
         try:
-            self.local_supabase = create_client(LOCAL_SUPABASE_URL, LOCAL_SUPABASE_KEY)
+            self.local_supabase = create_client(LOCAL_SUPABA_SE_URL, LOCAL_SUPABASE_KEY)
             logger.info("Connected to local Supabase")
         except Exception as e:
             logger.error(f"Failed to connect to local Supabase: {e}")
