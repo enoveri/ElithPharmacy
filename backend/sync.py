@@ -1,19 +1,24 @@
 #!/usr/bin/env python3
 """
-Pharmacy Database Sync Tool
+Pharmacy Database Sync and Initialization Tool
 
 This script synchronizes data between local and remote Supabase instances
-to ensure the pharmacy system works both online and offline.
+to ensure the pharmacy system works both online and offline. It can also
+initialize the database with mock data.
 """
 
 import os
+import sys
 import time
+import json
+import argparse
 import schedule
 from loguru import logger
 from supabase import create_client, Client
-_
+import requests
+
 from config import LOCAL_SUPABASE_KEY, LOCAL_SUPABASE_URL, REMOTE_SUPABASE_KEY,\
-    REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES
+    REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES, LOCAL_SERVICE_ROLE_KEY
 
 
 class PharmacyDatabaseSync:
@@ -37,21 +42,29 @@ class PharmacyDatabaseSync:
             logger.error(f"Error getting tables: {e}")
             return []
 
-    def connect_to_supabase(self):
+    def connect_to_supabase(self, target="local"):
         """Establish connections to both Supabase instances"""
-        try:
-            self.local_supabase = create_client(LOCAL_SUPABA_SE_URL, LOCAL_SUPABASE_KEY)
-            logger.info("Connected to local Supabase")
-        except Exception as e:
-            logger.error(f"Failed to connect to local Supabase: {e}")
-            self.local_supabase = None
-        
-        try:
-            self.remote_supabase = create_client(REMOTE_SUPABASE_URL, REMOTE_SUPABASE_KEY)
-            logger.info("Connected to remote Supabase")
-        except Exception as e:
-            logger.error(f"Failed to connect to remote Supabase: {e}")
-            self.remote_supabase = None
+        if target == "local":
+            try:
+                self.local_supabase = create_client(LOCAL_SUPABASE_URL, LOCAL_SUPABASE_KEY)
+                logger.info("Connected to local Supabase")
+            except Exception as e:
+                logger.error(f"Failed to connect to local Supabase: {e}")
+                self.local_supabase = None
+        elif target == "remote":
+            try:
+                self.remote_supabase = create_client(REMOTE_SUPABASE_URL, REMOTE_SUPABASE_KEY)
+                logger.info("Connected to remote Supabase")
+            except Exception as e:
+                logger.error(f"Failed to connect to remote Supabase: {e}")
+                self.remote_supabase = None
+        elif target == "both":
+            self.connect_to_supabase("local")
+            self.connect_to_supabase("remote")
+        else:
+            logger.error(f"Invalid target: {target}")
+            return False
+        return True
 
     def sync_local_to_remote(self):
         """Sync data from local to remote database"""
@@ -160,13 +173,325 @@ class PharmacyDatabaseSync:
         while True:
             schedule.run_pending()
             time.sleep(1)
+            
+    def create_tables_if_not_exist(self, supabase_url, supabase_key):
+        """Create necessary tables using the Supabase REST API"""
+        try:
+            headers = {
+                "apikey": supabase_key,
+                "Authorization": f"Bearer {supabase_key}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            }
+            
+            # Define table schemas
+            tables = {
+                "products": """
+                    CREATE TABLE IF NOT EXISTS products (
+                        id SERIAL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        category TEXT NOT NULL,
+                        price NUMERIC(10, 2) NOT NULL,
+                        cost_price NUMERIC(10, 2) NOT NULL,
+                        quantity INTEGER NOT NULL,
+                        min_stock_level INTEGER NOT NULL,
+                        status TEXT NOT NULL,
+                        manufacturer TEXT,
+                        expiry_date DATE,
+                        batch_number TEXT,
+                        barcode TEXT,
+                        description TEXT,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """,
+                "categories": """
+                    CREATE TABLE IF NOT EXISTS categories (
+                        id SERIAL PRIMARY KEY,
+                        name TEXT NOT NULL,
+                        description TEXT,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """,
+                "customers": """
+                    CREATE TABLE IF NOT EXISTS customers (
+                        id SERIAL PRIMARY KEY,
+                        first_name TEXT NOT NULL,
+                        last_name TEXT NOT NULL,
+                        email TEXT,
+                        phone TEXT,
+                        address TEXT,
+                        city TEXT,
+                        state TEXT,
+                        zip_code TEXT,
+                        date_of_birth DATE,
+                        registration_date DATE NOT NULL,
+                        status TEXT NOT NULL,
+                        total_purchases INTEGER DEFAULT 0,
+                        total_spent NUMERIC(12, 2) DEFAULT 0,
+                        last_purchase DATE,
+                        loyalty_points INTEGER DEFAULT 0,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """,
+                "sales": """
+                    CREATE TABLE IF NOT EXISTS sales (
+                        id SERIAL PRIMARY KEY,
+                        transaction_number TEXT NOT NULL,
+                        customer_id INTEGER REFERENCES customers(id),
+                        date TIMESTAMPTZ NOT NULL,
+                        subtotal NUMERIC(10, 2) NOT NULL,
+                        tax NUMERIC(10, 2) NOT NULL,
+                        discount NUMERIC(10, 2) NOT NULL,
+                        total_amount NUMERIC(10, 2) NOT NULL,
+                        payment_method TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        cashier_id INTEGER,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """,
+                "sale_items": """
+                    CREATE TABLE IF NOT EXISTS sale_items (
+                        id SERIAL PRIMARY KEY,
+                        sale_id INTEGER REFERENCES sales(id),
+                        product_id INTEGER REFERENCES products(id),
+                        quantity INTEGER NOT NULL,
+                        price NUMERIC(10, 2) NOT NULL,
+                        total NUMERIC(10, 2) NOT NULL,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """,
+                "settings": """
+                    CREATE TABLE IF NOT EXISTS settings (
+                        id SERIAL PRIMARY KEY,
+                        store_name TEXT NOT NULL,
+                        address TEXT,
+                        phone TEXT,
+                        email TEXT,
+                        currency TEXT NOT NULL,
+                        tax_rate NUMERIC(5, 2) NOT NULL,
+                        low_stock_threshold INTEGER NOT NULL,
+                        synced BOOLEAN DEFAULT FALSE,
+                        created_at TIMESTAMPTZ DEFAULT NOW(),
+                        updated_at TIMESTAMPTZ DEFAULT NOW()
+                    );
+                """
+            }
+            
+            # Execute SQL for each table
+            for table_name, sql in tables.items():
+                logger.info(f"Creating table: {table_name}")
+                
+                # Use the SQL API endpoint
+                response = requests.post(
+                    f"{supabase_url}/rest/v1/rpc/execute_sql",
+                    headers=headers,
+                    json={"sql": sql}
+                )
+                
+                if response.status_code >= 300:
+                    logger.error(f"Error creating table {table_name}: {response.text}")
+                    return False
+            
+            logger.success("Successfully created all required tables")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error creating tables: {e}")
+            return False
+    
+    def load_mock_data(self):
+        """Load mock data from JSON file"""
+        try:
+            with open("backend/mock_data.json", 'r') as file:
+                mock_data = json.load(file)
+            logger.success("Successfully loaded mock data from JSON file")
+            return mock_data
+        except Exception as e:
+            logger.error(f"Error loading mock data: {e}")
+            return None
+
+    def insert_mock_data(self, supabase, mock_data):
+        """Insert the mock data into Supabase tables"""
+        try:
+            # Insert products
+            for product in mock_data.get('products', []):
+                # Convert camelCase to snake_case for DB fields
+                db_product = {
+                    "id": product["id"],
+                    "name": product["name"],
+                    "category": product["category"],
+                    "price": product["price"],
+                    "cost_price": product["costPrice"],
+                    "quantity": product["quantity"],
+                    "min_stock_level": product["minStockLevel"],
+                    "status": product["status"],
+                    "manufacturer": product["manufacturer"],
+                    "expiry_date": product["expiryDate"],
+                    "batch_number": product["batchNumber"],
+                    "barcode": product["barcode"],
+                    "description": product["description"],
+                    "synced": True
+                }
+                supabase.table("products").upsert(db_product).execute()
+            
+            # Insert categories
+            for category in mock_data.get('categories', []):
+                db_category = {
+                    "id": category["id"],
+                    "name": category["name"],
+                    "description": category["description"],
+                    "synced": True
+                }
+                supabase.table("categories").upsert(db_category).execute()
+            
+            # Insert customers
+            for customer in mock_data.get('customers', []):
+                db_customer = {
+                    "id": customer["id"],
+                    "first_name": customer["firstName"],
+                    "last_name": customer["lastName"],
+                    "email": customer["email"],
+                    "phone": customer["phone"],
+                    "address": customer["address"],
+                    "city": customer["city"],
+                    "state": customer["state"],
+                    "zip_code": customer["zipCode"],
+                    "date_of_birth": customer["dateOfBirth"],
+                    "registration_date": customer["registrationDate"],
+                    "status": customer["status"],
+                    "total_purchases": customer["totalPurchases"],
+                    "total_spent": customer["totalSpent"],
+                    "last_purchase": customer["lastPurchase"],
+                    "loyalty_points": customer["loyaltyPoints"],
+                    "synced": True
+                }
+                supabase.table("customers").upsert(db_customer).execute()
+            
+            # Insert sales and sale items
+            for sale in mock_data.get('sales', []):
+                db_sale = {
+                    "id": sale["id"],
+                    "transaction_number": sale["transactionNumber"],
+                    "customer_id": sale["customerId"],
+                    "date": sale["date"],
+                    "subtotal": sale["subtotal"],
+                    "tax": sale["tax"],
+                    "discount": sale["discount"],
+                    "total_amount": sale["totalAmount"],
+                    "payment_method": sale["paymentMethod"],
+                    "status": sale["status"],
+                    "cashier_id": sale["cashierId"],
+                    "synced": True
+                }
+                supabase.table("sales").upsert(db_sale).execute()
+                
+                # Insert sale items
+                for idx, item in enumerate(sale.get("items", [])):
+                    db_item = {
+                        "id": sale["id"] * 100 + idx,  # Generate a unique ID
+                        "sale_id": sale["id"],
+                        "product_id": item["productId"],
+                        "quantity": item["quantity"],
+                        "price": item["price"],
+                        "total": item["total"],
+                        "synced": True
+                    }
+                    supabase.table("sale_items").upsert(db_item).execute()
+            
+            # Insert settings
+            settings = mock_data.get('settings', {})
+            if settings:
+                db_settings = {
+                    "id": 1,  # Use ID 1 for the single settings record
+                    "store_name": settings["storeName"],
+                    "address": settings["address"],
+                    "phone": settings["phone"],
+                    "email": settings["email"],
+                    "currency": settings["currency"],
+                    "tax_rate": settings["taxRate"],
+                    "low_stock_threshold": settings["lowStockThreshold"],
+                    "synced": True
+                }
+                supabase.table("settings").upsert(db_settings).execute()
+            
+            logger.success("Successfully inserted all mock data")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Error inserting mock data: {e}")
+            return False
+    
+    def initialize_database(self, target="local"):
+        """Initialize the database with mock data"""
+        self.connect_to_supabase(target=target)
+        
+        # Select which database to initialize
+        supabase = None
+        supabase_url = None
+        supabase_key = None
+        
+        if target == "local" and self.local_supabase:
+            supabase = self.local_supabase
+            supabase_url = LOCAL_SUPABASE_URL
+            supabase_key = LOCAL_SERVICE_ROLE_KEY
+            logger.info("Initializing local database")
+        elif target == "remote" and self.remote_supabase:
+            supabase = self.remote_supabase
+            supabase_url = REMOTE_SUPABASE_URL
+            supabase_key = REMOTE_SUPABASE_KEY
+            logger.info("Initializing remote database")
+        else:
+            logger.error(f"Cannot initialize {target} database: connection not available")
+            return False
+        
+        # Create tables
+        if not self.create_tables_if_not_exist(supabase_url, supabase_key):
+            return False
+        
+        # Load and insert mock data
+        mock_data = self.load_mock_data()
+        if not mock_data:
+            return False
+        
+        success = self.insert_mock_data(supabase, mock_data)
+        if success:
+            logger.success(f"Successfully initialized the {target} database")
+        return success
 
 
 def main():
-    """Main function to instantiate and run the sync process"""
+    """Main function to parse arguments and run the appropriate action"""
+    parser = argparse.ArgumentParser(description='Pharmacy Database Sync and Initialization Tool')
+    parser.add_argument('--init', choices=['local', 'remote', 'both'], 
+                        help='Initialize database with mock data (local, remote, or both)')
+    parser.add_argument('--sync', action='store_true', help='Run the sync service')
+    
+    args = parser.parse_args()
+    
     sync_service = PharmacyDatabaseSync()
-    sync_service.start()
-
+    
+    # Handle initialization if requested
+    if args.init:
+        if args.init == 'local' or args.init == 'both':
+            sync_service.initialize_database('local')
+        
+        if args.init == 'remote' or args.init == 'both':
+            sync_service.initialize_database('remote')
+    
+    # Run sync service if requested or if no specific action was provided
+    if args.sync or not (args.init):
+        sync_service.start()
+    
 
 if __name__ == "__main__":
     main() 

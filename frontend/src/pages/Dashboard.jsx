@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FiDollarSign,
   FiShoppingCart,
@@ -13,15 +13,48 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { mockData, mockHelpers } from "../lib/mockData";
+import { dbHelpers } from "../lib/db"
 
 const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
+  const [recentSales, setRecentSales] = useState([]);
+  const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [topCustomers, setTopCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Use centralized mock data
   const stats = mockData.dashboardStats;
-  const recentSales = mockHelpers.getRecentSales(3);
-  const lowStockProducts = mockHelpers.getLowStockProducts();
-  const topCustomers = mockHelpers.getTopCustomers(3);
+  
+  // Fetch data using async functions
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        setLoading(true);
+        
+        // Fetch data in parallel
+        const [salesData, stockData, customerData] = await Promise.all([
+          dbHelpers.getRecentSales(3),
+          mockHelpers.getLowStockProducts(),
+          dbHelpers.getTopCustomers(3)
+        ]);
+        
+        setRecentSales(salesData || []);
+        setLowStockProducts(stockData);
+        setTopCustomers(customerData);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        
+        // Fallback to mock data if there's an error
+        setRecentSales(mockHelpers.getRecentSales(3));
+        setLowStockProducts(mockHelpers.getLowStockProducts());
+        setTopCustomers(mockHelpers.getTopCustomers(3));
+      } finally {
+        setLoading(false);
+      }
+    }
+    
+    fetchData();
+  }, []);
 
   return (
     <div
@@ -317,31 +350,37 @@ const Dashboard = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
-            {recentSales.map((sale, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "12px",
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "8px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {sale.transactionNumber}
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+            ) : recentSales.length > 0 ? (
+              recentSales.map((sale, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {sale.transaction_number || sale.transactionNumber}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {new Date(sale.date).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                    {new Date(sale.date).toLocaleDateString()}
+                  <div style={{ fontWeight: "bold", color: "#10b981" }}>
+                    ₦{(sale.total_amount || sale.totalAmount).toFixed(2)}
                   </div>
                 </div>
-                <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                  ₦{sale.totalAmount.toFixed(2)}
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px" }}>No recent sales found</div>
+            )}
           </div>
         </div>
 
@@ -367,38 +406,44 @@ const Dashboard = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
-            {lowStockProducts.slice(0, 3).map((product, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "12px",
-                  backgroundColor: "#fef2f2",
-                  border: "1px solid #fecaca",
-                  borderRadius: "8px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {product.name}
-                  </div>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                    Min: {product.minStockLevel} units
-                  </div>
-                </div>
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+            ) : lowStockProducts.length > 0 ? (
+              lowStockProducts.slice(0, 3).map((product, index) => (
                 <div
+                  key={index}
                   style={{
-                    fontSize: "14px",
-                    color: "#dc2626",
-                    fontWeight: "600",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px",
+                    backgroundColor: "#fef2f2",
+                    border: "1px solid #fecaca",
+                    borderRadius: "8px",
                   }}
                 >
-                  {product.quantity} left
+                  <div>
+                    <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {product.name}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                      Min: {product.min_stock_level || product.minStockLevel} units
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "14px",
+                      color: "#dc2626",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {product.quantity} left
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px" }}>No low stock items found</div>
+            )}
           </div>
         </div>
       </div>
@@ -477,31 +522,37 @@ const Dashboard = () => {
           <div
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
-            {topCustomers.map((customer, index) => (
-              <div
-                key={index}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "12px",
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "8px",
-                }}
-              >
-                <div>
-                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {customer.firstName} {customer.lastName}
+            {loading ? (
+              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+            ) : topCustomers.length > 0 ? (
+              topCustomers.map((customer, index) => (
+                <div
+                  key={index}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "8px",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
+                    </div>
+                    <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                      {customer.total_purchases || customer.totalPurchases} purchases
+                    </div>
                   </div>
-                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                    {customer.totalPurchases} purchases
+                  <div style={{ fontWeight: "bold", color: "#10b981" }}>
+                    ₦{(customer.total_spent || customer.totalSpent).toLocaleString()}
                   </div>
                 </div>
-                <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                  ₦{customer.totalSpent.toLocaleString()}
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <div style={{ textAlign: "center", padding: "20px" }}>No customer data found</div>
+            )}
           </div>
         </div>
       </div>
