@@ -1419,88 +1419,200 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       console.error("Error in createSupplier:", error);      return { success: false, error };
     }
   },
-
   // Dashboard Stats
   getDashboardStats: async () => {
     try {
       console.log("🔄 [DB] Fetching dashboard stats...");
+
+      // Fetch all data first to check structure
+      const [
+        { data: products, error: productsError },
+        { data: customers, error: customersError },
+        { data: allSales, error: salesError }
+      ] = await Promise.all([
+        supabase.from("products").select("*"),
+        supabase.from("customers").select("*"),
+        supabase.from("sales").select("*")
+      ]);
+
+      if (productsError) {
+        console.error("❌ [DB] Products error:", productsError);
+        throw productsError;
+      }
+
+      if (customersError) {
+        console.error("❌ [DB] Customers error:", customersError);
+        throw customersError;
+      }
+
+      if (salesError) {
+        console.error("❌ [DB] Sales error:", salesError);
+        throw salesError;
+      }
+
+      console.log("📊 [DB] Raw data counts:", {
+        products: products?.length || 0,
+        customers: customers?.length || 0,
+        sales: allSales?.length || 0
+      });
+
+      // Log first sale to see structure
+      if (allSales && allSales.length > 0) {
+        console.log("🔍 [DB] First sale structure:", allSales[0]);
+      }
 
       // Get today's date range
       const today = new Date();
       const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
 
-      // Get current month date range
+      // Filter today's sales - try both date and created_at fields
+      const todaysSales = (allSales || []).filter(sale => {
+        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+        return saleDate >= todayStart && saleDate < todayEnd;
+      });
+
+      // Get current month sales
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      
+      const monthlySales = (allSales || []).filter(sale => {
+        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+        return saleDate >= monthStart && saleDate <= monthEnd;
+      });
 
-      // Fetch all data in parallel
-      const [
-        { data: products },
-        { data: customers },
-        { data: todaysSales },
-        { data: monthlySales },
-        { data: allSales }
-      ] = await Promise.all([
-        supabase.from("products").select("*"),
-        supabase.from("customers").select("*"),
-        supabase.from("sales").select("*").gte("date", todayStart.toISOString()).lt("date", todayEnd.toISOString()),
-        supabase.from("sales").select("*").gte("date", monthStart.toISOString()).lte("date", monthEnd.toISOString()),
-        supabase.from("sales").select("*")
-      ]);
+      // Calculate revenue - try multiple field names
+      const calculateRevenue = (sales) => {
+        return sales.reduce((sum, sale) => {
+          const amount = parseFloat(sale.total_amount || sale.total || sale.amount || 0);
+          return sum + amount;
+        }, 0);
+      };
 
-      // Calculate today's stats
-      const todaysSalesAmount = (todaysSales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
-      const todaysTransactions = (todaysSales || []).length;
-
-      // Calculate monthly stats
-      const monthlyRevenue = (monthlySales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+      const todaysSalesAmount = calculateRevenue(todaysSales);
+      const monthlyRevenue = calculateRevenue(monthlySales);
+      const totalRevenue = calculateRevenue(allSales || []);
 
       // Calculate low stock items
       const lowStockItems = (products || []).filter(product => {
-        const quantity = product.quantity || 0;
-        const minStock = product.min_stock_level || product.minStockLevel || 0;
+        const quantity = parseInt(product.quantity || 0);
+        const minStock = parseInt(product.min_stock_level || product.minStockLevel || 0);
         return quantity <= minStock;
       }).length;
+
+      // Calculate average order value
+      const totalSales = (allSales || []).length;
+      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
       // Calculate monthly growth (compare with previous month)
       const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
       const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
       
-      const { data: previousMonthSales } = await supabase
-        .from("sales")
-        .select("*")
-        .gte("date", previousMonthStart.toISOString())
-        .lte("date", previousMonthEnd.toISOString());
+      const previousMonthSales = (allSales || []).filter(sale => {
+        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+        return saleDate >= previousMonthStart && saleDate <= previousMonthEnd;
+      });
 
-      const previousMonthRevenue = (previousMonthSales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+      const previousMonthRevenue = calculateRevenue(previousMonthSales);
       const monthlyGrowth = previousMonthRevenue > 0 
         ? ((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 
         : 0;
 
       const stats = {
-        todaysSales: todaysSalesAmount,
-        todaysTransactions: todaysTransactions,
+        // Dashboard page expects these fields
         totalProducts: (products || []).length,
         totalCustomers: (customers || []).length,
-        lowStockItems: lowStockItems,
+        totalSales: totalSales,
+        totalRevenue: totalRevenue,
+        averageOrderValue: averageOrderValue,
+        lowStockCount: lowStockItems,
+        
+        // Reports page expects these fields  
+        todaysSales: todaysSalesAmount,
+        todaysTransactions: todaysSales.length,
         monthlyRevenue: monthlyRevenue,
         monthlyGrowth: monthlyGrowth,
+        recentSales: todaysSales.length,
+        recentRevenue: todaysSalesAmount
       };
 
       console.log("✅ [DB] Dashboard stats calculated:", stats);
-      return stats;
+      return { success: true, data: stats };
     } catch (error) {
       console.error("❌ [DB] Error fetching dashboard stats:", error);
       return {
-        todaysSales: 0,
-        todaysTransactions: 0,
-        totalProducts: 0,
-        totalCustomers: 0,
-        lowStockItems: 0,
-        monthlyRevenue: 0,
-        monthlyGrowth: 0,
+        success: false,
+        error: error.message,
+        data: {
+          totalProducts: 0,
+          totalCustomers: 0,
+          totalSales: 0,          totalRevenue: 0,
+          averageOrderValue: 0,
+          lowStockCount: 0,
+          todaysSales: 0,
+          todaysTransactions: 0,
+          monthlyRevenue: 0,
+          monthlyGrowth: 0,
+          recentSales: 0,
+          recentRevenue: 0
+        }
       };
+    }
+  },
+
+  // Debug function to check sales data
+  debugSalesData: async () => {
+    try {
+      console.log('🔍 [Debug] Checking sales data...');
+      
+      // Get all sales
+      const { data: sales, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (salesError) {
+        console.error('❌ [Debug] Error fetching sales:', salesError);
+        return { error: salesError };
+      }
+      
+      console.log('📊 [Debug] Sales data:', sales);
+      console.log('📊 [Debug] Number of sales:', sales?.length || 0);
+      
+      // Check total sales value
+      const totalSales = sales?.reduce((sum, sale) => {
+        const total = parseFloat(sale.total_amount || sale.total || 0);
+        console.log(`💰 [Debug] Sale ${sale.id}: ${total}`);
+        return sum + total;
+      }, 0) || 0;
+      
+      console.log('💰 [Debug] Total sales calculated:', totalSales);
+      
+      // Get all sale items
+      const { data: saleItems, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('*')
+        .limit(10);
+      
+      if (itemsError) {
+        console.error('❌ [Debug] Error fetching sale items:', itemsError);
+      } else {
+        console.log('📦 [Debug] Sale items:', saleItems);
+      }
+      
+      return { 
+        success: true, 
+        data: { 
+          sales, 
+          saleItems, 
+          totalSales,
+          salesCount: sales?.length || 0 
+        } 
+      };
+    } catch (error) {
+      console.error('❌ [Debug] Error in debugSalesData:', error);
+      return { error };
     }
   },
 };

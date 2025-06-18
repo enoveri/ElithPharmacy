@@ -112,11 +112,10 @@ function Reports() {
 
     loadReportData();
   }, [selectedReport, dateRange]);
-
   const loadOverviewData = async () => {
     try {
       const [dashboardStats, products, customers, sales] = await Promise.all([
-        dataService.dashboard.getStats(),
+        dataService.analytics.getDashboardStats(), // Changed from dashboard to analytics
         dataService.products.getAll(),
         dataService.customers.getAll(),
         dataService.sales.getAll(),

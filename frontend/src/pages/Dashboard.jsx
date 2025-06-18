@@ -36,16 +36,32 @@ const Dashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true);
-
-        // Fetch all dashboard data in parallel
-        const [stats, salesData, stockData, customerData] = await Promise.all([
+        setLoading(true);        // Fetch all dashboard data in parallel
+        const [statsResult, salesData, stockData, customerData] = await Promise.all([
           dataService.dashboard.getStats(),
           dataService.sales.getRecent(3),
           dataService.products.getLowStock(),
           dataService.customers.getTop(3),
         ]);
 
+        // Handle the stats result which might be wrapped in success/data structure
+        let stats;
+        if (statsResult && statsResult.success && statsResult.data) {
+          stats = statsResult.data;
+        } else if (statsResult && typeof statsResult === 'object') {
+          stats = statsResult;
+        } else {
+          stats = {
+            totalProducts: 0,
+            totalCustomers: 0,
+            totalSales: 0,
+            totalRevenue: 0,
+            averageOrderValue: 0,
+            lowStockCount: 0
+          };
+        }
+
+        console.log('📊 [Dashboard] Stats received:', stats);
         setDashboardStats(stats);
         setRecentSales(salesData || []);
         setLowStockProducts(stockData || []);
