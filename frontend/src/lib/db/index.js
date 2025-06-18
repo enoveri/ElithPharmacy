@@ -1416,8 +1416,91 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
 
       return { success: true, data };
     } catch (error) {
-      console.error("Error in createSupplier:", error);
-      return { success: false, error };
+      console.error("Error in createSupplier:", error);      return { success: false, error };
+    }
+  },
+
+  // Dashboard Stats
+  getDashboardStats: async () => {
+    try {
+      console.log("🔄 [DB] Fetching dashboard stats...");
+
+      // Get today's date range
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      // Get current month date range
+      const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+      const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+      // Fetch all data in parallel
+      const [
+        { data: products },
+        { data: customers },
+        { data: todaysSales },
+        { data: monthlySales },
+        { data: allSales }
+      ] = await Promise.all([
+        supabase.from("products").select("*"),
+        supabase.from("customers").select("*"),
+        supabase.from("sales").select("*").gte("date", todayStart.toISOString()).lt("date", todayEnd.toISOString()),
+        supabase.from("sales").select("*").gte("date", monthStart.toISOString()).lte("date", monthEnd.toISOString()),
+        supabase.from("sales").select("*")
+      ]);
+
+      // Calculate today's stats
+      const todaysSalesAmount = (todaysSales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+      const todaysTransactions = (todaysSales || []).length;
+
+      // Calculate monthly stats
+      const monthlyRevenue = (monthlySales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+
+      // Calculate low stock items
+      const lowStockItems = (products || []).filter(product => {
+        const quantity = product.quantity || 0;
+        const minStock = product.min_stock_level || product.minStockLevel || 0;
+        return quantity <= minStock;
+      }).length;
+
+      // Calculate monthly growth (compare with previous month)
+      const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+      
+      const { data: previousMonthSales } = await supabase
+        .from("sales")
+        .select("*")
+        .gte("date", previousMonthStart.toISOString())
+        .lte("date", previousMonthEnd.toISOString());
+
+      const previousMonthRevenue = (previousMonthSales || []).reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+      const monthlyGrowth = previousMonthRevenue > 0 
+        ? ((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 
+        : 0;
+
+      const stats = {
+        todaysSales: todaysSalesAmount,
+        todaysTransactions: todaysTransactions,
+        totalProducts: (products || []).length,
+        totalCustomers: (customers || []).length,
+        lowStockItems: lowStockItems,
+        monthlyRevenue: monthlyRevenue,
+        monthlyGrowth: monthlyGrowth,
+      };
+
+      console.log("✅ [DB] Dashboard stats calculated:", stats);
+      return stats;
+    } catch (error) {
+      console.error("❌ [DB] Error fetching dashboard stats:", error);
+      return {
+        todaysSales: 0,
+        todaysTransactions: 0,
+        totalProducts: 0,
+        totalCustomers: 0,
+        lowStockItems: 0,
+        monthlyRevenue: 0,
+        monthlyGrowth: 0,
+      };
     }
   },
 };
