@@ -335,57 +335,6 @@ export const useSalesStore = create((set, get) => ({
   },
 }));
 
-// Notifications store
-export const useNotificationsStore = create((set, get) => ({
-  notifications: [],
-  unreadCount: 0,
-  isLoading: false,
-
-  // Actions
-  setNotifications: (notifications) => set({ notifications }),
-  setUnreadCount: (unreadCount) => set({ unreadCount }),
-  setLoading: (isLoading) => set({ isLoading }),
-
-  // Fetch notifications
-  fetchNotifications: async () => {
-    try {
-      set({ isLoading: true });
-      const [notifications, unreadCount] = await Promise.all([
-        dataService.notifications.getAll(),
-        dataService.notifications.getUnreadCount(),
-      ]);
-      set({ notifications, unreadCount });
-    } catch (error) {
-      console.error("Error fetching notifications:", error);
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  // Mark notification as read
-  markAsRead: (notificationId) => {
-    const { notifications } = get();
-    set({
-      notifications: notifications.map((n) =>
-        n.id === notificationId ? { ...n, read: true } : n
-      ),
-    });
-    
-    // Update unread count
-    const unreadCount = notifications.filter((n) => !n.read && n.id !== notificationId).length;
-    set({ unreadCount });
-  },
-
-  // Mark all as read
-  markAllAsRead: () => {
-    const { notifications } = get();
-    set({
-      notifications: notifications.map((n) => ({ ...n, read: true })),
-      unreadCount: 0,
-    });
-  },
-}));
-
 // App settings store with persistence
 export const useSettingsStore = create(
   persist(
@@ -452,3 +401,9 @@ export const useSettingsStore = create(
     }
   )
 );
+
+// Export notifications store
+export { useNotificationsStore } from './notifications';
+
+// Export all stores
+export * from './notifications';

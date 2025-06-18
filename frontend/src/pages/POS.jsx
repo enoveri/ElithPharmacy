@@ -9,6 +9,7 @@ import {
   FiCreditCard,
 } from "react-icons/fi";
 import { dataService } from "../services";
+import { useNotificationsStore } from "../store";
 
 // Add CSS for loading spinner
 const loadingStyles = `

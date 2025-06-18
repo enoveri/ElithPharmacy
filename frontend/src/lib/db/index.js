@@ -927,6 +927,283 @@ export const dbHelpers = {
 
     return { success: true };
   },
+  // Notifications functions
+  getNotifications: async (userId = null) => {
+    try {
+      console.log('🔄 [DB] Fetching notifications...');
+      
+      let query = supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("❌ [DB] Error fetching notifications:", error);
+        
+        // Check if the error is about table not existing
+        if (error.message?.includes('relation "notifications" does not exist')) {
+          console.error("🚨 [DB] NOTIFICATIONS TABLE DOES NOT EXIST IN SUPABASE!");
+          console.error("📋 [DB] Please create the notifications table in your Supabase database.");
+        }
+        
+        return { data: [], error };
+      }
+
+      console.log(`✅ [DB] Fetched ${data?.length || 0} notifications`);
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error("❌ [DB] Error in getNotifications:", error);
+      return { data: [], error };
+    }
+  },
+  createNotification: async (notificationData) => {
+    try {
+      console.log('🔄 [DB] Creating notification:', notificationData);
+      
+      const { data, error } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: notificationData.userId || null,
+          type: notificationData.type || 'info',
+          title: notificationData.title,
+          message: notificationData.message,
+          is_read: false,
+          data: notificationData.data || null,
+          priority: notificationData.priority || 'normal',
+          action_url: notificationData.actionUrl || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error creating notification:", error);
+        
+        // Check if the error is about table not existing
+        if (error.message?.includes('relation "notifications" does not exist')) {
+          console.error("🚨 [DB] NOTIFICATIONS TABLE DOES NOT EXIST IN SUPABASE!");
+          console.error("📋 [DB] Please create the notifications table in your Supabase database:");
+          console.error(`
+CREATE TABLE notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL DEFAULT 'info',
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT FALSE,
+  data JSONB,
+  priority TEXT DEFAULT 'normal',
+  action_url TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  read_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Enable RLS
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+
+-- Create policy for authenticated users
+CREATE POLICY "Users can manage their own notifications" ON notifications
+  FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
+          `);
+        }
+        
+        return { success: false, error };
+      }
+
+      console.log('✅ [DB] Notification created successfully:', data);
+      return { success: true, data };
+    } catch (error) {
+      console.error("❌ [DB] Error in createNotification:", error);
+      return { success: false, error };
+    }
+  },
+
+  markNotificationAsRead: async (notificationId) => {
+    try {
+      const { data, error } = await supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("id", notificationId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error marking notification as read:", error);
+        return { success: false, error };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error in markNotificationAsRead:", error);
+      return { success: false, error };
+    }
+  },
+
+  markAllNotificationsAsRead: async (userId = null) => {
+    try {
+      let query = supabase
+        .from("notifications")
+        .update({ is_read: true, read_at: new Date().toISOString() })
+        .eq("is_read", false);
+
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error("Error marking all notifications as read:", error);
+        return { success: false, error };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error in markAllNotificationsAsRead:", error);
+      return { success: false, error };
+    }
+  },
+
+  deleteNotification: async (notificationId) => {
+    try {
+      const { error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("id", notificationId);
+
+      if (error) {
+        console.error("Error deleting notification:", error);
+        return { success: false, error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error in deleteNotification:", error);
+      return { success: false, error };
+    }
+  },
+
+  deleteAllNotifications: async (userId = null) => {
+    try {
+      let query = supabase.from("notifications").delete();
+
+      if (userId) {
+        query = query.eq("user_id", userId);
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error("Error deleting all notifications:", error);
+        return { success: false, error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error in deleteAllNotifications:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Auto-generate notifications for important events
+  createLowStockNotification: async (product) => {
+    try {
+      const notification = {
+        type: 'warning',
+        title: 'Low Stock Alert',
+        message: `${product.name} is running low (${product.quantity || 0} left, minimum: ${product.min_stock_level || product.minStockLevel || 0})`,
+        priority: 'high',
+        data: { productId: product.id, currentStock: product.quantity },
+        actionUrl: `/inventory/${product.id}`,
+      };
+
+      return await dbHelpers.createNotification(notification);
+    } catch (error) {
+      console.error("Error creating low stock notification:", error);
+      return { success: false, error };
+    }
+  },
+
+  createSaleNotification: async (sale) => {
+    try {
+      const customerName = sale.customer 
+        ? `${sale.customer.first_name || sale.customer.firstName || ''} ${sale.customer.last_name || sale.customer.lastName || ''}`.trim()
+        : 'Walk-in Customer';
+
+      const notification = {
+        type: 'success',
+        title: 'Sale Completed',
+        message: `Sale #${sale.transaction_number} completed for ${customerName} - ₦${(sale.total_amount || sale.totalAmount || 0).toFixed(2)}`,
+        priority: 'normal',
+        data: { saleId: sale.id, amount: sale.total_amount || sale.totalAmount },
+        actionUrl: `/sales/${sale.id}`,
+      };
+
+      return await dbHelpers.createNotification(notification);
+    } catch (error) {
+      console.error("Error creating sale notification:", error);
+      return { success: false, error };
+    }
+  },
+
+  createExpiryNotification: async (product) => {
+    try {
+      const expiryDate = new Date(product.expiry_date || product.expiryDate);
+      const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+
+      const notification = {
+        type: 'warning',
+        title: 'Product Expiry Alert',
+        message: `${product.name} expires in ${daysUntilExpiry} days (${expiryDate.toLocaleDateString()})`,
+        priority: daysUntilExpiry <= 7 ? 'high' : 'normal',
+        data: { productId: product.id, expiryDate: expiryDate.toISOString() },
+        actionUrl: `/inventory/${product.id}`,
+      };
+
+      return await dbHelpers.createNotification(notification);
+    } catch (error) {
+      console.error("Error creating expiry notification:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Check and create automatic notifications
+  checkAndCreateAutoNotifications: async () => {
+    try {
+      console.log("🔄 [Notifications] Checking for automatic notifications...");
+      
+      // Check for low stock products
+      const { data: lowStockProducts } = await dbHelpers.getLowStockProducts();
+      for (const product of lowStockProducts || []) {
+        await dbHelpers.createLowStockNotification(product);
+      }
+
+      // Check for expiring products (within 30 days)
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const { data: products } = await dbHelpers.getProducts();
+      const expiringProducts = (products || []).filter(product => {
+        const expiryDate = new Date(product.expiry_date || product.expiryDate);
+        return expiryDate <= thirtyDaysFromNow && expiryDate > new Date();
+      });
+
+      for (const product of expiringProducts) {
+        await dbHelpers.createExpiryNotification(product);
+      }
+
+      console.log("✅ [Notifications] Auto notifications check completed");
+      return { success: true };
+    } catch (error) {
+      console.error("Error in checkAndCreateAutoNotifications:", error);
+      return { success: false, error };
+    }
+  },
 
   // Purchases functions
   getPurchases: async () => {

@@ -46,8 +46,7 @@ export const router = createBrowserRouter([
       {
         path: "/inventory/edit/:id",
         element: <EditProduct />,
-      },
-      {
+      },      {
         path: "/pos",
         element: <POS />,
       },
@@ -90,8 +89,7 @@ export const router = createBrowserRouter([
       {
         path: "/purchases",
         element: <Purchases />,
-      },
-      {
+      },      {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
       },
