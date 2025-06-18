@@ -19,15 +19,21 @@ const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
   const [recentSales, setRecentSales] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
-  const [topCustomers, setTopCustomers] = useState([]);
-  const [dashboardStats, setDashboardStats] = useState({
+  const [topCustomers, setTopCustomers] = useState([]);  const [dashboardStats, setDashboardStats] = useState({
+    // Dashboard display fields
     todaysSales: 0,
     todaysTransactions: 0,
     totalProducts: 0,
     totalCustomers: 0,
+    totalSales: 0,
+    totalRevenue: 0,
+    averageOrderValue: 0,
     lowStockItems: 0,
+    lowStockCount: 0,
     monthlyRevenue: 0,
     monthlyGrowth: 0,
+    recentSales: 0,
+    recentRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
   const { fetchNotifications } = useNotificationsStore();
@@ -59,9 +65,8 @@ const Dashboard = () => {
             averageOrderValue: 0,
             lowStockCount: 0
           };
-        }
-
-        console.log('📊 [Dashboard] Stats received:', stats);
+        }        console.log('📊 [Dashboard] Stats received:', stats);
+        console.log('📊 [Dashboard] Setting dashboard stats to:', stats);
         setDashboardStats(stats);
         setRecentSales(salesData || []);
         setLowStockProducts(stockData || []);
@@ -342,9 +347,8 @@ const Dashboard = () => {
                   fontSize: "24px",
                   fontWeight: "bold",
                   color: "#1f2937",
-                }}
-              >
-                {dashboardStats.lowStockItems}
+                }}              >
+                {dashboardStats.lowStockCount || dashboardStats.lowStockItems || 0}
               </div>
             </div>
           </div>
@@ -605,6 +609,235 @@ const Dashboard = () => {
                 No customer data found
               </div>
             )}
+          </div>
+        </div>
+      </div>
+
+      {/* Business Overview Stats */}
+      <div
+        style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          padding: "24px",
+          marginBottom: "32px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        }}
+      >
+        <h3
+          style={{
+            fontSize: "18px",
+            fontWeight: "600",
+            color: "#1f2937",
+            marginBottom: "20px",
+          }}
+        >
+          Business Overview
+        </h3>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "20px",
+          }}
+        >
+          {/* Total Products */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "16px",
+              backgroundColor: "#f8fafc",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: "#dbeafe",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiPackage color="#3b82f6" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Total Products
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {dashboardStats.totalProducts || 0}
+              </div>
+            </div>
+          </div>
+
+          {/* Total Revenue */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "16px",
+              backgroundColor: "#f0fdf4",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: "#dcfce7",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiDollarSign color="#16a34a" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Total Revenue
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                ₦{(dashboardStats.totalRevenue || 0).toLocaleString()}
+              </div>
+            </div>
+          </div>
+
+          {/* Total Sales */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "16px",
+              backgroundColor: "#fefce8",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: "#fef3c7",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiShoppingCart color="#f59e0b" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Total Sales
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                {dashboardStats.totalSales || 0}
+              </div>
+            </div>
+          </div>
+
+          {/* Average Order Value */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "16px",
+              backgroundColor: "#fdf4ff",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: "#f3e8ff",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiTrendingUp color="#9333ea" size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Avg Order Value
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: "#1f2937",
+                }}
+              >
+                ₦{(dashboardStats.averageOrderValue || 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          {/* Low Stock Alert */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              padding: "16px",
+              backgroundColor: dashboardStats.lowStockCount > 0 ? "#fef2f2" : "#f8fafc",
+              borderRadius: "8px",
+            }}
+          >
+            <div
+              style={{
+                width: "40px",
+                height: "40px",
+                backgroundColor: dashboardStats.lowStockCount > 0 ? "#fecaca" : "#e2e8f0",
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiPackage color={dashboardStats.lowStockCount > 0 ? "#dc2626" : "#64748b"} size={20} />
+            </div>
+            <div>
+              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                Low Stock
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "bold",
+                  color: dashboardStats.lowStockCount > 0 ? "#dc2626" : "#1f2937",
+                }}
+              >
+                {dashboardStats.lowStockCount || dashboardStats.lowStockItems || 0}
+              </div>
+            </div>
           </div>
         </div>
       </div>

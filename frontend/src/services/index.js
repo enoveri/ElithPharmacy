@@ -332,7 +332,6 @@ export const dataService = {
       }
     },
   },
-
   // Analytics & Reports
   analytics: {
     getDashboardStats: async () => {
@@ -353,6 +352,13 @@ export const dataService = {
 
     getProductPerformance: async (startDate, endDate) => {
       return await dbHelpers.getProductPerformance(startDate, endDate);
+    },
+  },
+
+  // Dashboard (alias for analytics for backward compatibility)
+  dashboard: {
+    getStats: async () => {
+      return await dbHelpers.getDashboardStats();
     },
   },
 
