@@ -29,6 +29,8 @@ import {
   transformImportedCustomerData,
 } from "../utils/importUtils";
 import ImportModal from "../components/ImportModal";
+import { dbHelpers } from "../lib/db";
+import { dataService } from "../services";
 
 function Customers() {
   const navigate = useNavigate();
@@ -118,14 +120,27 @@ function Customers() {
       loyaltyPoints: 562,
     },
   ];
-
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setCustomers(mockCustomers);
-      setFilteredCustomers(mockCustomers);
-      setLoading(false);
-    }, 1000);
+    const loadCustomers = async () => {
+      setLoading(true);
+      try {
+        const customers = await dataService.customers.getAll();
+        console.log(
+          "✅ [Customers] Loaded customers from database:",
+          customers?.length || 0
+        );
+        setCustomers(customers || []);
+        setFilteredCustomers(customers || []);
+      } catch (error) {
+        console.error("❌ [Customers] Error loading customers:", error);
+        setCustomers([]);
+        setFilteredCustomers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomers();
 
     // Show success message if coming from add/edit
     if (location.state?.message) {
@@ -135,15 +150,20 @@ function Customers() {
 
   useEffect(() => {
     let filtered = customers;
-
     if (searchTerm) {
-      filtered = filtered.filter(
-        (customer) =>
-          customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          customer.phone.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      filtered = filtered.filter((customer) => {
+        const firstName = customer.first_name || customer.firstName || "";
+        const lastName = customer.last_name || customer.lastName || "";
+        const email = customer.email || "";
+        const phone = customer.phone || "";
+
+        return (
+          firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          phone.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      });
     }
 
     if (selectedStatus !== "all") {
@@ -154,20 +174,54 @@ function Customers() {
 
     setFilteredCustomers(filtered);
   }, [searchTerm, selectedStatus, customers]);
-
-  const handleDeleteCustomer = (id) => {
+  const handleDeleteCustomer = async (id) => {
     if (window.confirm("Are you sure you want to delete this customer?")) {
-      setCustomers(customers.filter((customer) => customer.id !== id));
+      try {
+        const result = await dbHelpers.deleteCustomer(id);
+        if (result.success) {
+          console.log("✅ [Customers] Customer deleted successfully");
+          // Remove from local state
+          setCustomers(customers.filter((customer) => customer.id !== id));
+          setFilteredCustomers(
+            filteredCustomers.filter((customer) => customer.id !== id)
+          );
+        } else {
+          console.error(
+            "❌ [Customers] Failed to delete customer:",
+            result.error
+          );
+          if (result.error === "CONSTRAINT_ERROR") {
+            // Redirect to customer sales management page
+            if (
+              window.confirm(
+                "This customer has existing sales records. Would you like to manage their sales to delete them first?"
+              )
+            ) {
+              navigate(`/customers/sales/${id}`);
+            }
+          } else {
+            alert(
+              result.message || "Failed to delete customer. Please try again."
+            );
+          }
+        }
+      } catch (error) {
+        console.error("❌ [Customers] Error deleting customer:", error);
+        alert("Error deleting customer. Please try again.");
+      }
     }
   };
-
   const getCustomerStats = () => {
     const totalCustomers = customers.length;
     const activeCustomers = customers.filter(
       (c) => c.status === "active"
     ).length;
-    const totalRevenue = customers.reduce((sum, c) => sum + c.totalSpent, 0);
-    const averageSpending = totalRevenue / totalCustomers;
+    const totalRevenue = customers.reduce((sum, c) => {
+      const totalSpent = c.total_spent || c.totalSpent || 0;
+      return sum + (typeof totalSpent === "number" ? totalSpent : 0);
+    }, 0);
+    const averageSpending =
+      totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
 
     return { totalCustomers, activeCustomers, totalRevenue, averageSpending };
   };
@@ -305,7 +359,6 @@ function Customers() {
               <option value="pdf">Export as PDF</option>
             </select>
           </div>
-
           <button
             onClick={() => setShowImportModal(true)}
             style={{
@@ -324,9 +377,9 @@ function Customers() {
           >
             <FiUpload size={16} />
             Import
-          </button>
-
+          </button>{" "}
           <button
+            onClick={() => navigate("/customers/add")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -488,7 +541,7 @@ function Customers() {
                   color: "#1f2937",
                 }}
               >
-                ₦{stats.totalRevenue.toLocaleString()}
+                ₦{(stats.totalRevenue || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -534,7 +587,7 @@ function Customers() {
                   color: "#1f2937",
                 }}
               >
-                ₦{stats.averageSpending.toLocaleString()}
+                ₦{(stats.averageSpending || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -739,7 +792,7 @@ function Customers() {
                 >
                   Actions
                 </th>
-              </tr>
+              </tr>{" "}
             </thead>
             <tbody>
               {filteredCustomers.map((customer) => (
@@ -764,13 +817,16 @@ function Customers() {
                         <FiUser color="#6b7280" size={20} />
                       </div>
                       <div>
+                        {" "}
                         <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                          {customer.firstName} {customer.lastName}
+                          {customer.first_name || customer.firstName}{" "}
+                          {customer.last_name || customer.lastName}
                         </div>
                         <div style={{ fontSize: "12px", color: "#6b7280" }}>
                           Member since{" "}
                           {new Date(
-                            customer.registrationDate
+                            customer.registration_date ||
+                              customer.registrationDate
                           ).toLocaleDateString()}
                         </div>
                       </div>
@@ -810,23 +866,33 @@ function Customers() {
                       {customer.status.charAt(0).toUpperCase() +
                         customer.status.slice(1)}
                     </span>
-                  </td>
+                  </td>{" "}
                   <td style={{ padding: "16px 12px" }}>
                     <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                      {customer.totalPurchases}
+                      {customer.total_purchases || customer.totalPurchases || 0}
                     </div>
                     <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {customer.loyaltyPoints} points
+                      {customer.loyalty_points || customer.loyaltyPoints || 0}{" "}
+                      points
                     </div>
                   </td>
                   <td style={{ padding: "16px 12px" }}>
                     <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                      ₦{customer.totalSpent.toLocaleString()}
+                      ₦
+                      {(
+                        customer.total_spent ||
+                        customer.totalSpent ||
+                        0
+                      ).toLocaleString()}
                     </div>
                   </td>
                   <td style={{ padding: "16px 12px" }}>
                     <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                      {new Date(customer.lastPurchase).toLocaleDateString()}
+                      {customer.last_purchase || customer.lastPurchase
+                        ? new Date(
+                            customer.last_purchase || customer.lastPurchase
+                          ).toLocaleDateString()
+                        : "N/A"}
                     </div>
                   </td>
                   <td style={{ padding: "16px 12px" }}>

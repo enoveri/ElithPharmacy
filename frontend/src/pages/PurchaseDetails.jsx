@@ -407,7 +407,7 @@ function PurchaseDetails() {
                           color: "#6b7280",
                         }}
                       >
-                        ₦{item.unitCost.toFixed(2)}
+                        ₦{(item.unitCost || 0).toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -426,7 +426,7 @@ function PurchaseDetails() {
                           color: "#1f2937",
                         }}
                       >
-                        ₦{item.total.toFixed(2)}
+                        ₦{(item.total || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -556,13 +556,13 @@ function PurchaseDetails() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{purchase.subtotal.toFixed(2)}
+                  ₦{(purchase.subtotal || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Tax:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{purchase.tax.toFixed(2)}
+                  ₦{(purchase.tax || 0).toFixed(2)}
                 </span>
               </div>
               {purchase.discount > 0 && (
@@ -571,7 +571,7 @@ function PurchaseDetails() {
                 >
                   <span style={{ color: "#6b7280" }}>Discount:</span>
                   <span style={{ fontWeight: "600", color: "#ef4444" }}>
-                    -₦{purchase.discount.toFixed(2)}
+                    -₦{(purchase.discount || 0).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -599,7 +599,7 @@ function PurchaseDetails() {
                     color: "#10b981",
                   }}
                 >
-                  ₦{purchase.totalAmount.toFixed(2)}
+                  ₦{(purchase.totalAmount || 0).toFixed(2)}
                 </span>
               </div>
             </div>

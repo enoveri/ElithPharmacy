@@ -5,146 +5,170 @@ export const dbHelpers = {
   // Get product by ID
   getProductById: async (id) => {
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', parseInt(id))
+      .from("products")
+      .select("*")
+      .eq("id", parseInt(id))
       .single();
-    
+
     if (error) {
-      console.error('Error fetching product:', error);
+      console.error("Error fetching product:", error);
       return null;
     }
-    
+
     return data;
   },
 
   // Get customer by ID
   getCustomerById: async (id) => {
     const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .eq('id', parseInt(id))
+      .from("customers")
+      .select("*")
+      .eq("id", parseInt(id))
       .single();
-    
+
     if (error) {
-      console.error('Error fetching customer:', error);
+      console.error("Error fetching customer:", error);
       return null;
     }
-    
+
     return data;
   },
 
   // Get products by category
   getProductsByCategory: async (categoryName) => {
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .eq('category', categoryName);
-    
-    if (error) {
-      console.error('Error fetching products by category:', error);
-      return [];
-    }
-    
-    return data;
-  },
+      .from("products")
+      .select("*")
+      .eq("category", categoryName);
 
-  // Get low stock products
-  getLowStockProducts: async () => {
-    const { data: products, error } = await supabase
-      .from('products')
-      .select('*, categories(name)')
-      .lt('quantity', supabase.rpc('min_stock_level'));
-    
     if (error) {
-      console.error('Error fetching low stock products:', error);
+      console.error("Error fetching products by category:", error);
       return [];
     }
-    
-    return products;
+
+    return data;
+  }, // Get low stock products
+  getLowStockProducts: async () => {
+    try {
+      // Fetch all products since PostgREST doesn't support column-to-column comparison
+      const { data: products, error } = await supabase
+        .from("products")
+        .select("*");
+
+      if (error) {
+        console.error("Error fetching low stock products:", error);
+        return [];
+      }
+
+      // Filter on the client side for low stock products
+      const lowStockProducts =
+        products?.filter((product) => {
+          const quantity = product.quantity || 0;
+          const minStock =
+            product.min_stock_level || product.minStockLevel || 0;
+          return quantity <= minStock;
+        }) || [];
+
+      console.log(
+        "✅ [DB] Low stock products filtered:",
+        lowStockProducts.length
+      );
+      return lowStockProducts;
+    } catch (error) {
+      console.error("❌ [DB] Error in getLowStockProducts:", error);
+      return [];
+    }
   },
 
   // Get sales by customer
   getSalesByCustomer: async (customerId) => {
     const { data, error } = await supabase
-      .from('sales')
-      .select(`
+      .from("sales")
+      .select(
+        `
         *,
         sale_items(*)
-      `)
-      .eq('customer_id', parseInt(customerId));
-    
+      `
+      )
+      .eq("customer_id", parseInt(customerId));
+
     if (error) {
-      console.error('Error fetching sales by customer:', error);
+      console.error("Error fetching sales by customer:", error);
       return [];
     }
-    
+
     return data;
   },
 
   // Get recent sales
   getRecentSales: async (limit = 10) => {
     const { data, error } = await supabase
-      .from('sales')
-      .select(`
+      .from("sales")
+      .select(
+        `
         *,
         customers(first_name, last_name),
         sale_items(*, products(name))
-      `)
-      .order('date', { ascending: false })
+      `
+      )
+      .order("date", { ascending: false })
       .limit(limit);
-    
+
     if (error) {
-      console.error('Error fetching recent sales:', error);
+      console.error("Error fetching recent sales:", error);
       return [];
     }
-    
+
     return data;
   },
 
   // Get top customers by spending
   getTopCustomers: async (limit = 5) => {
     const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .order('total_spent', { ascending: false })
+      .from("customers")
+      .select("*")
+      .order("total_spent", { ascending: false })
       .limit(limit);
-    
+
     if (error) {
-      console.error('Error fetching top customers:', error);
+      console.error("Error fetching top customers:", error);
       return [];
     }
-    
+
     return data;
   },
 
   // Search products
   searchProducts: async (query) => {
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .or(`name.ilike.%${query}%,category.ilike.%${query}%,manufacturer.ilike.%${query}%`);
-    
+      .from("products")
+      .select("*")
+      .or(
+        `name.ilike.%${query}%,category.ilike.%${query}%,manufacturer.ilike.%${query}%`
+      );
+
     if (error) {
-      console.error('Error searching products:', error);
+      console.error("Error searching products:", error);
       return [];
     }
-    
+
     return data;
   },
 
   // Search customers
   searchCustomers: async (query) => {
     const { data, error } = await supabase
-      .from('customers')
-      .select('*')
-      .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`);
-    
+      .from("customers")
+      .select("*")
+      .or(
+        `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%`
+      );
+
     if (error) {
-      console.error('Error searching customers:', error);
+      console.error("Error searching customers:", error);
       return [];
     }
-    
+
     return data;
   },
 
@@ -152,20 +176,20 @@ export const dbHelpers = {
   generateTransactionNumber: async () => {
     // Get the last transaction number from the database
     const { data, error } = await supabase
-      .from('sales')
-      .select('transaction_number')
-      .order('id', { ascending: false })
+      .from("sales")
+      .select("transaction_number")
+      .order("id", { ascending: false })
       .limit(1);
-    
+
     if (error) {
-      console.error('Error generating transaction number:', error);
+      console.error("Error generating transaction number:", error);
       return `TXN-2024-000001`;
     }
-    
+
     if (data && data.length > 0) {
       const lastTxn = data[0];
-      const lastNumber = parseInt(lastTxn.transaction_number.split('-').pop());
-      return `TXN-2024-${(lastNumber + 1).toString().padStart(6, '0')}`;
+      const lastNumber = parseInt(lastTxn.transaction_number.split("-").pop());
+      return `TXN-2024-${(lastNumber + 1).toString().padStart(6, "0")}`;
     } else {
       return `TXN-2024-000001`;
     }
@@ -173,31 +197,40 @@ export const dbHelpers = {
 
   // Get total revenue
   getTotalRevenue: async () => {
-    const { data, error } = await supabase
-      .from('sales')
-      .select('total_amount');
-    
+    const { data, error } = await supabase.from("sales").select("total_amount");
+
     if (error) {
-      console.error('Error calculating total revenue:', error);
+      console.error("Error calculating total revenue:", error);
       return 0;
     }
-    
+
     return data.reduce((total, sale) => total + sale.total_amount, 0);
   },
-
   // Get products needing reorder
   getProductsToReorder: async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .lte('quantity', supabase.raw('min_stock_level * 1.5'));
-    
-    if (error) {
-      console.error('Error fetching products to reorder:', error);
+    try {
+      // Fetch all products and filter client-side
+      const { data, error } = await supabase.from("products").select("*");
+
+      if (error) {
+        console.error("Error fetching products to reorder:", error);
+        return [];
+      }
+
+      // Filter on client side for products needing reorder
+      const productsToReorder =
+        data?.filter((product) => {
+          const quantity = product.quantity || 0;
+          const minStock =
+            product.min_stock_level || product.minStockLevel || 0;
+          return quantity <= minStock * 1.5;
+        }) || [];
+
+      return productsToReorder;
+    } catch (error) {
+      console.error("❌ [DB] Error in getProductsToReorder:", error);
       return [];
     }
-    
-    return data;
   },
 
   // Calculate age from date of birth
@@ -206,11 +239,14 @@ export const dbHelpers = {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
-    
+
     return age;
   },
 
@@ -219,38 +255,40 @@ export const dbHelpers = {
     const today = new Date();
     const thresholdDate = new Date(today);
     thresholdDate.setDate(today.getDate() + daysThreshold);
-    
+
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .lt('expiry_date', thresholdDate.toISOString().split('T')[0])
-      .gt('expiry_date', today.toISOString().split('T')[0]);
-    
+      .from("products")
+      .select("*")
+      .lt("expiry_date", thresholdDate.toISOString().split("T")[0])
+      .gt("expiry_date", today.toISOString().split("T")[0]);
+
     if (error) {
-      console.error('Error fetching expiring products:', error);
+      console.error("Error fetching expiring products:", error);
       return [];
     }
-    
-    return data.map(product => ({
+
+    return data.map((product) => ({
       ...product,
-      daysUntilExpiry: Math.ceil((new Date(product.expiry_date) - today) / (1000 * 60 * 60 * 24))
+      daysUntilExpiry: Math.ceil(
+        (new Date(product.expiry_date) - today) / (1000 * 60 * 60 * 24)
+      ),
     }));
   },
 
   // Get expired products
   getExpiredProducts: async () => {
     const today = new Date();
-    
+
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .lte('expiry_date', today.toISOString().split('T')[0]);
-    
+      .from("products")
+      .select("*")
+      .lte("expiry_date", today.toISOString().split("T")[0]);
+
     if (error) {
-      console.error('Error fetching expired products:', error);
+      console.error("Error fetching expired products:", error);
       return [];
     }
-    
+
     return data;
   },
 
@@ -281,14 +319,14 @@ export const dbHelpers = {
   // Get stock notifications
   getStockNotifications: async () => {
     const lowStockProducts = await dbHelpers.getLowStockProducts();
-    
-    return lowStockProducts.map(product => ({
+
+    return lowStockProducts.map((product) => ({
       id: `stock-${product.id}`,
       type: product.quantity === 0 ? "critical" : "warning",
       title: product.quantity === 0 ? "Out of Stock" : "Low Stock Alert",
       message: `${product.name} ${
-        product.quantity === 0 
-          ? "is out of stock" 
+        product.quantity === 0
+          ? "is out of stock"
           : `has only ${product.quantity} units remaining`
       }`,
       timestamp: new Date(Date.now() - Math.random() * 3600000),
@@ -300,12 +338,12 @@ export const dbHelpers = {
   // Get sales notifications
   getSalesNotifications: async () => {
     const recentSales = await dbHelpers.getRecentSales(5);
-    
-    return recentSales.map(sale => ({
+
+    return recentSales.map((sale) => ({
       id: `sale-${sale.id}`,
       type: "success",
       title: "Sale Completed",
-      message: `Transaction ${sale.transaction_number} - ₦${sale.total_amount.toFixed(2)}`,
+      message: `Transaction ${sale.transaction_number} - ₦${(sale.total_amount || 0).toFixed(2)}`,
       timestamp: new Date(sale.date),
       read: Math.random() > 0.3,
       saleId: sale.id,
@@ -317,12 +355,13 @@ export const dbHelpers = {
     const expiringProducts = await dbHelpers.getExpiringProducts(30);
     const expiredProducts = await dbHelpers.getExpiredProducts();
 
-    const expiringNotifications = expiringProducts.map(product => ({
+    const expiringNotifications = expiringProducts.map((product) => ({
       id: `expiry-${product.id}`,
       type: product.daysUntilExpiry <= 7 ? "critical" : "warning",
-      title: product.daysUntilExpiry <= 7
-        ? "Product Expiring Soon"
-        : "Product Expiry Warning",
+      title:
+        product.daysUntilExpiry <= 7
+          ? "Product Expiring Soon"
+          : "Product Expiry Warning",
       message: `${product.name} expires in ${product.daysUntilExpiry} day${
         product.daysUntilExpiry === 1 ? "" : "s"
       }`,
@@ -333,7 +372,7 @@ export const dbHelpers = {
       daysUntilExpiry: product.daysUntilExpiry,
     }));
 
-    const expiredNotifications = expiredProducts.map(product => ({
+    const expiredNotifications = expiredProducts.map((product) => ({
       id: `expired-${product.id}`,
       type: "critical",
       title: "Product Expired",
@@ -365,35 +404,79 @@ export const dbHelpers = {
   // Get unread notification count
   getUnreadNotificationCount: async () => {
     const allNotifications = await dbHelpers.getAllNotifications();
-    return allNotifications.filter(n => !n.read).length;
-  },
-
-  // Create a new product
+    return allNotifications.filter((n) => !n.read).length;
+  }, // Create a new product
   createProduct: async (product) => {
+    console.log("🔍 [DB] Input product data:", product);
+    // Check for existing products to understand the ID situation
+    const { data: existingProducts } = await supabase
+      .from("products")
+      .select("id, name")
+      .order("id", { ascending: false })
+      .limit(10);
+    console.log("🏪 [DB] Existing products (latest 10):", existingProducts);
+
+    // Check the highest ID
+    const maxId =
+      existingProducts && existingProducts.length > 0
+        ? existingProducts[0].id
+        : 0;
+    console.log("🔢 [DB] Highest existing ID:", maxId);
+    const productData = {
+      name: product.name,
+      category: product.category,
+      price: parseFloat(product.price) || 0,
+      cost_price: parseFloat(product.costPrice) || 0,
+      quantity: parseInt(product.quantity) || 0,
+      min_stock_level: parseInt(product.minStockLevel) || 0,
+      status: product.status || "active",
+      manufacturer: product.manufacturer || "",
+      expiry_date: product.expiryDate || null,
+      batch_number: product.batchNumber || "",
+      barcode: product.barcode || "",
+      description: product.description || "",
+      synced: false,
+    };
+
+    console.log("📤 [DB] Sending to Supabase:", productData);
     const { data, error } = await supabase
-      .from('products')
-      .insert([{
-        name: product.name,
-        category: product.category,
-        price: product.price,
-        cost_price: product.costPrice,
-        quantity: product.quantity,
-        min_stock_level: product.minStockLevel,
-        status: product.status,
-        manufacturer: product.manufacturer,
-        expiry_date: product.expiryDate,
-        batch_number: product.batchNumber,
-        barcode: product.barcode,
-        description: product.description,
-        synced: false
-      }])
+      .from("products")
+      .insert([productData])
       .select();
-    
     if (error) {
-      console.error('Error creating product:', error);
+      console.error("Error creating product:", error);
+
+      // If it's a primary key conflict, try inserting with a specific ID
+      if (error.code === "23505" && error.message.includes("products_pkey")) {
+        console.log(
+          "🔄 [DB] Primary key conflict detected, trying with specific ID..."
+        );
+
+        // Calculate a safe ID (max + 1)
+        const safeId = maxId + 1;
+        const productDataWithId = { ...productData, id: safeId };
+
+        console.log(`🆔 [DB] Retrying with ID ${safeId}:`, productDataWithId);
+
+        // Retry the insertion with specific ID
+        const { data: retryData, error: retryError } = await supabase
+          .from("products")
+          .insert([productDataWithId])
+          .select();
+
+        if (retryError) {
+          console.error("❌ [DB] Retry with specific ID failed:", retryError);
+          return null;
+        }
+
+        console.log("✅ [DB] Product created successfully with specific ID");
+        return retryData[0];
+      }
+
       return null;
     }
-    
+
+    console.log("✅ [DB] Product created successfully:", data[0]);
     return data[0];
   },
 
@@ -401,137 +484,161 @@ export const dbHelpers = {
   updateProduct: async (id, updates) => {
     // Convert camelCase to snake_case for database
     const dbUpdates = {};
-    if (updates.costPrice !== undefined) dbUpdates.cost_price = updates.costPrice;
-    if (updates.minStockLevel !== undefined) dbUpdates.min_stock_level = updates.minStockLevel;
-    if (updates.expiryDate !== undefined) dbUpdates.expiry_date = updates.expiryDate;
-    if (updates.batchNumber !== undefined) dbUpdates.batch_number = updates.batchNumber;
-    
+    if (updates.costPrice !== undefined)
+      dbUpdates.cost_price = updates.costPrice;
+    if (updates.minStockLevel !== undefined)
+      dbUpdates.min_stock_level = updates.minStockLevel;
+    if (updates.expiryDate !== undefined)
+      dbUpdates.expiry_date = updates.expiryDate;
+    if (updates.batchNumber !== undefined)
+      dbUpdates.batch_number = updates.batchNumber;
+
     // Add remaining fields directly
-    Object.keys(updates).forEach(key => {
-      if (!['costPrice', 'minStockLevel', 'expiryDate', 'batchNumber'].includes(key)) {
+    Object.keys(updates).forEach((key) => {
+      if (
+        !["costPrice", "minStockLevel", "expiryDate", "batchNumber"].includes(
+          key
+        )
+      ) {
         dbUpdates[key] = updates[key];
       }
     });
-    
+
     // Mark as not synced
     dbUpdates.synced = false;
-    
+
     const { data, error } = await supabase
-      .from('products')
+      .from("products")
       .update(dbUpdates)
-      .eq('id', id)
+      .eq("id", id)
       .select();
-    
+
     if (error) {
-      console.error('Error updating product:', error);
+      console.error("Error updating product:", error);
       return null;
     }
-    
+
     return data[0];
   },
 
   // Delete a product
   deleteProduct: async (id) => {
-    const { error } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
-    
+    const { error } = await supabase.from("products").delete().eq("id", id);
+
     if (error) {
-      console.error('Error deleting product:', error);
+      console.error("Error deleting product:", error);
       return false;
     }
-    
+
     return true;
   },
-
   // Create a new sale
   createSale: async (sale) => {
-    // Start a transaction
-    const { data: saleData, error: saleError } = await supabase
-      .from('sales')
-      .insert([{
-        transaction_number: sale.transactionNumber,
-        customer_id: sale.customerId,
-        date: sale.date,
-        subtotal: sale.subtotal,
-        tax: sale.tax,
-        discount: sale.discount,
-        total_amount: sale.totalAmount,
-        payment_method: sale.paymentMethod,
-        status: sale.status,
-        cashier_id: sale.cashierId,
-        synced: false
-      }])
-      .select();
-    
-    if (saleError) {
-      console.error('Error creating sale:', saleError);
-      return null;
-    }
-    
-    const newSaleId = saleData[0].id;
-    
-    // Insert sale items
-    for (const item of sale.items) {
-      const { error: itemError } = await supabase
-        .from('sale_items')
-        .insert([{
-          sale_id: newSaleId,
-          product_id: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          total: item.total,
-          synced: false
-        }]);
-      
-      if (itemError) {
-        console.error('Error creating sale item:', itemError);
-        // In a real app, you might want to roll back the transaction here
+    try {
+      console.log("🔄 [DB] Creating sale with data:", sale);
+
+      // Start a transaction - create the sale first
+      const { data: saleData, error: saleError } = await supabase
+        .from("sales")
+        .insert([
+          {
+            transaction_number: sale.transactionNumber,
+            customer_id: sale.customerId,
+            date: sale.date,
+            subtotal: sale.subtotal,
+            tax: sale.tax,
+            discount: sale.discount,
+            total_amount: sale.totalAmount,
+            payment_method: sale.paymentMethod,
+            status: sale.status,
+            cashier_id: sale.cashierId,
+            synced: false,
+          },
+        ])
+        .select();
+
+      if (saleError) {
+        console.error("❌ [DB] Error creating sale:", saleError);
+        throw new Error(`Failed to create sale: ${saleError.message}`);
       }
-      
-      // Update product quantity
-      await supabase
-        .from('products')
-        .update({ 
-          quantity: supabase.raw(`quantity - ${item.quantity}`),
-          synced: false
-        })
-        .eq('id', item.productId);
+
+      const newSaleId = saleData[0].id;
+      console.log("✅ [DB] Sale created with ID:", newSaleId);
+
+      // Insert sale items
+      for (const item of sale.items) {
+        console.log("🔄 [DB] Creating sale item:", item);
+
+        const { error: itemError } = await supabase.from("sale_items").insert([
+          {
+            sale_id: newSaleId,
+            product_id: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.total,
+            synced: false,
+          },
+        ]);
+
+        if (itemError) {
+          console.error("❌ [DB] Error creating sale item:", itemError);
+          throw new Error(`Failed to create sale item: ${itemError.message}`);
+        }
+      }
+
+      console.log("✅ [DB] Sale and items created successfully");
+      return saleData[0];
+    } catch (error) {
+      console.error("❌ [DB] createSale failed:", error);
+      throw error;
     }
-    
-    // Update customer data
-    if (sale.customerId) {
-      await supabase
-        .from('customers')
-        .update({
-          total_purchases: supabase.raw('total_purchases + 1'),
-          total_spent: supabase.raw(`total_spent + ${sale.totalAmount}`),
-          last_purchase: sale.date,
-          synced: false
-        })
-        .eq('id', sale.customerId);
+  },
+
+  // Delete a sale
+  deleteSale: async (id) => {
+    try {
+      // First delete sale items
+      const { error: itemsError } = await supabase
+        .from("sale_items")
+        .delete()
+        .eq("sale_id", id);
+
+      if (itemsError) {
+        console.error("Error deleting sale items:", itemsError);
+        return false;
+      }
+
+      // Then delete the sale
+      const { error: saleError } = await supabase
+        .from("sales")
+        .delete()
+        .eq("id", id);
+
+      if (saleError) {
+        console.error("Error deleting sale:", saleError);
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("Error deleting sale:", error);
+      return false;
     }
-    
-    return {
-      ...saleData[0],
-      items: sale.items
-    };
   },
 
   // Get app settings
   getSettings: async () => {
     const { data, error } = await supabase
-      .from('settings')
-      .select('*')
-      .eq('id', 1)
+      .from("settings")
+      .select("*")
+      .eq("id", 1)
       .single();
-    
+
     if (error) {
-      console.error('Error fetching settings:', error);
+      console.error("Error fetching settings:", error);
       return null;
     }
-    
+
     // Convert snake_case to camelCase for frontend
     return {
       storeName: data.store_name,
@@ -540,14 +647,14 @@ export const dbHelpers = {
       email: data.email,
       currency: data.currency,
       taxRate: data.tax_rate,
-      lowStockThreshold: data.low_stock_threshold
+      lowStockThreshold: data.low_stock_threshold,
     };
   },
 
   // Update app settings
   updateSettings: async (settings) => {
     const { data, error } = await supabase
-      .from('settings')
+      .from("settings")
       .update({
         store_name: settings.storeName,
         address: settings.address,
@@ -556,18 +663,486 @@ export const dbHelpers = {
         currency: settings.currency,
         tax_rate: settings.taxRate,
         low_stock_threshold: settings.lowStockThreshold,
-        synced: false
+        synced: false,
       })
-      .eq('id', 1)
+      .eq("id", 1)
       .select();
-    
+
     if (error) {
-      console.error('Error updating settings:', error);
+      console.error("Error updating settings:", error);
       return null;
     }
-    
+
     return data[0];
-  }
+  },
+
+  // Get all products
+  getProducts: async () => {
+    const { data, error } = await supabase
+      .from("products")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      console.error("Error fetching products:", error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  },
+
+  // Get all customers
+  getCustomers: async () => {
+    const { data, error } = await supabase
+      .from("customers")
+      .select("*")
+      .order("first_name");
+
+    if (error) {
+      console.error("Error fetching customers:", error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  },
+
+  // Get all sales
+  getSales: async () => {
+    const { data, error } = await supabase
+      .from("sales")
+      .select(
+        `
+        *,
+        customers(first_name, last_name),
+        sale_items(*, products(name))
+      `
+      )
+      .order("date", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching sales:", error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  },
+
+  // Get sale by ID
+  getSaleById: async (id) => {
+    const { data, error } = await supabase
+      .from("sales")
+      .select(
+        `
+        *,
+        customers(first_name, last_name, email, phone),
+        sale_items(*, products(name, category))
+      `
+      )
+      .eq("id", parseInt(id))
+      .single();
+
+    if (error) {
+      console.error("Error fetching sale:", error);
+      return null;
+    }
+
+    return data;
+  },
+
+  // Get all categories
+  getCategories: async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("*")
+      .order("name");
+
+    if (error) {
+      console.error("Error fetching categories:", error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }, // Create a new customer
+  createCustomer: async (customer) => {
+    try {
+      // Build a minimal customer object with only required fields
+      const customerData = {
+        first_name: customer.firstName || "",
+        last_name: customer.lastName || "",
+        registration_date: new Date().toISOString(),
+        status: "active",
+        total_purchases: 0,
+        total_spent: 0,
+        loyalty_points: 0,
+        synced: false,
+      };
+
+      // Add optional fields only if they exist
+      if (customer.email) customerData.email = customer.email;
+      if (customer.phone) customerData.phone = customer.phone;
+      if (customer.address) customerData.address = customer.address;
+      if (customer.city) customerData.city = customer.city;
+      if (customer.state) customerData.state = customer.state;
+      if (customer.zipCode) customerData.zip_code = customer.zipCode;
+      if (customer.dateOfBirth)
+        customerData.date_of_birth = customer.dateOfBirth;
+
+      console.log("🔄 [DB] Creating customer with data:", customerData);
+
+      const { data, error } = await supabase
+        .from("customers")
+        .insert([customerData])
+        .select();
+
+      if (error) {
+        console.error("❌ [DB] Error creating customer:", error);
+        return null;
+      }
+
+      console.log("✅ [DB] Customer created successfully:", data[0]);
+      return data[0];
+    } catch (error) {
+      console.error("❌ [DB] createCustomer exception:", error);
+      return null;
+    }
+  },
+  // Update a customer
+  updateCustomer: async (id, updates) => {
+    // Convert camelCase to snake_case for database
+    const dbUpdates = {};
+    if (updates.firstName !== undefined)
+      dbUpdates.first_name = updates.firstName;
+    if (updates.lastName !== undefined) dbUpdates.last_name = updates.lastName;
+    if (updates.dateOfBirth !== undefined)
+      dbUpdates.date_of_birth = updates.dateOfBirth;
+    if (updates.zipCode !== undefined) dbUpdates.zip_code = updates.zipCode;
+    if (updates.registrationDate !== undefined)
+      dbUpdates.registration_date = updates.registrationDate;
+    if (updates.totalPurchases !== undefined)
+      dbUpdates.total_purchases = updates.totalPurchases;
+    if (updates.totalSpent !== undefined)
+      dbUpdates.total_spent = updates.totalSpent;
+    if (updates.loyaltyPoints !== undefined)
+      dbUpdates.loyalty_points = updates.loyaltyPoints;
+    if (updates.lastPurchase !== undefined)
+      dbUpdates.last_purchase = updates.lastPurchase;
+
+    // Add optional fields if they exist in the database (graceful handling)
+    if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
+    if (updates.allergies !== undefined)
+      dbUpdates.allergies = updates.allergies;
+    if (updates.medicalConditions !== undefined)
+      dbUpdates.medical_conditions = updates.medicalConditions;
+    if (updates.emergencyContact !== undefined)
+      dbUpdates.emergency_contact = updates.emergencyContact;
+    if (updates.emergencyPhone !== undefined)
+      dbUpdates.emergency_phone = updates.emergencyPhone;
+
+    // Add remaining basic fields directly
+    Object.keys(updates).forEach((key) => {
+      if (
+        ![
+          "firstName",
+          "lastName",
+          "dateOfBirth",
+          "zipCode",
+          "registrationDate",
+          "totalPurchases",
+          "totalSpent",
+          "loyaltyPoints",
+          "lastPurchase",
+          "emergencyContact",
+          "emergencyPhone",
+          "medicalConditions",
+          "allergies",
+          "gender",
+        ].includes(key)
+      ) {
+        dbUpdates[key] = updates[key];
+      }
+    });
+
+    // Mark as not synced
+    dbUpdates.synced = false;
+
+    const { data, error } = await supabase
+      .from("customers")
+      .update(dbUpdates)
+      .eq("id", id)
+      .select();
+
+    if (error) {
+      console.error("Error updating customer:", error);
+      // If it's a column not found error, try again without the optional fields
+      if (error.code === "PGRST204") {
+        console.log("Retrying customer update without optional fields...");
+        const basicUpdates = { ...dbUpdates };
+        delete basicUpdates.gender;
+        delete basicUpdates.allergies;
+        delete basicUpdates.medical_conditions;
+        delete basicUpdates.emergency_contact;
+        delete basicUpdates.emergency_phone;
+
+        const { data: retryData, error: retryError } = await supabase
+          .from("customers")
+          .update(basicUpdates)
+          .eq("id", id)
+          .select();
+
+        if (retryError) {
+          console.error("Error updating customer on retry:", retryError);
+          return null;
+        }
+
+        return retryData[0];
+      }
+      return null;
+    }
+
+    return data[0];
+  },
+  // Delete a customer
+  deleteCustomer: async (id) => {
+    const { error } = await supabase.from("customers").delete().eq("id", id);
+
+    if (error) {
+      console.error("Error deleting customer:", error);
+
+      // Handle foreign key constraint errors
+      if (error.code === "23503") {
+        return {
+          success: false,
+          error: "CONSTRAINT_ERROR",
+          message:
+            "Cannot delete customer with existing sales records. Please remove associated sales first.",
+        };
+      }
+
+      return {
+        success: false,
+        error: "DELETE_ERROR",
+        message: error.message || "Failed to delete customer",
+      };
+    }
+
+    return { success: true };
+  },
+
+  // Purchases functions
+  getPurchases: async () => {
+    try {
+      const { data, error } = await supabase
+        .from("purchases")
+        .select(
+          `
+          *,
+          supplier:suppliers(*),
+          purchase_items(
+            *,
+            product:products(*)
+          )
+        `
+        )
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("Error fetching purchases:", error);
+        return { data: [], error };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error("Error in getPurchases:", error);
+      return { data: [], error };
+    }
+  },
+
+  getPurchaseById: async (id) => {
+    try {
+      const { data, error } = await supabase
+        .from("purchases")
+        .select(
+          `
+          *,
+          supplier:suppliers(*),
+          purchase_items(
+            *,
+            product:products(*)
+          )
+        `
+        )
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching purchase:", error);
+        return null;
+      }
+
+      return data;
+    } catch (error) {
+      console.error("Error in getPurchaseById:", error);
+      return null;
+    }
+  },
+
+  createPurchase: async (purchaseData) => {
+    try {
+      console.log("Creating purchase:", purchaseData);
+
+      // Insert the purchase
+      const { data: purchase, error: purchaseError } = await supabase
+        .from("purchases")
+        .insert({
+          purchase_number: purchaseData.purchaseNumber,
+          supplier_id: purchaseData.supplierId,
+          order_date: purchaseData.orderDate,
+          expected_delivery: purchaseData.expectedDelivery,
+          actual_delivery: purchaseData.actualDelivery,
+          status: purchaseData.status || "pending",
+          total_amount: purchaseData.totalAmount,
+          notes: purchaseData.notes || "",
+        })
+        .select()
+        .single();
+
+      if (purchaseError) {
+        console.error("Error creating purchase:", purchaseError);
+        return { success: false, error: purchaseError };
+      }
+
+      // Insert purchase items if provided
+      if (purchaseData.items && purchaseData.items.length > 0) {
+        const purchaseItems = purchaseData.items.map((item) => ({
+          purchase_id: purchase.id,
+          product_id: item.productId,
+          quantity: item.quantity,
+          unit_cost: item.unitCost,
+          total: item.total || item.quantity * item.unitCost,
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("purchase_items")
+          .insert(purchaseItems);
+
+        if (itemsError) {
+          console.error("Error creating purchase items:", itemsError);
+          // Clean up the purchase if items failed
+          await supabase.from("purchases").delete().eq("id", purchase.id);
+          return { success: false, error: itemsError };
+        }
+      }
+
+      return { success: true, data: purchase };
+    } catch (error) {
+      console.error("Error in createPurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  updatePurchase: async (id, updates) => {
+    try {
+      const dbUpdates = {};
+
+      if (updates.purchaseNumber !== undefined)
+        dbUpdates.purchase_number = updates.purchaseNumber;
+      if (updates.supplierId !== undefined)
+        dbUpdates.supplier_id = updates.supplierId;
+      if (updates.orderDate !== undefined)
+        dbUpdates.order_date = updates.orderDate;
+      if (updates.expectedDelivery !== undefined)
+        dbUpdates.expected_delivery = updates.expectedDelivery;
+      if (updates.actualDelivery !== undefined)
+        dbUpdates.actual_delivery = updates.actualDelivery;
+      if (updates.status !== undefined) dbUpdates.status = updates.status;
+      if (updates.totalAmount !== undefined)
+        dbUpdates.total_amount = updates.totalAmount;
+      if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+      const { data, error } = await supabase
+        .from("purchases")
+        .update(dbUpdates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error updating purchase:", error);
+        return { success: false, error };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error in updatePurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  deletePurchase: async (id) => {
+    try {
+      // First delete purchase items
+      await supabase.from("purchase_items").delete().eq("purchase_id", id);
+
+      // Then delete the purchase
+      const { error } = await supabase.from("purchases").delete().eq("id", id);
+
+      if (error) {
+        console.error("Error deleting purchase:", error);
+        return { success: false, error };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error("Error in deletePurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Suppliers functions (needed for purchases)
+  getSuppliers: async () => {
+    try {
+      const { data, error } = await supabase
+        .from("suppliers")
+        .select("*")
+        .order("name");
+
+      if (error) {
+        console.error("Error fetching suppliers:", error);
+        return { data: [], error };
+      }
+
+      return { data: data || [], error: null };
+    } catch (error) {
+      console.error("Error in getSuppliers:", error);
+      return { data: [], error };
+    }
+  },
+
+  createSupplier: async (supplierData) => {
+    try {
+      const { data, error } = await supabase
+        .from("suppliers")
+        .insert({
+          name: supplierData.name,
+          contact_person: supplierData.contactPerson,
+          email: supplierData.email,
+          phone: supplierData.phone,
+          address: supplierData.address,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error("Error creating supplier:", error);
+        return { success: false, error };
+      }
+
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error in createSupplier:", error);
+      return { success: false, error };
+    }
+  },
 };
 
-export default dbHelpers; 
+export default dbHelpers;

@@ -26,14 +26,12 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@eslint/js": "^9.25.0",
-    "@tailwindcss/postcss": "^4.1.8",
+    "@eslint/js": "^9.25.0",   
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.14",
     "eslint": "^9.25.0",
     "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-refresh": "^0.4.19",
-    "postcss": "^8.4.31",
+    "eslint-plugin-react-refresh": "^0.4.19",    
     "prettier": "^3.2.5",
     "vite": "^6.3.5"
   }

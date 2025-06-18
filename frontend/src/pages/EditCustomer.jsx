@@ -12,6 +12,7 @@ import {
   FiCalendar,
   FiAlertCircle,
 } from "react-icons/fi";
+import { dbHelpers } from "../lib/db";
 
 function EditCustomer() {
   const { id } = useParams();
@@ -65,27 +66,39 @@ function EditCustomer() {
   // Load existing customer data
   useEffect(() => {
     if (id) {
-      setLoading(true);
-      setTimeout(() => {
-        setFormData({
-          firstName: "John",
-          lastName: "Doe",
-          email: "john.doe@email.com",
-          phone: "+234 801 234 5678",
-          address: "123 Lagos Street",
-          city: "Lagos",
-          state: "Lagos State",
-          zipCode: "100001",
-          dateOfBirth: "1985-06-15",
-          gender: "male",
-          emergencyContact: "Jane Doe",
-          emergencyPhone: "+234 802 345 6789",
-          allergies: "Penicillin, Shellfish",
-          medicalConditions: "Hypertension",
-          status: "active",
-        });
-        setLoading(false);
-      }, 1000);
+      const loadCustomer = async () => {
+        setLoading(true);
+        try {
+          const customer = await dbHelpers.getCustomerById(id);
+          if (customer) {
+            setFormData({
+              firstName: customer.first_name || customer.firstName || "",
+              lastName: customer.last_name || customer.lastName || "",
+              email: customer.email || "",
+              phone: customer.phone || "",
+              address: customer.address || "",
+              city: customer.city || "",
+              state: customer.state || "",
+              zipCode: customer.zip_code || customer.zipCode || "",
+              dateOfBirth: customer.date_of_birth || customer.dateOfBirth || "",
+              gender: customer.gender || "",
+              emergencyContact:
+                customer.emergency_contact || customer.emergencyContact || "",
+              emergencyPhone:
+                customer.emergency_phone || customer.emergencyPhone || "",
+              allergies: customer.allergies || "",
+              medicalConditions:
+                customer.medical_conditions || customer.medicalConditions || "",
+              status: customer.status || "active",
+            });
+          }
+        } catch (error) {
+          console.error("Error loading customer:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadCustomer();
     }
   }, [id]);
 
@@ -140,19 +153,38 @@ function EditCustomer() {
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
-
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      navigate("/customers", {
-        state: { message: "Customer updated successfully!" },
-      });
+      let result;
+      if (id) {
+        // Update existing customer
+        result = await dbHelpers.updateCustomer(id, formData);
+        console.log("Customer updated successfully:", result);
+      } else {
+        // Create new customer
+        result = await dbHelpers.createCustomer(formData);
+        console.log("Customer created successfully:", result);
+      }
+
+      if (result) {
+        navigate("/customers", {
+          state: {
+            message: id
+              ? "Customer updated successfully!"
+              : "Customer added successfully!",
+          },
+        });
+      } else {
+        console.error("Failed to save customer");
+        // You might want to show an error message to the user here
+      }
     } catch (error) {
-      console.error("Error updating customer:", error);
+      console.error("Error saving customer:", error);
+      // You might want to show an error message to the user here
     } finally {
       setLoading(false);
     }
@@ -452,7 +484,6 @@ function EditCustomer() {
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
                   <option value="female">Female</option>
-                  <option value="other">Other</option>
                 </select>
               </div>
             </div>
@@ -891,7 +922,7 @@ function EditCustomer() {
         >
           <FiArrowLeft size={16} />
           Back to Customers
-        </button>
+        </button>{" "}
         <div>
           <h1
             style={{
@@ -901,7 +932,7 @@ function EditCustomer() {
               margin: "0 0 4px 0",
             }}
           >
-            Edit Customer
+            {id ? "Edit Customer" : "Add Customer"}
           </h1>
           <p
             style={{
@@ -909,7 +940,8 @@ function EditCustomer() {
               margin: 0,
             }}
           >
-            Update customer information in {steps.length} easy steps
+            {id ? "Update" : "Add"} customer information in {steps.length} easy
+            steps
           </p>
         </div>
       </div>
@@ -1042,6 +1074,7 @@ function EditCustomer() {
               opacity: loading ? 0.7 : 1,
             }}
           >
+            {" "}
             {loading ? (
               <>
                 <div
@@ -1054,12 +1087,12 @@ function EditCustomer() {
                     animation: "spin 1s linear infinite",
                   }}
                 />
-                Updating...
+                {id ? "Updating..." : "Adding..."}
               </>
             ) : (
               <>
                 <FiSave size={16} />
-                Update Customer
+                {id ? "Update Customer" : "Add Customer"}
               </>
             )}
           </button>

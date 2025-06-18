@@ -17,19 +17,81 @@ import {
   FiClock,
   FiDollarSign,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../lib/mockData";
+import { dataService } from "../services";
+import { useProductsStore } from "../store";
 
 // Inventory page
 function Inventory() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [products] = useState(mockData.products);
+  const { products, fetchProducts, isLoading } = useProductsStore();
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Initial logging
+  console.log("🏪 [Inventory] Component initialized");
+  console.log("⚙️ [Inventory] Data service config:", {
+    useMockData: dataService?.useMockData,
+    serviceAvailable: !!dataService,
+  });
+  console.log("🏬 [Inventory] Store state:", {
+    productsCount: products?.length || 0,
+    isLoading,
+    fetchProductsAvailable: !!fetchProducts,
+  });
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [viewMode, setViewMode] = useState("table"); // "table" or "grid"
   const [sortBy, setSortBy] = useState("name");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortOrder, setSortOrder] = useState("asc"); // Fetch products on component mount
+  useEffect(() => {
+    console.log("🔄 [Inventory] Starting to fetch products...");
+    console.log("📊 [Inventory] Current products state:", products);
+    console.log("⏳ [Inventory] Loading state:", isLoading);
+    fetchProducts();
+  }, [fetchProducts]);
+
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      console.log("🔄 [Inventory] Starting to load categories...");
+      try {
+        console.log("📡 [Inventory] Calling dataService.categories.getAll()");
+        const categoriesData = await dataService.categories.getAll();
+        console.log(
+          "✅ [Inventory] Categories loaded successfully:",
+          categoriesData
+        );
+        console.log(
+          "📝 [Inventory] Categories data type:",
+          typeof categoriesData
+        );
+        console.log(
+          "📊 [Inventory] Categories length:",
+          categoriesData?.length
+        );
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("❌ [Inventory] Error loading categories:", error);
+        console.log("🔄 [Inventory] Using fallback categories");
+        // Fallback to hardcoded categories
+        setCategories([
+          { id: 1, name: "Pain Relief" },
+          { id: 2, name: "Antibiotics" },
+          { id: 3, name: "Vitamins & Supplements" },
+          { id: 4, name: "Cold & Flu" },
+          { id: 5, name: "Digestive Health" },
+          { id: 6, name: "Heart & Blood Pressure" },
+          { id: 7, name: "Diabetes Care" },
+          { id: 8, name: "Skin Care" },
+          { id: 9, name: "Eye Care" },
+          { id: 10, name: "Other" },
+        ]);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   // Handle navigation from notifications
   useEffect(() => {
@@ -40,25 +102,63 @@ function Inventory() {
     }
   }, [location.state]);
 
+  // Add logging for products data
+  useEffect(() => {
+    console.log("📊 [Inventory] Products state updated:");
+    console.log("   - Products count:", products?.length || 0);
+    console.log("   - Products sample:", products?.slice(0, 3));
+    console.log("   - Loading state:", isLoading);
+
+    if (products?.length > 0) {
+      const sampleProduct = products[0];
+      console.log("🔍 [Inventory] Sample product structure:", {
+        id: sampleProduct?.id,
+        name: sampleProduct?.name,
+        quantity: sampleProduct?.quantity,
+        price: sampleProduct?.price,
+        costPrice: sampleProduct?.costPrice,
+        cost_price: sampleProduct?.cost_price,
+        minStockLevel: sampleProduct?.minStockLevel,
+        min_stock_level: sampleProduct?.min_stock_level,
+        expiryDate: sampleProduct?.expiryDate,
+        expiry_date: sampleProduct?.expiry_date,
+        batchNumber: sampleProduct?.batchNumber,
+        batch_number: sampleProduct?.batch_number,
+        manufacturer: sampleProduct?.manufacturer,
+        category: sampleProduct?.category,
+      });
+    }
+  }, [products, isLoading]);
   const filteredProducts = products
     .filter((product) => {
       const matchesSearch =
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.batchNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.manufacturer.toLowerCase().includes(searchTerm.toLowerCase());
+        (product.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (product.batchNumber || product.batch_number || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        (product.manufacturer || "")
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
 
       let matchesStatus = true;
       if (statusFilter === "low-stock") {
-        matchesStatus = product.quantity <= product.minStockLevel;
+        const minStock = product.minStockLevel || product.min_stock_level || 0;
+        matchesStatus = (product.quantity || 0) <= minStock;
       } else if (statusFilter === "out-of-stock") {
-        matchesStatus = product.quantity === 0;
+        matchesStatus = (product.quantity || 0) === 0;
       } else if (statusFilter === "in-stock") {
-        matchesStatus = product.quantity > product.minStockLevel;
+        const minStock = product.minStockLevel || product.min_stock_level || 0;
+        matchesStatus = (product.quantity || 0) > minStock;
       } else if (statusFilter === "expiring") {
-        const daysUntilExpiry = Math.ceil(
-          (new Date(product.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
-        );
-        matchesStatus = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+        const expiryDate = product.expiryDate || product.expiry_date;
+        if (expiryDate) {
+          const daysUntilExpiry = Math.ceil(
+            (new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+          );
+          matchesStatus = daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+        } else {
+          matchesStatus = false;
+        }
       }
 
       const matchesCategory =
@@ -78,7 +178,6 @@ function Inventory() {
         aValue = Number(aValue);
         bValue = Number(bValue);
       }
-
       if (sortOrder === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -86,18 +185,49 @@ function Inventory() {
       }
     });
 
-  const lowStockProducts = mockHelpers.getLowStockProducts();
-  const outOfStockProducts = products.filter((p) => p.quantity === 0);
+  // Log filtering results
+  console.log("🔍 [Inventory] Filtering results:");
+  console.log("   - Original products count:", products?.length || 0);
+  console.log("   - Filtered products count:", filteredProducts?.length || 0);
+  console.log("   - Search term:", searchTerm);
+  console.log("   - Status filter:", statusFilter);
+  console.log("   - Category filter:", categoryFilter);
+  console.log("   - Sort by:", sortBy, "Order:", sortOrder);
+
+  // Calculate derived data
+  const lowStockProducts = products.filter(
+    (p) => (p.quantity || 0) <= (p.minStockLevel || p.min_stock_level || 0)
+  );
+  const outOfStockProducts = products.filter((p) => (p.quantity || 0) === 0);
   const totalValue = products.reduce(
-    (sum, p) => sum + p.quantity * p.costPrice,
+    (sum, p) => sum + (p.quantity || 0) * (p.costPrice || p.cost_price || 0),
     0
   );
   const expiringProducts = products.filter((p) => {
+    const expiryDate = p.expiryDate || p.expiry_date;
+    if (!expiryDate) return false;
     const daysUntilExpiry = Math.ceil(
-      (new Date(p.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
+      (new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
     );
     return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
   });
+
+  // Log derived data calculations
+  console.log("📈 [Inventory] Derived data calculations:");
+  console.log("   - Low stock products:", lowStockProducts?.length || 0);
+  console.log("   - Out of stock products:", outOfStockProducts?.length || 0);
+  console.log("   - Expiring products:", expiringProducts?.length || 0);
+  console.log("   - Total inventory value:", totalValue);
+  console.log("   - Categories loaded:", categories?.length || 0);
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   const getStockStatus = (product) => {
     if (product.quantity === 0)
@@ -241,7 +371,7 @@ function Inventory() {
                       fontSize: "14px",
                     }}
                   >
-                    ₦{product.price.toFixed(2)}
+                    ₦{(product.price || 0).toFixed(2)}
                   </div>
                 </td>
                 <td style={{ padding: "16px 12px" }}>
@@ -360,7 +490,7 @@ function Inventory() {
                   fontSize: "16px",
                 }}
               >
-                ₦{product.price.toFixed(2)}
+                ₦{(product.price || 0).toFixed(2)}
               </div>
             </div>
 
@@ -676,7 +806,7 @@ function Inventory() {
                   color: "#1f2937",
                 }}
               >
-                ₦{totalValue.toLocaleString()}
+                ₦{(totalValue || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -760,8 +890,9 @@ function Inventory() {
                 backgroundColor: "white",
               }}
             >
+              {" "}
               <option value="all">All Categories</option>
-              {mockData.categories.map((category) => (
+              {categories.map((category) => (
                 <option key={category.id} value={category.name}>
                   {category.name}
                 </option>

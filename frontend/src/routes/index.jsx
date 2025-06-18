@@ -16,6 +16,7 @@ import Refunds from "../pages/Refunds";
 import Customers from "../pages/Customers";
 import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
+import CustomerSales from "../pages/CustomerSales";
 import Reports from "../pages/Reports";
 import ViewProduct from "../pages/ViewProduct";
 import Purchases from "../pages/Purchases";
@@ -71,8 +72,16 @@ export const router = createBrowserRouter([
         element: <ViewCustomer />,
       },
       {
+        path: "/customers/add",
+        element: <EditCustomer />,
+      },
+      {
         path: "/customers/edit/:id",
         element: <EditCustomer />,
+      },
+      {
+        path: "/customers/sales/:id",
+        element: <CustomerSales />,
       },
       {
         path: "/reports",

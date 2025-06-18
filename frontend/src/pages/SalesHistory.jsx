@@ -7,31 +7,46 @@ import {
   FiPackage,
   FiAlertCircle,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../lib/mockData";
+import { dataService } from "../services";
+import { useSalesStore } from "../store";
 
 function SalesHistory() {
   const location = useLocation();
   const navigate = useNavigate();
   const [sales, setSales] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [highlightedSale, setHighlightedSale] = useState(null);
-
-  // Initialize sales data with error handling
+  const [highlightedSale, setHighlightedSale] = useState(null); // Initialize sales data with error handling
   useEffect(() => {
-    try {
-      setLoading(true);
-      // Ensure mockData.sales exists and is an array
-      const salesData = Array.isArray(mockData.sales) ? mockData.sales : [];
-      setSales(salesData);
-      setError(null);
-    } catch (err) {
-      console.error("Error loading sales data:", err);
-      setError("Failed to load sales data");
-      setSales([]);
-    } finally {
-      setLoading(false);
-    }
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [salesData, customersData] = await Promise.all([
+          dataService.sales.getAll(),
+          dataService.customers.getAll().catch(() => []),
+        ]);
+
+        console.log("✅ [SalesHistory] Sales loaded:", salesData?.length || 0);
+        console.log(
+          "✅ [SalesHistory] Customers loaded:",
+          customersData?.length || 0
+        );
+
+        setSales(salesData || []);
+        setCustomers(customersData || []);
+        setError(null);
+      } catch (err) {
+        console.error("❌ [SalesHistory] Error loading data:", err);
+        setError("Failed to load sales data");
+        setSales([]);
+        setCustomers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   // Handle navigation from notifications
@@ -49,18 +64,34 @@ function SalesHistory() {
       }
     }
   }, [location.state]);
-
   const getCustomerName = (customerId) => {
     if (!customerId) return "Walk-in Customer";
-    try {
-      const customer = mockHelpers.getCustomerById(customerId);
-      return customer
-        ? `${customer.firstName} ${customer.lastName}`
-        : "Unknown Customer";
-    } catch (err) {
-      console.error("Error getting customer name:", err);
-      return "Unknown Customer";
-    }
+    const customer = customers.find((c) => c.id === customerId);
+    return customer
+      ? `${customer.firstName || customer.first_name || ""} ${customer.lastName || customer.last_name || ""}`.trim() ||
+          customer.name ||
+          `Customer #${customerId}`
+      : `Customer #${customerId}`;
+  };
+
+  const getPaymentMethodDisplay = (method) => {
+    const paymentMethods = {
+      cash: "Cash",
+      mobile_money: "Mobile Money",
+      bank: "Bank Transfer",
+      credit: "Credit",
+    };
+    return paymentMethods[method] || method || "Unknown";
+  };
+
+  const getPaymentMethodColor = (method) => {
+    const colors = {
+      cash: "#10b981",
+      mobile_money: "#f59e0b",
+      bank: "#3b82f6",
+      credit: "#ef4444",
+    };
+    return colors[method] || "#6b7280";
   };
 
   if (loading) {
@@ -251,6 +282,7 @@ function SalesHistory() {
                       }}
                     >
                       <div>
+                        {" "}
                         <h3
                           style={{
                             fontSize: "16px",
@@ -258,7 +290,9 @@ function SalesHistory() {
                             color: "#1f2937",
                           }}
                         >
-                          {sale.transactionNumber || `Transaction #${sale.id}`}
+                          {sale.transactionNumber ||
+                            sale.transaction_number ||
+                            `Transaction #${sale.id}`}
                         </h3>
                         <p style={{ fontSize: "14px", color: "#6b7280" }}>
                           {sale.date
@@ -275,7 +309,10 @@ function SalesHistory() {
                           color: "#10b981",
                         }}
                       >
-                        ₦{(sale.totalAmount || 0).toFixed(2)}
+                        ₦
+                        {(sale.totalAmount || sale.total_amount || 0).toFixed(
+                          2
+                        )}
                       </div>
                     </div>
 
@@ -296,14 +333,17 @@ function SalesHistory() {
                       >
                         <FiUser color="#6b7280" size={16} />
                         <div>
+                          {" "}
                           <div style={{ fontWeight: "500", color: "#1f2937" }}>
-                            {getCustomerName(sale.customerId)}
+                            {getCustomerName(
+                              sale.customerId || sale.customer_id
+                            )}
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             Customer
                           </div>
                         </div>
-                      </div>
+                      </div>{" "}
                       <div
                         style={{
                           display: "flex",
@@ -313,8 +353,15 @@ function SalesHistory() {
                       >
                         <FiPackage color="#6b7280" size={16} />
                         <div>
+                          {" "}
                           <div style={{ fontWeight: "500", color: "#1f2937" }}>
-                            {sale.items ? sale.items.length : 0} item(s)
+                            {sale.items && Array.isArray(sale.items)
+                              ? sale.items.length
+                              : sale.sale_items &&
+                                  Array.isArray(sale.sale_items)
+                                ? sale.sale_items.length
+                                : 0}{" "}
+                            item(s)
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             Products
@@ -330,6 +377,7 @@ function SalesHistory() {
                       >
                         <FiDollarSign color="#6b7280" size={16} />
                         <div>
+                          {" "}
                           <div style={{ fontWeight: "500", color: "#1f2937" }}>
                             ₦{(sale.subtotal || 0).toFixed(2)}
                           </div>
@@ -337,7 +385,7 @@ function SalesHistory() {
                             Subtotal
                           </div>
                         </div>
-                      </div>
+                      </div>{" "}
                       <div
                         style={{
                           display: "flex",
@@ -350,10 +398,9 @@ function SalesHistory() {
                             width: "16px",
                             height: "16px",
                             borderRadius: "50%",
-                            backgroundColor:
-                              sale.paymentMethod === "cash"
-                                ? "#10b981"
-                                : "#3b82f6",
+                            backgroundColor: getPaymentMethodColor(
+                              sale.paymentMethod || sale.payment_method
+                            ),
                           }}
                         />
                         <div>
@@ -361,10 +408,11 @@ function SalesHistory() {
                             style={{
                               fontWeight: "500",
                               color: "#1f2937",
-                              textTransform: "capitalize",
                             }}
                           >
-                            {sale.paymentMethod || "Unknown"}
+                            {getPaymentMethodDisplay(
+                              sale.paymentMethod || sale.payment_method
+                            )}
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             Payment

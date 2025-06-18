@@ -17,17 +17,20 @@ The frontend application for Elith Pharmacy management system, built with React,
 ## 🛠️ Development Setup
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - npm or yarn
 
 ### Getting Started
 
 1. Install dependencies:
+
    ```bash
    npm install
    ```
 
 2. Start the development server:
+
    ```bash
    npm run dev
    ```
@@ -44,6 +47,7 @@ The frontend application for Elith Pharmacy management system, built with React,
 ## 🎨 Styling
 
 This project uses **Tailwind CSS 4.1.8** for styling with:
+
 - Utility-first approach
 - Responsive design patterns
 - Modern CSS features
@@ -81,11 +85,13 @@ src/
 ## 🔧 Configuration
 
 ### Vite Configuration
+
 - React plugin for JSX support
 - Tailwind CSS integration
 - Development server optimization
 
 ### ESLint Configuration
+
 - React-specific rules
 - Modern JavaScript standards
 - Code quality enforcement
@@ -105,6 +111,7 @@ This frontend is built with a modern, scalable architecture:
 - 🚧 **API integration** - Pending backend implementation
 
 ### Architecture Benefits
+
 - **Domain-driven design** - Features organized by business domain
 - **Separation of concerns** - Clear boundaries between UI, logic, and data
 - **Offline-first** - Works without internet connection

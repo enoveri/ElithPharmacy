@@ -45,12 +45,11 @@ Elith Pharmacy/
 ## 🚀 Tech Stack
 
 ### Frontend
+
 - **React 19.1.0** - Modern UI library
 - **Vite 6.3.5** - Fast build tool and development server
 - **Tailwind CSS 4.1.8** - Utility-first CSS framework
 - **ESLint** - Code linting and formatting
-
-
 
 ## ✨ Features
 
@@ -66,6 +65,7 @@ This pharmacy management system will include:
 ## 🛠️ Getting Started
 
 ### Prerequisites
+
 - Node.js (v18 or higher)
 - Python (v3.8 or higher)
 - npm or yarn
@@ -73,16 +73,19 @@ This pharmacy management system will include:
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
+
    ```powershell
    cd frontend
    ```
 
 2. Install dependencies:
+
    ```powershell
    npm install
    ```
 
 3. Start the development server:
+
    ```powershell
    npm run dev
    ```
@@ -92,11 +95,13 @@ This pharmacy management system will include:
 ### Backend Setup
 
 1. Navigate to the backend directory:
+
    ```powershell
    cd backend
    ```
 
 2. Create a virtual environment:
+
    ```powershell
    python -m venv venv
    .\venv\Scripts\Activate.ps1
@@ -110,6 +115,7 @@ This pharmacy management system will include:
 ## 📝 Available Scripts
 
 ### Frontend
+
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
 - `npm run lint` - Run ESLint
@@ -118,6 +124,7 @@ This pharmacy management system will include:
 ## 🎨 Design System
 
 The project uses Tailwind CSS for styling with a focus on:
+
 - Clean, modern interface
 - Accessibility compliance
 - Mobile-first responsive design
@@ -126,13 +133,16 @@ The project uses Tailwind CSS for styling with a focus on:
 ## 🔧 Development
 
 ### Code Style
+
 - ESLint configuration for code quality
 - React hooks and modern patterns
 - Component-based architecture
 - Proper error handling and validation
 
 ### Project Status
+
 ✅ **Frontend Structure Complete** - Comprehensive React application structure with:
+
 - Domain-driven feature organization
 - Complete dependency setup (React 19, Vite 6, Tailwind CSS 4)
 - State management with Zustand
@@ -145,6 +155,7 @@ The project uses Tailwind CSS for styling with a focus on:
 ## 📦 Dependencies
 
 ### Frontend Dependencies
+
 - React & React DOM for UI framework
 - React Router DOM for navigation
 - Tailwind CSS for styling with @tailwindcss/forms
@@ -157,6 +168,7 @@ The project uses Tailwind CSS for styling with a focus on:
 - ESLint and Prettier for code quality
 
 ### Upcoming Backend Dependencies
+
 - Flask/FastAPI for REST API
 - SQLAlchemy for database ORM
 - PostgreSQL/MySQL for data storage
@@ -180,4 +192,4 @@ For questions or support, please contact the development team.
 
 ---
 
-*Built with ❤️ for modern pharmacy management*
+_Built with ❤️ for modern pharmacy management_

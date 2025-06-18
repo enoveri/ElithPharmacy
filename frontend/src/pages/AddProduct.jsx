@@ -2,13 +2,16 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FiArrowLeft, FiCheck, FiPackage } from "react-icons/fi";
-import { mockData } from "../lib/mockData";
+import { dataService } from "../services";
+import { useProductsStore } from "../store";
 
 function AddProduct() {
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const { addProduct } = useProductsStore();
 
   // Check if this is being called from a purchase order
   const isFromPurchaseOrder = location.state?.fromPurchaseOrder;
@@ -74,6 +77,33 @@ function AddProduct() {
       });
     }
   }, [isFromPurchaseOrder, purchaseOrderData]);
+
+  // Load categories on component mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesData = await dataService.categories.getAll();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error("Error loading categories:", error);
+        // Fallback to hardcoded categories
+        setCategories([
+          { id: 1, name: "Antibiotics" },
+          { id: 2, name: "Pain Relief" },
+          { id: 3, name: "Vitamins" },
+          { id: 4, name: "Cold & Flu" },
+          { id: 5, name: "Supplements" },
+          { id: 6, name: "First Aid" },
+          { id: 7, name: "Diabetes Care" },
+          { id: 8, name: "Heart Health" },
+          { id: 9, name: "Skin Care" },
+          { id: 10, name: "Mental Health" },
+        ]);
+      }
+    };
+
+    loadCategories();
+  }, []);
 
   const renderBasicInfoStep = () => (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -150,16 +180,9 @@ function AddProduct() {
               required
             />
             <datalist id="categories">
-              <option value="Antibiotics" />
-              <option value="Pain Relief" />
-              <option value="Vitamins" />
-              <option value="Cold & Flu" />
-              <option value="Supplements" />
-              <option value="First Aid" />
-              <option value="Diabetes Care" />
-              <option value="Heart Health" />
-              <option value="Skin Care" />
-              <option value="Mental Health" />
+              {categories.map((category) => (
+                <option key={category.id} value={category.name} />
+              ))}
             </datalist>
           </div>
         </div>
@@ -497,7 +520,10 @@ function AddProduct() {
             }}
           >
             Profit per unit: ₦
-            {(productData.price - productData.costPrice).toFixed(2)}
+            {(
+              (parseFloat(productData.price) || 0) -
+              (parseFloat(productData.costPrice) || 0)
+            ).toFixed(2)}
           </div>
         </div>
       )}
@@ -862,7 +888,7 @@ function AddProduct() {
               Cost Price:
             </span>
             <div style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦{productData.costPrice.toFixed(2)}
+              ₦{(parseFloat(productData.costPrice) || 0).toFixed(2)}
             </div>
           </div>
           <div>
@@ -872,7 +898,7 @@ function AddProduct() {
             <div
               style={{ fontWeight: "600", color: "#10b981", fontSize: "16px" }}
             >
-              ₦{productData.price.toFixed(2)}
+              ₦{(parseFloat(productData.price) || 0).toFixed(2)}
             </div>
           </div>
         </div>
@@ -1073,31 +1099,44 @@ function AddProduct() {
   const handlePrevious = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
-
   const handleSubmit = async () => {
     if (!validateStep(currentStep)) return;
 
     setLoading(true);
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log("🚀 Starting product creation process");
+      console.log("📋 Product data:", productData);
 
-      // Create new supplier if it doesn't exist
-      if (productData.supplierName && !productData.supplierId) {
-        const newSupplierId = Date.now();
-        // In a real app, this would be saved to the backend
-        suppliers.push({
-          id: newSupplierId,
-          name: productData.supplierName,
-          email: `contact@${productData.supplierName.toLowerCase().replace(/\s+/g, "")}.com`,
-        });
+      // Prepare product data for database
+      const productForDb = {
+        name: productData.name,
+        category: productData.category,
+        manufacturer: productData.manufacturer || "",
+        description: productData.description || "",
+        costPrice: parseFloat(productData.costPrice) || 0,
+        price: parseFloat(productData.price) || 0,
+        quantity: parseInt(productData.quantity) || 0,
+        minStockLevel: parseInt(productData.minStockLevel) || 0,
+        expiryDate: productData.expiryDate || null,
+        batchNumber: productData.batchNumber || "",
+        barcode: productData.barcode || "",
+        status: "active",
+      };
 
-        // Update product data with new supplier ID
-        setProductData((prev) => ({
-          ...prev,
-          supplierId: newSupplierId,
-        }));
+      console.log("💾 Prepared product for database:", productForDb);
+
+      // Create product in database
+      const newProduct = await dataService.products.create(productForDb);
+
+      if (!newProduct) {
+        throw new Error("Failed to create product - no data returned");
       }
+
+      console.log("✅ Product created successfully:", newProduct);
+
+      // Update the store with new product
+      addProduct(newProduct);
 
       if (isFromPurchaseOrder && purchaseOrderData) {
         // Handle purchase order creation
@@ -1113,7 +1152,7 @@ function AddProduct() {
           totalAmount: productData.costPrice * purchaseDetails.quantity,
           items: [
             {
-              productId: Date.now(),
+              productId: newProduct.id,
               productName: productData.name,
               quantity: purchaseDetails.quantity,
               unitCost: productData.costPrice,
@@ -1127,11 +1166,14 @@ function AddProduct() {
             purchaseDetails.notes || "Product added through purchase order",
         };
 
+        // For now, still using localStorage for purchases (we can update this later)
         const existingPurchases = JSON.parse(
           localStorage.getItem("purchases") || "[]"
         );
         existingPurchases.unshift(newPurchase);
         localStorage.setItem("purchases", JSON.stringify(existingPurchases));
+
+        console.log("📦 Purchase order created:", newPurchase);
 
         navigate("/purchases", {
           state: {
@@ -1145,7 +1187,12 @@ function AddProduct() {
         });
       }
     } catch (error) {
-      console.error("Error adding product:", error);
+      console.error("❌ Error adding product:", error);
+
+      // Show user-friendly error message
+      const errorMessage =
+        error.message || "Failed to add product. Please try again.";
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }

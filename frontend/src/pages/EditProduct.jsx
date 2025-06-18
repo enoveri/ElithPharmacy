@@ -14,6 +14,7 @@ import {
   FiInfo,
   FiCamera,
 } from "react-icons/fi";
+import { dataService } from "../services";
 
 function EditProduct() {
   const { id } = useParams();
@@ -62,33 +63,75 @@ function EditProduct() {
       icon: FiPackage,
       color: "var(--color-warning-600)",
     },
-  ];
-
-  // Load existing product data
+  ]; // Load existing product data and categories
   useEffect(() => {
-    if (id) {
-      setLoading(true);
-      setTimeout(() => {
-        setFormData({
-          name: "Paracetamol 500mg",
-          category: "Pain Relief",
-          description: "Effective pain relief and fever reducer",
-          price: "25.50",
-          costPrice: "18.00",
-          quantity: "150",
-          minStockLevel: "20",
-          barcode: "1234567890123",
-          manufacturer: "PharmaCorp Ltd",
-          expiryDate: "2025-12-31",
-          batchNumber: "PC2024001",
-          location: "A-12-03",
-          status: "active",
-          image: null,
-        });
-        setLoading(false);
-      }, 1000);
-    }
-  }, [id]);
+    const loadData = async () => {
+      if (id) {
+        setLoading(true);
+        try {
+          console.log("🔍 [EditProduct] Loading product with ID:", id);
+
+          // Load product and categories in parallel
+          const [product, categoriesData] = await Promise.all([
+            dataService.products.getById(id),
+            dataService.categories.getAll().catch(() => []), // Fallback to empty array
+          ]);
+
+          if (!product) {
+            console.error("❌ [EditProduct] Product not found");
+            navigate("/inventory", {
+              state: { message: "Product not found!", type: "error" },
+            });
+            return;
+          }
+
+          console.log("✅ [EditProduct] Product loaded:", product);
+
+          // Update categories if loaded successfully
+          if (categoriesData && categoriesData.length > 0) {
+            const categoryNames = categoriesData.map((cat) => cat.name || cat);
+            setCategories([...new Set([...categoryNames, "Other"])]);
+            console.log("✅ [EditProduct] Categories loaded:", categoryNames);
+          }
+
+          // Map database fields to form fields (handle both camelCase and snake_case)
+          setFormData({
+            name: product.name || "",
+            category: product.category || "",
+            description: product.description || "",
+            price: (product.price || 0).toString(),
+            costPrice: (
+              product.costPrice ||
+              product.cost_price ||
+              0
+            ).toString(),
+            quantity: (product.quantity || 0).toString(),
+            minStockLevel: (
+              product.minStockLevel ||
+              product.min_stock_level ||
+              0
+            ).toString(),
+            barcode: product.barcode || "",
+            manufacturer: product.manufacturer || "",
+            expiryDate: product.expiryDate || product.expiry_date || "",
+            batchNumber: product.batchNumber || product.batch_number || "",
+            location: product.location || "",
+            status: product.status || "active",
+            image: null,
+          });
+        } catch (error) {
+          console.error("❌ [EditProduct] Error loading product:", error);
+          navigate("/inventory", {
+            state: { message: "Error loading product!", type: "error" },
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+  }, [id, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -162,7 +205,6 @@ function EditProduct() {
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -171,21 +213,56 @@ function EditProduct() {
     setLoading(true);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log("🚀 [EditProduct] Starting product update");
+      console.log("📋 [EditProduct] Form data:", formData);
 
-      // Show success message or navigate
+      // Prepare update data
+      const updateData = {
+        name: formData.name,
+        category: formData.category,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        costPrice: parseFloat(formData.costPrice) || 0,
+        quantity: parseInt(formData.quantity) || 0,
+        minStockLevel: parseInt(formData.minStockLevel) || 0,
+        barcode: formData.barcode,
+        manufacturer: formData.manufacturer,
+        expiryDate: formData.expiryDate || null,
+        batchNumber: formData.batchNumber,
+        location: formData.location,
+        status: formData.status,
+      };
+
+      console.log("💾 [EditProduct] Prepared update data:", updateData);
+
+      // Update product in database
+      const updatedProduct = await dataService.products.update(id, updateData);
+
+      if (!updatedProduct) {
+        throw new Error("Failed to update product - no data returned");
+      }
+
+      console.log(
+        "✅ [EditProduct] Product updated successfully:",
+        updatedProduct
+      );
+
+      // Show success message and navigate
       navigate("/inventory", {
         state: { message: "Product updated successfully!" },
       });
     } catch (error) {
-      console.error("Error updating product:", error);
+      console.error("❌ [EditProduct] Error updating product:", error);
+
+      // Show user-friendly error message
+      const errorMessage =
+        error.message || "Failed to update product. Please try again.";
+      alert(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
-
-  const categories = [
+  const [categories, setCategories] = useState([
     "Pain Relief",
     "Antibiotics",
     "Vitamins & Supplements",
@@ -196,7 +273,7 @@ function EditProduct() {
     "Skin Care",
     "Eye Care",
     "Other",
-  ];
+  ]);
 
   if (loading && !formData.name) {
     return (

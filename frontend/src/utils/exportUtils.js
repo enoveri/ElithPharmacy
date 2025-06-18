@@ -122,7 +122,7 @@ export const formatCustomerDataForExport = (customers) => {
     State: customer.state,
     Status: customer.status,
     "Total Purchases": customer.totalPurchases,
-    "Total Spent": `₦${customer.totalSpent.toLocaleString()}`,
+    "Total Spent": `₦${(customer.totalSpent || 0).toLocaleString()}`,
     "Loyalty Points": customer.loyaltyPoints,
     "Registration Date": new Date(
       customer.registrationDate
@@ -136,8 +136,8 @@ export const formatProductDataForExport = (products) => {
     "Product ID": product.id,
     "Product Name": product.name,
     Category: product.category,
-    Price: `₦${product.price.toFixed(2)}`,
-    "Cost Price": `₦${product.costPrice.toFixed(2)}`,
+    Price: `₦${(product.price || 0).toFixed(2)}`,
+    "Cost Price": `₦${(product.costPrice || 0).toFixed(2)}`,
     Quantity: product.quantity,
     "Min Stock Level": product.minStockLevel,
     Status: product.status,

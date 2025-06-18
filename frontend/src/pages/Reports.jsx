@@ -16,6 +16,7 @@ import {
   FiActivity,
 } from "react-icons/fi";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
+import { dataService } from "../services";
 
 function Reports() {
   const navigate = useNavigate();
@@ -27,126 +28,228 @@ function Reports() {
     endDate: new Date().toISOString().split("T")[0],
   });
   const [selectedReport, setSelectedReport] = useState("overview");
-
-  // Mock data for different reports
   const [reportData, setReportData] = useState({
     overview: {
-      totalSales: 45750.5,
-      totalTransactions: 234,
-      totalCustomers: 89,
-      averageOrderValue: 195.73,
-      topProducts: [
-        { name: "Paracetamol 500mg", sales: 5420.5, quantity: 142 },
-        { name: "Amoxicillin 250mg", sales: 4800.0, quantity: 96 },
-        { name: "Vitamin C 1000mg", sales: 3200.75, quantity: 89 },
-      ],
-      salesByCategory: [
-        { category: "Pain Relief", amount: 12500.5, percentage: 27.3 },
-        { category: "Antibiotics", amount: 10200.25, percentage: 22.3 },
-        { category: "Vitamins", amount: 8900.75, percentage: 19.5 },
-        { category: "Cold & Flu", amount: 7800.0, percentage: 17.0 },
-        { category: "Other", amount: 6349.0, percentage: 13.9 },
-      ],
+      totalSales: 0,
+      totalTransactions: 0,
+      totalCustomers: 0,
+      averageOrderValue: 0,
+      topProducts: [],
+      salesByCategory: [],
     },
     sales: {
-      dailySales: [
-        { date: "2024-01-15", amount: 1250.5, transactions: 8 },
-        { date: "2024-01-16", amount: 1890.75, transactions: 12 },
-        { date: "2024-01-17", amount: 2100.25, transactions: 15 },
-        { date: "2024-01-18", amount: 1670.0, transactions: 11 },
-        { date: "2024-01-19", amount: 2340.8, transactions: 18 },
-        { date: "2024-01-20", amount: 1950.45, transactions: 14 },
-      ],
-      monthlySales: [
-        { month: "Jan 2024", amount: 45750.5, growth: 12.5 },
-        { month: "Dec 2023", amount: 40650.25, growth: 8.3 },
-        { month: "Nov 2023", amount: 37890.75, growth: -2.1 },
-      ],
+      dailySales: [],
+      monthlySales: [],
     },
     inventory: {
       stockStatus: {
-        inStock: 156,
-        lowStock: 23,
-        outOfStock: 8,
-        totalProducts: 187,
+        inStock: 0,
+        lowStock: 0,
+        outOfStock: 0,
+        totalProducts: 0,
       },
-      topMovingProducts: [
-        { name: "Paracetamol 500mg", movement: 142, trend: "up" },
-        { name: "Vitamin C 1000mg", movement: 89, trend: "up" },
-        { name: "Ibuprofen 400mg", movement: 76, trend: "down" },
-      ],
-      expiringProducts: [
-        { name: "Amoxicillin 250mg", expiryDate: "2024-03-15", quantity: 25 },
-        { name: "Cough Syrup 100ml", expiryDate: "2024-04-20", quantity: 12 },
-      ],
+      topMovingProducts: [],
+      expiringProducts: [],
     },
     customers: {
       customerMetrics: {
-        totalCustomers: 89,
-        newCustomers: 15,
-        activeCustomers: 67,
-        customerRetention: 75.3,
+        totalCustomers: 0,
+        newCustomers: 0,
+        activeCustomers: 0,
+        customerRetention: 0,
       },
-      topCustomers: [
-        { name: "John Doe", totalSpent: 2450.75, visits: 12 },
-        { name: "Sarah Johnson", totalSpent: 1890.5, visits: 8 },
-        { name: "Michael Brown", totalSpent: 1650.25, visits: 15 },
-      ],
+      topCustomers: [],
     },
   });
 
-  // Add new section data for Reports section
+  // Add section data for additional dashboard info
   const [sectionData, setSectionData] = useState({
     quickStats: {
-      todayRevenue: 2450.75,
-      yesterdayRevenue: 2180.5,
-      monthlyGrowth: 12.3,
-      weeklyOrders: 89,
-      activeCustomers: 156,
-      lowStockAlerts: 7,
+      todayRevenue: 0,
+      yesterdayRevenue: 0,
+      monthlyGrowth: 0,
+      weeklyOrders: 0,
+      activeCustomers: 0,
+      lowStockAlerts: 0,
     },
-    recentActivity: [
-      {
-        type: "sale",
-        message: "Sale #12345 completed",
-        amount: 125.5,
-        time: "2 mins ago",
-      },
-      {
-        type: "stock",
-        message: "Low stock alert: Paracetamol 500mg",
-        time: "15 mins ago",
-      },
-      {
-        type: "customer",
-        message: "New customer registered: John Doe",
-        time: "1 hour ago",
-      },
-      {
-        type: "return",
-        message: "Return processed for order #12340",
-        amount: 45.0,
-        time: "2 hours ago",
-      },
-    ],
+    recentActivity: [],
     topPerformers: {
-      products: [
-        {
-          name: "Paracetamol 500mg",
-          revenue: 5420.5,
-          units: 142,
-          growth: 15.2,
-        },
-        { name: "Vitamin C 1000mg", revenue: 3200.75, units: 89, growth: 8.7 },
-        { name: "Amoxicillin 250mg", revenue: 4800.0, units: 96, growth: -2.1 },
-      ],
-      categories: [
-        { name: "Pain Relief", revenue: 12500.5, percentage: 27.3 },
-        { name: "Vitamins", revenue: 8900.75, percentage: 19.5 },
-        { name: "Antibiotics", revenue: 10200.25, percentage: 22.3 },
-      ],
+      products: [],
+      categories: [],
     },
   });
+
+  // Load report data from database
+  useEffect(() => {
+    const loadReportData = async () => {
+      try {
+        setLoading(true);
+        console.log("🔄 [Reports] Loading report data...");
+
+        // Load different report types based on selected report
+        switch (selectedReport) {
+          case "overview":
+            await loadOverviewData();
+            break;
+          case "sales":
+            await loadSalesData();
+            break;
+          case "inventory":
+            await loadInventoryData();
+            break;
+          case "customers":
+            await loadCustomerData();
+            break;
+          default:
+            await loadOverviewData();
+        }
+      } catch (error) {
+        console.error("❌ [Reports] Error loading report data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadReportData();
+  }, [selectedReport, dateRange]);
+
+  const loadOverviewData = async () => {
+    try {
+      const [dashboardStats, products, customers, sales] = await Promise.all([
+        dataService.dashboard.getStats(),
+        dataService.products.getAll(),
+        dataService.customers.getAll(),
+        dataService.sales.getAll(),
+      ]);
+
+      // Filter sales by date range
+      const filteredSales = sales.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return (
+          saleDate >= new Date(dateRange.startDate) &&
+          saleDate <= new Date(dateRange.endDate)
+        );
+      });
+
+      // Calculate product sales from filtered sales
+      const productSales = {};
+      filteredSales.forEach((sale) => {
+        (sale.items || sale.sale_items || []).forEach((item) => {
+          const productName =
+            item.productName ||
+            item.product_name ||
+            products.find((p) => p.id === (item.productId || item.product_id))
+              ?.name ||
+            "Unknown Product";
+
+          if (!productSales[productName]) {
+            productSales[productName] = { sales: 0, quantity: 0 };
+          }
+          productSales[productName].sales += item.total || 0;
+          productSales[productName].quantity += item.quantity || 0;
+        });
+      });
+
+      const topProducts = Object.entries(productSales)
+        .map(([name, data]) => ({ name, ...data }))
+        .sort((a, b) => b.sales - a.sales)
+        .slice(0, 5);
+
+      // Calculate category sales
+      const categorySales = {};
+      products.forEach((product) => {
+        const category = product.category || "Other";
+        if (!categorySales[category]) {
+          categorySales[category] = 0;
+        }
+        // Add sales for this product
+        const productSalesData = productSales[product.name];
+        if (productSalesData) {
+          categorySales[category] += productSalesData.sales;
+        }
+      });
+
+      const totalCategorySales = Object.values(categorySales).reduce(
+        (sum, sales) => sum + sales,
+        0
+      );
+      const salesByCategory = Object.entries(categorySales)
+        .map(([category, amount]) => ({
+          category,
+          amount,
+          percentage:
+            totalCategorySales > 0 ? (amount / totalCategorySales) * 100 : 0,
+        }))
+        .sort((a, b) => b.amount - a.amount);
+
+      const totalSales = filteredSales.reduce(
+        (sum, sale) => sum + (sale.totalAmount || sale.total_amount || 0),
+        0
+      );
+      const totalTransactions = filteredSales.length;
+      const averageOrderValue =
+        totalTransactions > 0 ? totalSales / totalTransactions : 0;
+
+      setReportData((prev) => ({
+        ...prev,
+        overview: {
+          totalSales,
+          totalTransactions,
+          totalCustomers: customers.length,
+          averageOrderValue,
+          topProducts,
+          salesByCategory,
+        },
+      }));
+    } catch (error) {
+      console.error("Error loading overview data:", error);
+    }
+  };
+
+  const loadSalesData = async () => {
+    try {
+      const salesReport = await dataService.reports.getSalesReport(
+        dateRange.startDate,
+        dateRange.endDate
+      );
+
+      setReportData((prev) => ({
+        ...prev,
+        sales: {
+          dailySales: salesReport.dailySales || [],
+          monthlySales: [], // Would need historical data
+        },
+      }));
+    } catch (error) {
+      console.error("Error loading sales data:", error);
+    }
+  };
+
+  const loadInventoryData = async () => {
+    try {
+      const inventoryReport = await dataService.reports.getInventoryReport();
+
+      setReportData((prev) => ({
+        ...prev,
+        inventory: inventoryReport,
+      }));
+    } catch (error) {
+      console.error("Error loading inventory data:", error);
+    }
+  };
+
+  const loadCustomerData = async () => {
+    try {
+      const customerReport = await dataService.reports.getCustomerReport();
+
+      setReportData((prev) => ({
+        ...prev,
+        customers: customerReport,
+      }));
+    } catch (error) {
+      console.error("Error loading customer data:", error);
+    }
+  };
 
   const reportTypes = [
     {
@@ -189,7 +292,6 @@ function Reports() {
       setLoading(false);
     }, 1500);
   };
-
   const handleExportReport = (format) => {
     const currentData = reportData[selectedReport];
     let exportData = [];
@@ -200,49 +302,55 @@ function Reports() {
         exportData = [
           {
             Metric: "Total Sales",
-            Value: `₦${currentData.totalSales.toLocaleString()}`,
+            Value: `₦${(currentData.totalSales || 0).toLocaleString()}`,
           },
           {
             Metric: "Total Transactions",
-            Value: currentData.totalTransactions,
+            Value: currentData.totalTransactions || 0,
           },
-          { Metric: "Total Customers", Value: currentData.totalCustomers },
+          { Metric: "Total Customers", Value: currentData.totalCustomers || 0 },
           {
             Metric: "Average Order Value",
-            Value: `₦${currentData.averageOrderValue.toFixed(2)}`,
+            Value: `₦${(currentData.averageOrderValue || 0).toFixed(2)}`,
           },
-          ...currentData.topProducts.map((product) => ({
+          ...(currentData.topProducts || []).map((product) => ({
             Metric: `Top Product - ${product.name}`,
-            Value: `₦${product.sales.toLocaleString()} (${product.quantity} units)`,
+            Value: `₦${(product.sales || 0).toLocaleString()} (${product.quantity || 0} units)`,
           })),
         ];
         break;
       case "sales":
-        exportData = currentData.dailySales.map((sale) => ({
+        exportData = (currentData.dailySales || []).map((sale) => ({
           Date: sale.date,
-          Amount: `₦${sale.amount.toLocaleString()}`,
-          Transactions: sale.transactions,
+          Amount: `₦${(sale.amount || 0).toLocaleString()}`,
+          Transactions: sale.transactions || 0,
         }));
         break;
       case "inventory":
         exportData = [
-          { Category: "In Stock", Count: currentData.stockStatus.inStock },
-          { Category: "Low Stock", Count: currentData.stockStatus.lowStock },
+          {
+            Category: "In Stock",
+            Count: currentData.stockStatus?.inStock || 0,
+          },
+          {
+            Category: "Low Stock",
+            Count: currentData.stockStatus?.lowStock || 0,
+          },
           {
             Category: "Out of Stock",
-            Count: currentData.stockStatus.outOfStock,
+            Count: currentData.stockStatus?.outOfStock || 0,
           },
           {
             Category: "Total Products",
-            Count: currentData.stockStatus.totalProducts,
+            Count: currentData.stockStatus?.totalProducts || 0,
           },
         ];
         break;
       case "customers":
-        exportData = currentData.topCustomers.map((customer) => ({
+        exportData = (currentData.topCustomers || []).map((customer) => ({
           "Customer Name": customer.name,
-          "Total Spent": `₦${customer.totalSpent.toLocaleString()}`,
-          Visits: customer.visits,
+          "Total Spent": `₦${(customer.totalSpent || 0).toLocaleString()}`,
+          Visits: customer.visits || 0,
         }));
         break;
     }
@@ -303,7 +411,7 @@ function Reports() {
             <div
               style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{reportData.overview.totalSales.toLocaleString()}
+              ₦{(reportData.overview.totalSales || 0).toLocaleString()}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Total Sales
@@ -364,7 +472,7 @@ function Reports() {
             <div
               style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{reportData.overview.averageOrderValue.toFixed(0)}
+              ₦{(reportData.overview.averageOrderValue || 0).toFixed(0)}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Avg Order Value
@@ -414,7 +522,7 @@ function Reports() {
                 </div>
               </div>
               <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                ₦{product.sales.toLocaleString()}
+                ₦{(product.sales || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -476,7 +584,7 @@ function Reports() {
                   {category.percentage}%
                 </span>
                 <span style={{ fontWeight: "bold", color: "#1f2937" }}>
-                  ₦{category.amount.toLocaleString()}
+                  ₦{(category.amount || 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -542,7 +650,7 @@ function Reports() {
                   paddingBottom: "4px",
                 }}
               >
-                ₦{(day.amount / 1000).toFixed(1)}k
+                ₦{((day.amount || 0) / 1000).toFixed(1)}k
               </div>
               <div style={{ fontSize: "10px", color: "#6b7280" }}>
                 {new Date(day.date).toLocaleDateString("en-US", {
@@ -615,7 +723,7 @@ function Reports() {
                   color: "#10b981",
                 }}
               >
-                ₦{month.amount.toLocaleString()}
+                ₦{(month.amount || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -978,7 +1086,7 @@ function Reports() {
                 </div>
               </div>
               <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                ₦{customer.totalSpent.toLocaleString()}
+                ₦{(customer.totalSpent || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -1059,7 +1167,7 @@ function Reports() {
           <div
             style={{ fontSize: "20px", fontWeight: "bold", color: "#10b981" }}
           >
-            ₦{sectionData.quickStats.todayRevenue.toLocaleString()}
+            ₦{(sectionData.quickStats.todayRevenue || 0).toLocaleString()}
           </div>
           <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
             Today's Revenue
@@ -1429,7 +1537,7 @@ function Reports() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦{product.revenue.toLocaleString()}
+                    ₦{(product.revenue || 0).toLocaleString()}
                   </div>
                   <div
                     style={{
@@ -1512,7 +1620,7 @@ function Reports() {
                     marginTop: "4px",
                   }}
                 >
-                  ₦{category.revenue.toLocaleString()}
+                  ₦{(category.revenue || 0).toLocaleString()}
                 </div>
               </div>
             ))}

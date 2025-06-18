@@ -1,50 +1,69 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiArrowLeft, FiShoppingCart } from 'react-icons/fi';
-import { mockData, mockHelpers } from '../lib/mockData';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiSearch, FiArrowLeft, FiShoppingCart } from "react-icons/fi";
+import { dataService } from "../services";
+
+// Helper function to format currency
+const formatCurrency = (amount) => {
+  return `₦${(amount || 0).toFixed(2)}`;
+};
 
 function Refunds() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);
-  const [refundReason, setRefundReason] = useState('');
+  const [refundReason, setRefundReason] = useState("");
   const [selectedItems, setSelectedItems] = useState([]);
+  const [products, setProducts] = useState([]);
+
+  // Load products for reference
+  useEffect(() => {
+    const loadProducts = async () => {
+      try {
+        const productsData = await dataService.products.getAll();
+        setProducts(productsData || []);
+      } catch (error) {
+        console.error("❌ [Refunds] Error loading products:", error);
+      }
+    };
+    loadProducts();
+  }, []);
 
   const handleSearch = () => {
-    // In a real app, this would search the backend
-    const found = mockData.recentTransactions.find(
-      t => t.id.toString() === searchTerm && t.status === 'completed'
-    );
-    
-    if (found) {
-      setSelectedTransaction({
-        ...found,
-        items: [
-          {
-            id: 1,
-            name: 'Paracetamol',
-            quantity: 2,
-            price: 10.00,
-            total: 20.00
-          },
-          {
-            id: 2,
-            name: 'Amoxicillin',
-            quantity: 1,
-            price: 15.50,
-            total: 15.50
-          }
-        ]
-      });
+    console.log("🔍 [Refunds] Searching for transaction:", searchTerm);
+
+    // TODO: Replace with actual sales/transaction search when sales system is implemented
+    // For now, create a mock transaction based on available products
+    if (searchTerm && products.length > 0) {
+      const mockTransaction = {
+        id: searchTerm,
+        transactionNumber: `TXN-${searchTerm}`,
+        date: new Date().toISOString(),
+        amount: 50.0,
+        status: "completed",
+        items: products.slice(0, 2).map((product, index) => ({
+          id: product.id,
+          name: product.name,
+          quantity: 1 + index,
+          price: product.price || 10,
+          total: (product.price || 10) * (1 + index),
+        })),
+      };
+
+      setSelectedTransaction(mockTransaction);
+      console.log("✅ [Refunds] Mock transaction created:", mockTransaction);
     } else {
       setSelectedTransaction(null);
+      console.log(
+        "❌ [Refunds] Transaction not found or no products available"
+      );
     }
   };
 
   const handleItemSelect = (item) => {
-    const existing = selectedItems.find(i => i.id === item.id);
+    const existing = selectedItems.find((i) => i.id === item.id);
     if (existing) {
-      setSelectedItems(selectedItems.filter(i => i.id !== item.id));
+      setSelectedItems(selectedItems.filter((i) => i.id !== item.id));
     } else {
       setSelectedItems([...selectedItems, item]);
     }
@@ -61,23 +80,24 @@ function Refunds() {
       date: new Date().toISOString(),
       items: selectedItems,
       reason: refundReason,
-      amount: selectedItems.reduce((sum, item) => sum + item.total, 0)
+      amount: selectedItems.reduce((sum, item) => sum + item.total, 0),
     };
 
     // In a real app, this would be sent to the backend
-    console.log('Processing refund:', refund);
-    
+    console.log("Processing refund:", refund);
+
     // Reset form
     setSelectedTransaction(null);
     setSelectedItems([]);
-    setRefundReason('');
-    setSearchTerm('');
+    setRefundReason("");
+    setSearchTerm("");
   };
 
-  return (    <div className="p-6 max-w-[1600px] mx-auto">
+  return (
+    <div className="p-6 max-w-[1600px] mx-auto">
       <div className="flex items-center gap-4 mb-6">
         <button
-          onClick={() => navigate('/sales')}
+          onClick={() => navigate("/sales")}
           className="btn btn-icon"
           title="Go Back"
         >
@@ -87,7 +107,7 @@ function Refunds() {
           Process Refund
         </h2>
         <button
-          onClick={() => navigate('/pos')}
+          onClick={() => navigate("/pos")}
           className="btn btn-outline btn-sm flex items-center gap-2"
         >
           <FiShoppingCart />
@@ -98,7 +118,8 @@ function Refunds() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Search Section */}
         <div className="bg-[var(--color-bg-card)] p-4 rounded-lg shadow-[var(--shadow-card)]">
-          <h3 className="font-semibold mb-4">Find Transaction</h3>          <div className="flex gap-2">
+          <h3 className="font-semibold mb-4">Find Transaction</h3>{" "}
+          <div className="flex gap-2">
             <div className="flex-1 relative min-w-[300px]">
               <FiSearch className="absolute left-10 top-1/2 transform -translate-y-1/2 text-black-400 pointer-events-none" />
               <input
@@ -109,10 +130,7 @@ function Refunds() {
                 className="form-input w-full pl-10 pr-4 py-2"
               />
             </div>
-            <button
-              onClick={handleSearch}
-              className="btn btn-primary"
-            >
+            <button onClick={handleSearch} className="btn btn-primary">
               Search
             </button>
           </div>
@@ -140,9 +158,7 @@ function Refunds() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-500">Total Amount</span>
-                  <span>
-                    {mockHelpers.formatCurrency(selectedTransaction.amount)}
-                  </span>
+                  <span>{formatCurrency(selectedTransaction.amount)}</span>
                 </div>
               </div>
             </div>
@@ -170,18 +186,22 @@ function Refunds() {
                         <td className="py-3 px-4">
                           <input
                             type="checkbox"
-                            checked={selectedItems.some(i => i.id === item.id)}
+                            checked={selectedItems.some(
+                              (i) => i.id === item.id
+                            )}
                             onChange={() => handleItemSelect(item)}
                             className="form-checkbox"
                           />
                         </td>
                         <td className="py-3 px-4">{item.name}</td>
                         <td className="py-3 px-4 text-right">
-                          {mockHelpers.formatCurrency(item.price)}
+                          {formatCurrency(item.price)}
                         </td>
-                        <td className="py-3 px-4 text-right">{item.quantity}</td>
                         <td className="py-3 px-4 text-right">
-                          {mockHelpers.formatCurrency(item.total)}
+                          {item.quantity}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {formatCurrency(item.total)}
                         </td>
                       </tr>
                     ))}
@@ -210,7 +230,7 @@ function Refunds() {
                   <div>
                     <div className="text-sm text-gray-500">Refund Amount</div>
                     <div className="text-xl font-semibold">
-                      {mockHelpers.formatCurrency(
+                      {formatCurrency(
                         selectedItems.reduce((sum, item) => sum + item.total, 0)
                       )}
                     </div>

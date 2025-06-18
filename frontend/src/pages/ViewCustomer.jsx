@@ -686,7 +686,7 @@ function ViewCustomer() {
                     color: "#10b981",
                   }}
                 >
-                  ₦{purchase.total.toFixed(2)}
+                  ₦{(purchase.total || 0).toFixed(2)}
                 </div>
               </div>
 
@@ -718,7 +718,7 @@ function ViewCustomer() {
                       </span>
                     </div>
                     <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                      {item.quantity} × ₦{item.price.toFixed(2)}
+                      {item.quantity} × ₦{(item.price || 0).toFixed(2)}
                     </div>
                   </div>
                 ))}

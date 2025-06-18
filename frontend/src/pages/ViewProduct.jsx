@@ -17,7 +17,8 @@ import {
   FiUser,
   FiMapPin,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../lib/mockData";
+import { dataService } from "../services";
+import { useProductsStore } from "../store";
 
 function ViewProduct() {
   const { id } = useParams();
@@ -53,14 +54,20 @@ function ViewProduct() {
     profitMargin: 29.4,
     demandTrend: "increasing",
   });
-
   useEffect(() => {
-    // Simulate API call to get product details
-    setTimeout(() => {
-      const foundProduct = mockHelpers.getProductById(id);
-      setProduct(foundProduct);
-      setLoading(false);
-    }, 1000);
+    // Load product details from data service
+    const loadProduct = async () => {
+      try {
+        const foundProduct = await dataService.products.getById(id);
+        setProduct(foundProduct);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error loading product:", error);
+        setLoading(false);
+      }
+    };
+
+    loadProduct();
   }, [id]);
 
   if (loading) {
@@ -250,21 +257,20 @@ function ViewProduct() {
           }}
         >
           Pricing & Stock
-        </h3>
-
+        </h3>{" "}
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "#6b7280" }}>Selling Price:</span>
             <span
               style={{ fontWeight: "600", color: "#10b981", fontSize: "16px" }}
             >
-              ₦{product.price.toFixed(2)}
+              ₦{(product.price || 0).toFixed(2)}
             </span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
             <span style={{ color: "#6b7280" }}>Cost Price:</span>
             <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦{product.costPrice.toFixed(2)}
+              ₦{(product.costPrice || product.cost_price || 0).toFixed(2)}
             </span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
@@ -286,9 +292,13 @@ function ViewProduct() {
             </span>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Total Value:</span>
+            <span style={{ color: "#6b7280" }}>Total Value:</span>{" "}
             <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦{(product.quantity * product.costPrice).toLocaleString()}
+              ₦
+              {(
+                (product.quantity || 0) *
+                (product.costPrice || product.cost_price || 0)
+              ).toLocaleString()}
             </span>
           </div>
         </div>
@@ -364,11 +374,11 @@ function ViewProduct() {
             <FiDollarSign
               size={24}
               style={{ color: "#3b82f6", marginBottom: "8px" }}
-            />
+            />{" "}
             <div
               style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{productAnalytics.totalRevenue.toFixed(2)}
+              ₦{(productAnalytics.totalRevenue || 0).toFixed(2)}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Total Revenue
@@ -389,7 +399,7 @@ function ViewProduct() {
             <div
               style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{productAnalytics.totalProfit.toFixed(2)}
+              ₦{(productAnalytics.totalProfit || 0).toFixed(2)}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Total Profit
@@ -619,7 +629,7 @@ function ViewProduct() {
                     fontWeight: "600",
                   }}
                 >
-                  ₦{sale.revenue.toFixed(2)}
+                  ₦{(sale.revenue || 0).toFixed(2)}
                 </td>
                 <td
                   style={{
@@ -628,7 +638,7 @@ function ViewProduct() {
                     fontWeight: "600",
                   }}
                 >
-                  ₦{sale.profit.toFixed(2)}
+                  ₦{(sale.profit || 0).toFixed(2)}
                 </td>
               </tr>
             ))}
@@ -678,9 +688,9 @@ function ViewProduct() {
               <div style={{ fontSize: "12px", color: "#6b7280" }}>
                 {customer.purchases} purchases
               </div>
-            </div>
+            </div>{" "}
             <div style={{ fontWeight: "bold", color: "#10b981" }}>
-              ₦{customer.totalSpent.toFixed(2)}
+              ₦{(customer.totalSpent || 0).toFixed(2)}
             </div>
           </div>
         ))}

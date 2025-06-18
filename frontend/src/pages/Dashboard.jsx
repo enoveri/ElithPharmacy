@@ -12,49 +12,65 @@ import {
   FiArrowDown,
   FiPlus,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../lib/mockData";
-import { dbHelpers } from "../lib/db"
+import { dataService } from "../services";
+import { useNotificationsStore } from "../store";
 
 const Dashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
   const [recentSales, setRecentSales] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [topCustomers, setTopCustomers] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    todaysSales: 0,
+    todaysTransactions: 0,
+    totalProducts: 0,
+    totalCustomers: 0,
+    lowStockItems: 0,
+    monthlyRevenue: 0,
+    monthlyGrowth: 0,
+  });
   const [loading, setLoading] = useState(true);
+  const { fetchNotifications } = useNotificationsStore();
 
-  // Use centralized mock data
-  const stats = mockData.dashboardStats;
-  
-  // Fetch data using async functions
+  // Fetch data using the unified data service
   useEffect(() => {
     async function fetchData() {
       try {
         setLoading(true);
-        
-        // Fetch data in parallel
-        const [salesData, stockData, customerData] = await Promise.all([
-          dbHelpers.getRecentSales(3),
-          mockHelpers.getLowStockProducts(),
-          dbHelpers.getTopCustomers(3)
+
+        // Fetch all dashboard data in parallel
+        const [stats, salesData, stockData, customerData] = await Promise.all([
+          dataService.dashboard.getStats(),
+          dataService.sales.getRecent(3),
+          dataService.products.getLowStock(),
+          dataService.customers.getTop(3),
         ]);
-        
+
+        setDashboardStats(stats);
         setRecentSales(salesData || []);
-        setLowStockProducts(stockData);
-        setTopCustomers(customerData);
+        setLowStockProducts(stockData || []);
+        setTopCustomers(customerData || []);
+
+        // Also fetch notifications
+        fetchNotifications();
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        
-        // Fallback to mock data if there's an error
-        setRecentSales(mockHelpers.getRecentSales(3));
-        setLowStockProducts(mockHelpers.getLowStockProducts());
-        setTopCustomers(mockHelpers.getTopCustomers(3));
+        // You could show a toast notification here
       } finally {
         setLoading(false);
       }
     }
-    
+
     fetchData();
-  }, []);
+  }, [fetchNotifications]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -125,7 +141,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Key Metrics using mockData.dashboardStats */}
+      {/* Key Metrics from database */}
       <div
         style={{
           display: "grid",
@@ -174,7 +190,7 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                ₦{stats.todaysSales.toLocaleString()}
+                ₦{(dashboardStats.todaysSales || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -220,7 +236,7 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                {stats.todaysTransactions}
+                {dashboardStats.todaysTransactions}
               </div>
             </div>
           </div>
@@ -266,7 +282,7 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                {stats.totalCustomers}
+                {dashboardStats.totalCustomers}
               </div>
             </div>
           </div>
@@ -312,7 +328,7 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                {stats.lowStockItems}
+                {dashboardStats.lowStockItems}
               </div>
             </div>
           </div>
@@ -351,7 +367,9 @@ const Dashboard = () => {
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
             {loading ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                Loading...
+              </div>
             ) : recentSales.length > 0 ? (
               recentSales.map((sale, index) => (
                 <div
@@ -372,14 +390,16 @@ const Dashboard = () => {
                     <div style={{ fontSize: "12px", color: "#6b7280" }}>
                       {new Date(sale.date).toLocaleDateString()}
                     </div>
-                  </div>
+                  </div>{" "}
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦{(sale.total_amount || sale.totalAmount).toFixed(2)}
+                    ₦{(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ textAlign: "center", padding: "20px" }}>No recent sales found</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                No recent sales found
+              </div>
             )}
           </div>
         </div>
@@ -407,7 +427,9 @@ const Dashboard = () => {
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
             {loading ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                Loading...
+              </div>
             ) : lowStockProducts.length > 0 ? (
               lowStockProducts.slice(0, 3).map((product, index) => (
                 <div
@@ -427,7 +449,8 @@ const Dashboard = () => {
                       {product.name}
                     </div>
                     <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                      Min: {product.min_stock_level || product.minStockLevel} units
+                      Min: {product.min_stock_level || product.minStockLevel}{" "}
+                      units
                     </div>
                   </div>
                   <div
@@ -442,7 +465,9 @@ const Dashboard = () => {
                 </div>
               ))
             ) : (
-              <div style={{ textAlign: "center", padding: "20px" }}>No low stock items found</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                No low stock items found
+              </div>
             )}
           </div>
         </div>
@@ -523,7 +548,9 @@ const Dashboard = () => {
             style={{ display: "flex", flexDirection: "column", gap: "12px" }}
           >
             {loading ? (
-              <div style={{ textAlign: "center", padding: "20px" }}>Loading...</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                Loading...
+              </div>
             ) : topCustomers.length > 0 ? (
               topCustomers.map((customer, index) => (
                 <div
@@ -539,19 +566,28 @@ const Dashboard = () => {
                 >
                   <div>
                     <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                      {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
+                      {customer.first_name || customer.firstName}{" "}
+                      {customer.last_name || customer.lastName}
                     </div>
                     <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                      {customer.total_purchases || customer.totalPurchases} purchases
+                      {customer.total_purchases || customer.totalPurchases}{" "}
+                      purchases
                     </div>
-                  </div>
+                  </div>{" "}
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦{(customer.total_spent || customer.totalSpent).toLocaleString()}
+                    ₦
+                    {(
+                      customer.total_spent ||
+                      customer.totalSpent ||
+                      0
+                    ).toLocaleString()}
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ textAlign: "center", padding: "20px" }}>No customer data found</div>
+              <div style={{ textAlign: "center", padding: "20px" }}>
+                No customer data found
+              </div>
             )}
           </div>
         </div>

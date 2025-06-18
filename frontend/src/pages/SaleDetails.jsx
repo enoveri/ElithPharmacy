@@ -18,7 +18,8 @@ import {
   FiMessageCircle,
   FiX,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../lib/mockData";
+import { dataService } from "../services";
+import { useSalesStore } from "../store";
 
 function SaleDetails() {
   const { id } = useParams();
@@ -32,38 +33,55 @@ function SaleDetails() {
   const [sharingMethod, setSharingMethod] = useState(""); // 'whatsapp' or 'email'
 
   useEffect(() => {
-    try {
-      setLoading(true);
+    const loadSaleDetails = async () => {
+      try {
+        setLoading(true);
 
-      // Find the sale by ID
-      const foundSale = mockData.sales.find((s) => s.id === parseInt(id));
+        // Find the sale by ID
+        const foundSale = await dataService.sales.getById(id);
 
-      if (!foundSale) {
-        setError("Sale not found");
+        if (!foundSale) {
+          setError("Sale not found");
+          setLoading(false);
+          return;
+        }
+        setSale(foundSale);
+
+        // Transform sale data to match expected format if needed
+        if (foundSale.sale_items && !foundSale.items) {
+          foundSale.items = foundSale.sale_items;
+        }
+
+        // Get customer details if available
+        if (foundSale.customerId || foundSale.customer_id) {
+          const customerId = foundSale.customerId || foundSale.customer_id;
+          const foundCustomer = await dataService.customers.getById(customerId);
+          setCustomer(foundCustomer);
+        }
+
+        setError(null);
+      } catch (err) {
+        console.error("Error loading sale details:", err);
+        setError("Failed to load sale details");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      setSale(foundSale);
-
-      // Get customer details if available
-      if (foundSale.customerId) {
-        const foundCustomer = mockHelpers.getCustomerById(foundSale.customerId);
-        setCustomer(foundCustomer);
-      }
-
-      setError(null);
-    } catch (err) {
-      console.error("Error loading sale details:", err);
-      setError("Failed to load sale details");
-    } finally {
-      setLoading(false);
-    }
+    };
+    loadSaleDetails();
   }, [id]);
+  const getProductName = (productId, saleItem = null) => {
+    // If the sale item has product information from the join, use it
+    if (saleItem && saleItem.products && saleItem.products.name) {
+      return saleItem.products.name;
+    }
 
-  const getProductName = (productId) => {
-    const product = mockHelpers.getProductById(productId);
-    return product ? product.name : "Unknown Product";
+    // Fallback to the item's product name if available directly
+    if (saleItem && saleItem.productName) {
+      return saleItem.productName;
+    }
+
+    // Last resort fallback
+    return `Product #${productId}`;
   };
 
   const handlePrint = () => {
@@ -75,30 +93,27 @@ function SaleDetails() {
     const receiptContent = `
       ELITH PHARMACY
       ===============
+        Transaction: ${sale.transactionNumber || sale.transaction_number || "N/A"}
+      Date: ${sale.date ? new Date(sale.date).toLocaleDateString() : "N/A"}
+      Time: ${sale.date ? new Date(sale.date).toLocaleTimeString() : "N/A"}
       
-      Transaction: ${sale.transactionNumber}
-      Date: ${new Date(sale.date).toLocaleDateString()}
-      Time: ${new Date(sale.date).toLocaleTimeString()}
-      
-      ${customer ? `Customer: ${customer.firstName} ${customer.lastName}` : "Customer: Walk-in"}
+      ${customer ? `Customer: ${customer.firstName || customer.first_name || ""} ${customer.lastName || customer.last_name || ""}`.trim() : "Customer: Walk-in"}
       
       ITEMS:
       ------
       ${sale.items
         .map(
           (item) =>
-            `${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`
+            `${getProductName(item.productId || item.product_id, item)} x${item.quantity || 0} - ₦${(item.total || 0).toFixed(2)}`
         )
         .join("\n")}
       
-      ------
-      Subtotal: ₦${sale.subtotal.toFixed(2)}
-      Tax: ₦${sale.tax.toFixed(2)}
-      ${sale.discount > 0 ? `Discount: -₦${sale.discount.toFixed(2)}` : ""}
-      Total: ₦${sale.totalAmount.toFixed(2)}
-      
-      Payment Method: ${sale.paymentMethod.toUpperCase()}
-      Status: ${sale.status.toUpperCase()}
+      ------      Subtotal: ₦${(sale.subtotal || 0).toFixed(2)}
+      Tax: ₦${(sale.tax || 0).toFixed(2)}
+      ${(sale.discount || 0) > 0 ? `Discount: -₦${(sale.discount || 0).toFixed(2)}` : ""}
+      Total: ₦${(sale.totalAmount || 0).toFixed(2)}
+        Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
+      Status: ${(sale.status || "N/A").toUpperCase()}
       
       Thank you for your business!
     `;
@@ -250,9 +265,8 @@ function SaleDetails() {
                     (item) => `
                   <tr>
                     <td>${getProductName(item.productId)}</td>
-                    <td>${item.quantity}</td>
-                    <td>₦${item.price.toFixed(2)}</td>
-                    <td>₦${item.total.toFixed(2)}</td>
+                    <td>${item.quantity}</td>                    <td>₦{(item.price || 0).toFixed(2)}</td>
+                    <td>₦{(item.total || 0).toFixed(2)}</td>
                   </tr>
                 `
                   )
@@ -260,28 +274,27 @@ function SaleDetails() {
               </tbody>
             </table>
 
-            <div class="totals">
-              <div class="total-row">
+            <div class="totals">              <div class="total-row">
                 <span>Subtotal:</span>
-                <span>₦${sale.subtotal.toFixed(2)}</span>
+                <span>₦${(sale.subtotal || 0).toFixed(2)}</span>
               </div>
               <div class="total-row">
                 <span>Tax:</span>
-                <span>₦${sale.tax.toFixed(2)}</span>
+                <span>₦${(sale.tax || 0).toFixed(2)}</span>
               </div>
               ${
-                sale.discount > 0
+                (sale.discount || 0) > 0
                   ? `
                 <div class="total-row">
                   <span>Discount:</span>
-                  <span>-₦${sale.discount.toFixed(2)}</span>
+                  <span>-₦${(sale.discount || 0).toFixed(2)}</span>
                 </div>
               `
                   : ""
               }
               <div class="total-row final">
                 <span>TOTAL:</span>
-                <span>₦${sale.totalAmount.toFixed(2)}</span>
+                <span>₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -320,7 +333,7 @@ function SaleDetails() {
     setGeneratingPDF(true);
 
     try {
-      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ₦${sale.totalAmount.toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName} ${customer.lastName}\n` : ""}Items:\n${sale.items.map((item) => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
+      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ₦${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
 
       const phoneNumber = customer?.phone?.replace(/[^\d]/g, "") || "";
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -350,19 +363,19 @@ function SaleDetails() {
 Thank you for your purchase at Elith Pharmacy!
 
 RECEIPT DETAILS:
-Receipt Number: ${sale.transactionNumber}
+Receipt Number: ${sale.transactionNumber || sale.transaction_number || "N/A"}
 Date: ${new Date(sale.date).toLocaleDateString()}
 Time: ${new Date(sale.date).toLocaleTimeString()}
 
 ITEMS PURCHASED:
-${sale.items.map((item) => `• ${getProductName(item.productId)} x${item.quantity} - ₦${item.total.toFixed(2)}`).join("\n")}
+${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ₦${(item.total || 0).toFixed(2)}`).join("\n")}
 
 PAYMENT SUMMARY:
-Subtotal: ₦${sale.subtotal.toFixed(2)}
-Tax: ₦${sale.tax.toFixed(2)}${sale.discount > 0 ? `\nDiscount: -₦${sale.discount.toFixed(2)}` : ""}
-TOTAL: ₦${sale.totalAmount.toFixed(2)}
+Subtotal: ₦${(sale.subtotal || 0).toFixed(2)}
+Tax: ₦${(sale.tax || 0).toFixed(2)}${(sale.discount || 0) > 0 ? `\nDiscount: -₦${(sale.discount || 0).toFixed(2)}` : ""}
+TOTAL: ₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
 
-Payment Method: ${sale.paymentMethod.toUpperCase()}
+Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
 
 We appreciate your business and look forward to serving you again!
 
@@ -460,6 +473,57 @@ Email: info@elithpharmacy.com`;
           <FiArrowLeft size={16} />
           Back to Sales
         </button>
+      </div>
+    );
+  }
+
+  // Safety check - ensure sale data exists before rendering
+  if (!sale) {
+    return (
+      <div
+        style={{
+          padding: "24px",
+          backgroundColor: "#f8fafc",
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <FiAlertCircle
+            size={64}
+            style={{ color: "#ef4444", marginBottom: "16px" }}
+          />
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#374151",
+              marginBottom: "8px",
+            }}
+          >
+            Sale Not Found
+          </h2>
+          <p style={{ color: "#6b7280", marginBottom: "24px" }}>
+            The requested sale could not be loaded.
+          </p>
+          <button
+            onClick={() => navigate("/sales")}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Back to Sales
+          </button>
+        </div>
       </div>
     );
   }
@@ -775,7 +839,7 @@ Email: info@elithpharmacy.com`;
                   </tr>
                 </thead>
                 <tbody>
-                  {sale.items.map((item, index) => (
+                  {(sale.items || sale.sale_items || []).map((item, index) => (
                     <tr
                       key={index}
                       style={{ borderBottom: "1px solid #f3f4f6" }}
@@ -787,7 +851,10 @@ Email: info@elithpharmacy.com`;
                             color: "#1f2937",
                           }}
                         >
-                          {getProductName(item.productId)}
+                          {getProductName(
+                            item.productId || item.product_id,
+                            item
+                          )}
                         </div>
                       </td>
                       <td
@@ -797,7 +864,7 @@ Email: info@elithpharmacy.com`;
                           color: "#6b7280",
                         }}
                       >
-                        ₦{item.price.toFixed(2)}
+                        ₦{(item.price || 0).toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -816,7 +883,7 @@ Email: info@elithpharmacy.com`;
                           color: "#1f2937",
                         }}
                       >
-                        ₦{item.total.toFixed(2)}
+                        ₦{(item.total || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -904,7 +971,7 @@ Email: info@elithpharmacy.com`;
                       fontSize: "18px",
                     }}
                   >
-                    ₦{sale.totalAmount.toFixed(2)}
+                    ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                   </div>
                 </div>
               </div>
@@ -942,24 +1009,24 @@ Email: info@elithpharmacy.com`;
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Subtotal:</span>
+                <span style={{ color: "#6b7280" }}>Subtotal:</span>{" "}
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{sale.subtotal.toFixed(2)}
+                  ₦{(sale.subtotal || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Tax:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{sale.tax.toFixed(2)}
+                  ₦{(sale.tax || 0).toFixed(2)}
                 </span>
               </div>
-              {sale.discount > 0 && (
+              {(sale.discount || 0) > 0 && (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
                 >
-                  <span style={{ color: "#6b7280" }}>Discount:</span>
+                  <span style={{ color: "#6b7280" }}>Discount:</span>{" "}
                   <span style={{ fontWeight: "600", color: "#ef4444" }}>
-                    -₦{sale.discount.toFixed(2)}
+                    -₦{(sale.discount || 0).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -987,7 +1054,7 @@ Email: info@elithpharmacy.com`;
                     color: "#10b981",
                   }}
                 >
-                  ₦{sale.totalAmount.toFixed(2)}
+                  ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                 </span>
               </div>
             </div>

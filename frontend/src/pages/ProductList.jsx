@@ -24,13 +24,14 @@ import {
   transformImportedProductData,
 } from "../utils/importUtils";
 import ImportModal from "../components/ImportModal";
-import { mockData, mockHelpers } from "../lib/mockData";
+import { dataService } from "../services";
 
 // Product List page
 function ProductList() {
   const navigate = useNavigate();
   const location = useLocation();
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -38,23 +39,46 @@ function ProductList() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showImportModal, setShowImportModal] = useState(false);
 
-  // Use centralized categories
-  const categories = mockData.categories.map((cat) => cat.name);
-
   useEffect(() => {
-    // Simulate API call using centralized mock data
-    setTimeout(() => {
-      setProducts(mockData.products);
-      setFilteredProducts(mockData.products);
-      setLoading(false);
-    }, 1000);
+    const loadData = async () => {
+      try {
+        console.log("🔄 [ProductList] Loading products and categories...");
+        setLoading(true);
+
+        const [productsData, categoriesData] = await Promise.all([
+          dataService.products.getAll(),
+          dataService.categories.getAll().catch(() => []),
+        ]);
+
+        console.log(
+          "✅ [ProductList] Products loaded:",
+          productsData?.length || 0
+        );
+        console.log(
+          "✅ [ProductList] Categories loaded:",
+          categoriesData?.length || 0
+        );
+
+        setProducts(productsData || []);
+        setFilteredProducts(productsData || []);
+
+        // Extract category names
+        const categoryNames = categoriesData.map((cat) => cat.name || cat);
+        setCategories(categoryNames);
+      } catch (error) {
+        console.error("❌ [ProductList] Error loading data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
 
     // Show success message if coming from edit/add
     if (location.state?.message) {
-      // You can implement a toast notification here
       console.log(location.state.message);
     }
-  }, []);
+  }, [location.state]);
 
   useEffect(() => {
     let filtered = products;
@@ -84,10 +108,12 @@ function ProductList() {
 
     setFilteredProducts(filtered);
   }, [searchTerm, selectedCategory, selectedStatus, products]);
-
   const getStockStatus = (product) => {
-    if (product.quantity === 0) return "out-of-stock";
-    if (product.quantity <= product.minStockLevel) return "low-stock";
+    const quantity = product.quantity || 0;
+    const minStockLevel = product.minStockLevel || product.min_stock_level || 0;
+
+    if (quantity === 0) return "out-of-stock";
+    if (quantity <= minStockLevel) return "low-stock";
     return "in-stock";
   };
 
@@ -141,20 +167,51 @@ function ProductList() {
         exportToCSV(exportData, `${filename}.csv`);
     }
   };
-
   const handleImport = async (importedData) => {
-    // Simulate API call to import products
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      console.log("🔄 [ProductList] Starting product import...");
+      console.log("📥 [ProductList] Imported data:", importedData);
 
-    // Add imported products to existing list
-    const newProducts = importedData.map((product, index) => ({
-      ...product,
-      id: products.length + index + 1,
-      expiryDate: product.expiryDate || "2025-12-31",
-    }));
+      // Process and create products in database
+      const createPromises = importedData.map(async (product) => {
+        const productForDb = {
+          name: product.name || "Unknown Product",
+          category: product.category || "Other",
+          manufacturer: product.manufacturer || "",
+          description: product.description || "",
+          costPrice: parseFloat(product.costPrice) || 0,
+          price: parseFloat(product.price) || 0,
+          quantity: parseInt(product.quantity) || 0,
+          minStockLevel: parseInt(product.minStockLevel) || 0,
+          expiryDate: product.expiryDate || null,
+          batchNumber: product.batchNumber || "",
+          barcode: product.barcode || "",
+          status: "active",
+        };
 
-    setProducts([...products, ...newProducts]);
-    setShowImportModal(false);
+        return dataService.products.create(productForDb);
+      });
+
+      const createdProducts = await Promise.all(createPromises);
+      const successfulImports = createdProducts.filter(Boolean);
+
+      console.log(
+        `✅ [ProductList] Successfully imported ${successfulImports.length} products`
+      );
+
+      // Refresh the products list
+      const updatedProducts = await dataService.products.getAll();
+      setProducts(updatedProducts || []);
+      setFilteredProducts(updatedProducts || []);
+
+      setShowImportModal(false);
+
+      // Show success message
+      alert(`Successfully imported ${successfulImports.length} products!`);
+    } catch (error) {
+      console.error("❌ [ProductList] Error importing products:", error);
+      alert("Error importing products. Please try again.");
+    }
   };
 
   if (loading) {
@@ -349,20 +406,25 @@ function ProductList() {
                         >
                           {product.category}
                         </span>
-                      </td>
+                      </td>{" "}
                       <td>
                         <div>
                           <div
                             className="font-semibold"
                             style={{ color: "var(--color-text-primary)" }}
                           >
-                            ₦{product.price.toFixed(2)}
+                            ₦{(product.price || 0).toFixed(2)}
                           </div>
                           <div
                             className="text-sm"
                             style={{ color: "var(--color-text-muted)" }}
                           >
-                            Cost: ₦{product.costPrice.toFixed(2)}
+                            Cost: ₦
+                            {(
+                              product.costPrice ||
+                              product.cost_price ||
+                              0
+                            ).toFixed(2)}
                           </div>
                         </div>
                       </td>

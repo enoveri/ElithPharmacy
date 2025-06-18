@@ -14,15 +14,22 @@ import {
   FiClock,
   FiExternalLink,
 } from "react-icons/fi";
-import { mockData, mockHelpers } from "../../lib/mockData";
+import { useNotificationsStore } from "../../store";
 
 const Header = () => {
   const [time, setTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
+  
+  // Use notification store
+  const { 
+    notifications, 
+    unreadCount, 
+    fetchNotifications, 
+    markAsRead, 
+    markAllAsRead 
+  } = useNotificationsStore();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -33,111 +40,17 @@ const Header = () => {
       clearInterval(timer);
     };
   }, []);
-
-  // Generate notifications based on mock data
+  // Fetch notifications on component mount
   useEffect(() => {
-    const generateNotifications = () => {
-      const lowStockProducts = mockHelpers.getLowStockProducts();
-      const recentSales = mockHelpers.getRecentSales(3);
-      const expiringProducts = mockHelpers.getExpiringProducts(30);
-      const expiredProducts = mockHelpers.getExpiredProducts();
-
-      const stockNotifications = lowStockProducts.map((product) => ({
-        id: `stock-${product.id}`,
-        type: product.quantity === 0 ? "critical" : "warning",
-        title: product.quantity === 0 ? "Out of Stock" : "Low Stock Alert",
-        message: `${product.name} has ${product.quantity === 0 ? "no stock remaining" : `only ${product.quantity} units left`}`,
-        timestamp: new Date(Date.now() - Math.random() * 3600000),
-        read: false,
-        icon: FiPackage,
-      }));
-
-      const salesNotifications = recentSales.map((sale) => ({
-        id: `sale-${sale.id}`,
-        type: "info",
-        title: "New Sale Completed",
-        message: `Transaction ${sale.transactionNumber} - ₦${sale.totalAmount.toFixed(2)}`,
-        timestamp: new Date(sale.date),
-        read: Math.random() > 0.5,
-        icon: FiCheckCircle,
-      }));
-
-      // Add expiry notifications
-      const expiryNotifications = expiringProducts.map((product) => {
-        const daysUntilExpiry = Math.ceil(
-          (new Date(product.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
-        );
-        return {
-          id: `expiry-${product.id}`,
-          type: daysUntilExpiry <= 7 ? "critical" : "warning",
-          title:
-            daysUntilExpiry <= 7
-              ? "Product Expiring Soon"
-              : "Product Expiry Warning",
-          message: `${product.name} expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? "" : "s"} (${new Date(product.expiryDate).toLocaleDateString()})`,
-          timestamp: new Date(Date.now() - Math.random() * 1800000), // Random time within last 30 minutes
-          read: false,
-          icon: FiClock,
-          expiryDate: product.expiryDate,
-          daysUntilExpiry: daysUntilExpiry,
-        };
-      });
-
-      // Add expired product notifications
-      const expiredNotifications = expiredProducts.map((product) => ({
-        id: `expired-${product.id}`,
-        type: "critical",
-        title: "Product Expired",
-        message: `${product.name} expired on ${new Date(product.expiryDate).toLocaleDateString()} - Remove from inventory`,
-        timestamp: new Date(product.expiryDate),
-        read: false,
-        icon: FiAlertTriangle,
-        expiryDate: product.expiryDate,
-      }));
-
-      // Add system notifications
-      const systemNotifications = [
-        {
-          id: "system-1",
-          type: "info",
-          title: "System Update",
-          message: "Inventory management system updated successfully",
-          timestamp: new Date(Date.now() - 7200000), // 2 hours ago
-          read: false,
-          icon: FiInfo,
-        },
-        {
-          id: "system-2",
-          type: "warning",
-          title: "Expiry Check Complete",
-          message: `${expiringProducts.length + expiredProducts.length} products require attention due to expiry dates`,
-          timestamp: new Date(Date.now() - 3600000), // 1 hour ago
-          read: false,
-          icon: FiClock,
-        },
-      ];
-
-      const allNotifications = [
-        ...stockNotifications,
-        ...salesNotifications,
-        ...expiryNotifications,
-        ...expiredNotifications,
-        ...systemNotifications,
-      ]
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-        .slice(0, 15); // Increased limit to accommodate expiry notifications
-
-      setNotifications(allNotifications);
-      setUnreadCount(allNotifications.filter((n) => !n.read).length);
+    fetchNotifications();
+    
+    // Set up periodic refresh
+    const refreshInterval = setInterval(fetchNotifications, 60000); // Refresh every minute
+    
+    return () => {
+      clearInterval(refreshInterval);
     };
-
-    generateNotifications();
-
-    // Update notifications every 30 seconds
-    const notificationTimer = setInterval(generateNotifications, 30000);
-
-    return () => clearInterval(notificationTimer);
-  }, []);
+  }, [fetchNotifications]);
 
   // Close notifications when clicking outside
   useEffect(() => {
@@ -158,25 +71,8 @@ const Header = () => {
     setShowNotifications(!showNotifications);
   };
 
-  const markAsRead = (notificationId) => {
-    setNotifications((prev) =>
-      prev.map((notification) =>
-        notification.id === notificationId
-          ? { ...notification, read: true }
-          : notification
-      )
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-    setUnreadCount(0);
-  };
-
   const clearAllNotifications = () => {
-    setNotifications([]);
-    setUnreadCount(0);
+    markAllAsRead();
     setShowNotifications(false);
   };
 
