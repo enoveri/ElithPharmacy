@@ -3,9 +3,13 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { FiArrowLeft, FiCheck, FiPackage } from "react-icons/fi";
 import { dataService } from "../services";
-import { useProductsStore } from "../store";
+import { useProductsStore, useSettingsStore } from "../store";
 
 function AddProduct() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+  
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);

@@ -16,19 +16,24 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import { useNotificationsStore } from "../../store";
+import NotificationPanel from "../NotificationPanel.jsx";
+import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
 
 const Header = () => {
+  const { user, logout } = useAuth(); // Call useAuth at the beginning
+
   const [time, setTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
-  
+
   // Use notification store
-  const { 
-    notifications, 
-    unreadCount, 
-    fetchNotifications, 
-    markAsRead, 
+  const {
+    notifications,
+    unreadCount,
+    fetchNotifications,
+    markAsRead,
     markAllAsRead,
     deleteNotification,
     checkAutoNotifications,
@@ -49,13 +54,13 @@ const Header = () => {
   useEffect(() => {
     fetchNotifications();
     checkAutoNotifications(); // Check for automatic notifications
-    
+
     // Set up periodic refresh and auto-notification checks
     const refreshInterval = setInterval(() => {
       fetchNotifications();
       checkAutoNotifications();
     }, 300000); // Refresh every 5 minutes
-    
+
     return () => {
       clearInterval(refreshInterval);
     };
@@ -85,7 +90,7 @@ const Header = () => {
       await markAllAsRead();
       setShowNotifications(false);
     } catch (error) {
-      console.error('Error clearing notifications:', error);
+      console.error("Error clearing notifications:", error);
     }
   };
 
@@ -102,36 +107,95 @@ const Header = () => {
     }
   };
 
-  const handleDeleteNotification = async (notificationId, event) => {
-    event.stopPropagation(); // Prevent triggering the click handler
+  // Notification action handlers
+  const handleMarkAsRead = async (notificationId) => {
     try {
-      await deleteNotification(notificationId);
+      await markNotificationAsRead(notificationId);
+      // Refresh notifications
+      const updatedNotifications = notifications.map((n) =>
+        n.id === notificationId ? { ...n, is_read: true } : n
+      );
+      setNotifications(updatedNotifications);
     } catch (error) {
-      console.error('Error deleting notification:', error);
+      console.error("Error marking notification as read:", error);
     }
   };
 
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead(user?.id);
+      // Refresh notifications
+      const updatedNotifications = notifications.map((n) => ({
+        ...n,
+        is_read: true,
+      }));
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      await deleteNotification(notificationId);
+      // Remove from local state
+      const updatedNotifications = notifications.filter(
+        (n) => n.id !== notificationId
+      );
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+  // Cleanup old notifications on mount
+  useEffect(() => {
+    if (user?.id) {
+      cleanupOldNotifications(user.id).catch(console.error);
+    }
+  }, [user?.id]);
+
   // Debug function to manually create notifications
   const handleCreateTestNotifications = async () => {
-    console.log('🔧 [Debug] Manually creating test notifications...');
+    console.log("🔧 [Debug] Manually creating test notifications...");
     try {
       await createManualNotifications();
-      console.log('✅ [Debug] Test notifications created');
+      console.log("✅ [Debug] Test notifications created");
     } catch (error) {
-      console.error('❌ [Debug] Error creating test notifications:', error);
+      console.error("❌ [Debug] Error creating test notifications:", error);
+    }
+  };
+
+  // Load notifications function
+  const loadNotifications = async () => {
+    try {
+      const data = await getNotifications();
+      setNotifications(data || []);
+    } catch (error) {
+      console.error("Error loading notifications:", error);
+      setNotifications([]);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowProfileMenu(false);
+    } catch (error) {
+      console.error("Error logging out:", error);
     }
   };
 
   // Get notification icon based on type
   const getNotificationIcon = (type) => {
     switch (type) {
-      case 'success':
+      case "success":
         return FiCheckCircle;
-      case 'warning':
+      case "warning":
         return FiAlertTriangle;
-      case 'error':
+      case "error":
         return FiAlertTriangle;
-      case 'info':
+      case "info":
         return FiInfo;
       default:
         return FiBell;
@@ -184,7 +248,6 @@ const Header = () => {
             minute: "2-digit",
           })}
         </div>
-
         {/* Notifications */}
         <div style={{ position: "relative" }} ref={notificationRef}>
           <button
@@ -298,7 +361,9 @@ const Header = () => {
                   maxHeight: "320px",
                   overflowY: "auto",
                 }}
-              >                {notifications.length === 0 ? (
+              >
+                {" "}
+                {notifications.length === 0 ? (
                   <div
                     style={{
                       padding: "32px 16px",
@@ -306,10 +371,21 @@ const Header = () => {
                       color: "#6b7280",
                     }}
                   >
-                    <FiBell size={32} style={{ marginBottom: "8px", opacity: 0.5 }} />
-                    <div style={{ fontSize: "14px", marginBottom: "16px" }}>No notifications</div>
-                      {/* Debug buttons */}
-                    <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+                    <FiBell
+                      size={32}
+                      style={{ marginBottom: "8px", opacity: 0.5 }}
+                    />
+                    <div style={{ fontSize: "14px", marginBottom: "16px" }}>
+                      No notifications
+                    </div>
+                    {/* Debug buttons */}
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        flexDirection: "column",
+                      }}
+                    >
                       <button
                         onClick={handleCreateTestNotifications}
                         style={{
@@ -324,10 +400,10 @@ const Header = () => {
                       >
                         Create Test Notifications
                       </button>
-                      
+
                       <button
                         onClick={() => {
-                          navigate('/database-setup');
+                          navigate("/database-setup");
                           setShowNotifications(false);
                         }}
                         style={{
@@ -346,10 +422,17 @@ const Header = () => {
                   </div>
                 ) : (
                   notifications.map((notification) => {
-                    const NotificationIcon = getNotificationIcon(notification.type);
-                    const iconColor = notification.type === 'success' ? '#10b981' : 
-                                    notification.type === 'warning' ? '#f59e0b' : 
-                                    notification.type === 'error' ? '#ef4444' : '#6b7280';
+                    const NotificationIcon = getNotificationIcon(
+                      notification.type
+                    );
+                    const iconColor =
+                      notification.type === "success"
+                        ? "#10b981"
+                        : notification.type === "warning"
+                          ? "#f59e0b"
+                          : notification.type === "error"
+                            ? "#ef4444"
+                            : "#6b7280";
 
                     return (
                       <div
@@ -359,7 +442,9 @@ const Header = () => {
                           padding: "12px 16px",
                           borderBottom: "1px solid #f3f4f6",
                           cursor: "pointer",
-                          backgroundColor: notification.is_read ? "transparent" : "#f8fafc",
+                          backgroundColor: notification.is_read
+                            ? "transparent"
+                            : "#f8fafc",
                           transition: "background-color 0.2s",
                           display: "flex",
                           gap: "12px",
@@ -369,7 +454,9 @@ const Header = () => {
                           e.target.style.backgroundColor = "#f3f4f6";
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = notification.is_read ? "transparent" : "#f8fafc";
+                          e.target.style.backgroundColor = notification.is_read
+                            ? "transparent"
+                            : "#f8fafc";
                         }}
                       >
                         <div
@@ -386,12 +473,14 @@ const Header = () => {
                         >
                           <NotificationIcon size={16} color={iconColor} />
                         </div>
-                        
+
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
                               fontSize: "14px",
-                              fontWeight: notification.is_read ? "normal" : "600",
+                              fontWeight: notification.is_read
+                                ? "normal"
+                                : "600",
                               color: "#1f2937",
                               marginBottom: "4px",
                             }}
@@ -419,12 +508,16 @@ const Header = () => {
                               marginTop: "4px",
                             }}
                           >
-                            {new Date(notification.created_at).toLocaleDateString()}
+                            {new Date(
+                              notification.created_at
+                            ).toLocaleDateString()}
                           </div>
                         </div>
 
                         <button
-                          onClick={(e) => handleDeleteNotification(notification.id, e)}
+                          onClick={(e) =>
+                            handleDeleteNotification(notification.id, e)
+                          }
                           style={{
                             padding: "4px",
                             border: "none",
@@ -452,10 +545,10 @@ const Header = () => {
               </div>
             </div>
           )}
-        </div>
-
+        </div>{" "}
         {/* Settings */}
         <button
+          onClick={() => navigate("/settings")}
           style={{
             padding: "8px",
             border: "none",
@@ -467,6 +560,7 @@ const Header = () => {
             justifyContent: "center",
             transition: "background-color 0.2s",
           }}
+          title="Settings"
           onMouseEnter={(e) => {
             e.target.style.backgroundColor = "#f3f4f6";
           }}
@@ -476,7 +570,6 @@ const Header = () => {
         >
           <FiSettings size={20} color="#374151" />
         </button>
-
         {/* User Profile */}
         <button
           style={{

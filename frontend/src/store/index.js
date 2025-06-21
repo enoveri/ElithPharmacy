@@ -252,7 +252,7 @@ export const useSalesStore = create((set, get) => ({
   addToCart: (product, quantity = 1) => {
     const { cart } = get();
     const existingItem = cart.find((item) => item.productId === product.id);
-    
+
     if (existingItem) {
       set({
         cart: cart.map((item) =>
@@ -288,7 +288,7 @@ export const useSalesStore = create((set, get) => ({
       get().removeFromCart(productId);
       return;
     }
-    
+
     set({
       cart: cart.map((item) =>
         item.productId === productId
@@ -340,11 +340,45 @@ export const useSettingsStore = create(
   persist(
     (set, get) => ({
       settings: {
+        // General Settings
         storeName: "Elith Pharmacy",
-        currency: "NGN",
-        taxRate: 0.1,
+        pharmacyName: "Elith Pharmacy",
+        address: "",
+        phone: "",
+        email: "",
+        pharmacyLicense: "",
+
+        // Business Settings
+        currency: "UGX", // Uganda Shillings
+        taxRate: 18, // Uganda VAT rate (percentage)
+        timezone: "Africa/Kampala",
+        fiscalYearStart: "July",
+
+        // Display Settings
         theme: "light",
         language: "en",
+        dateFormat: "DD/MM/YYYY",
+        timeFormat: "24-hour",
+
+        // Notification Settings
+        lowStockAlerts: true,
+        expiryAlerts: true,
+        alertThreshold: 30, // days before expiry
+        emailNotifications: true,
+
+        // POS Settings
+        receiptHeader: "Elith Pharmacy",
+        receiptFooter: "Thank you for your business!",
+        autoprint: false,
+
+        // Inventory Settings
+        enableBarcodeScanning: false,
+        autoReorderPoint: 10,
+
+        // System Settings
+        backupFrequency: "daily",
+        sessionTimeout: 30, // minutes
+        enableAuditLog: true,
       },
       isLoading: false,
       error: null,
@@ -357,17 +391,112 @@ export const useSettingsStore = create(
       // Update setting
       updateSetting: (key, value) => {
         const { settings } = get();
-        set({ settings: { ...settings, [key]: value } });
+        const updatedSettings = { ...settings, [key]: value };
+        set({ settings: updatedSettings });
+
+        // Also save to localStorage immediately
+        try {
+          localStorage.setItem(
+            "elith-pharmacy-settings",
+            JSON.stringify({ settings: updatedSettings })
+          );
+          console.log(`✅ [Settings] Updated ${key}:`, value);
+        } catch (error) {
+          console.error("❌ [Settings] Error saving to localStorage:", error);
+        }
+      },
+
+      // Update multiple settings
+      updateSettings: (newSettings) => {
+        const { settings } = get();
+        const updatedSettings = { ...settings, ...newSettings };
+        set({ settings: updatedSettings });
+
+        // Save to localStorage
+        try {
+          localStorage.setItem(
+            "elith-pharmacy-settings",
+            JSON.stringify({ settings: updatedSettings })
+          );
+          console.log("✅ [Settings] Updated settings:", newSettings);
+          return { success: true };
+        } catch (error) {
+          console.error("❌ [Settings] Error updating settings:", error);
+          set({ error: error.message });
+          return { success: false, error: error.message };
+        }
+      },
+
+      // Get specific setting
+      getSetting: (key) => {
+        const { settings } = get();
+        return settings[key];
+      },
+
+      // Reset to defaults
+      resetSettings: () => {
+        const defaultSettings = {
+          storeName: "Elith Pharmacy",
+          pharmacyName: "Elith Pharmacy",
+          address: "",
+          phone: "",
+          email: "",
+          pharmacyLicense: "",
+          currency: "UGX",
+          taxRate: 18,
+          timezone: "Africa/Kampala",
+          fiscalYearStart: "July",
+          theme: "light",
+          language: "en",
+          dateFormat: "DD/MM/YYYY",
+          timeFormat: "24-hour",
+          lowStockAlerts: true,
+          expiryAlerts: true,
+          alertThreshold: 30,
+          emailNotifications: true,
+          receiptHeader: "Elith Pharmacy",
+          receiptFooter: "Thank you for your business!",
+          autoprint: false,
+          enableBarcodeScanning: false,
+          autoReorderPoint: 10,
+          backupFrequency: "daily",
+          sessionTimeout: 30,
+          enableAuditLog: true,
+        };
+
+        set({ settings: defaultSettings });
+
+        try {
+          localStorage.setItem(
+            "elith-pharmacy-settings",
+            JSON.stringify({ settings: defaultSettings })
+          );
+          console.log("✅ [Settings] Reset to defaults");
+          return { success: true };
+        } catch (error) {
+          console.error("❌ [Settings] Error resetting settings:", error);
+          return { success: false, error: error.message };
+        }
       },
 
       // Fetch settings
       fetchSettings: async () => {
         try {
           set({ isLoading: true, error: null });
-          const settings = await dataService.settings.get();
-          if (settings) {
-            set({ settings });
+
+          // First try localStorage
+          const stored = localStorage.getItem("elith-pharmacy-settings");
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed.settings) {
+              set({ settings: parsed.settings });
+              console.log("✅ [Settings] Loaded from localStorage");
+              return;
+            }
           }
+
+          // If no localStorage, keep defaults
+          console.log("✅ [Settings] Using default settings");
         } catch (error) {
           console.error("Error fetching settings:", error);
           set({ error: error.message });
@@ -380,12 +509,18 @@ export const useSettingsStore = create(
       saveSettings: async (newSettings) => {
         try {
           set({ isLoading: true, error: null });
-          const savedSettings = await dataService.settings.update(newSettings);
-          if (savedSettings) {
-            set({ settings: savedSettings });
-            return { success: true };
-          }
-          return { success: false, error: "Failed to save settings" };
+          const { settings } = get();
+          const updatedSettings = { ...settings, ...newSettings };
+
+          // Save to localStorage
+          localStorage.setItem(
+            "elith-pharmacy-settings",
+            JSON.stringify({ settings: updatedSettings })
+          );
+          set({ settings: updatedSettings });
+
+          console.log("✅ [Settings] Settings saved successfully");
+          return { success: true };
         } catch (error) {
           console.error("Error saving settings:", error);
           set({ error: error.message });
@@ -403,7 +538,7 @@ export const useSettingsStore = create(
 );
 
 // Export notifications store
-export { useNotificationsStore } from './notifications';
+export { useNotificationsStore } from "./notifications";
 
 // Export all stores
-export * from './notifications';
+export * from "./notifications";

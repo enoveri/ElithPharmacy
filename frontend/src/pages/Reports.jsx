@@ -17,8 +17,13 @@ import {
 } from "react-icons/fi";
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { dataService } from "../services";
+import { useSettingsStore } from "../store";
 
 function Reports() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [dateRange, setDateRange] = useState({
@@ -301,7 +306,7 @@ function Reports() {
         exportData = [
           {
             Metric: "Total Sales",
-            Value: `₦${(currentData.totalSales || 0).toLocaleString()}`,
+            Value: `${currency} ${(currentData.totalSales || 0).toLocaleString()}`,
           },
           {
             Metric: "Total Transactions",
@@ -310,18 +315,18 @@ function Reports() {
           { Metric: "Total Customers", Value: currentData.totalCustomers || 0 },
           {
             Metric: "Average Order Value",
-            Value: `₦${(currentData.averageOrderValue || 0).toFixed(2)}`,
+            Value: `${currency} ${(currentData.averageOrderValue || 0).toFixed(2)}`,
           },
           ...(currentData.topProducts || []).map((product) => ({
             Metric: `Top Product - ${product.name}`,
-            Value: `₦${(product.sales || 0).toLocaleString()} (${product.quantity || 0} units)`,
+            Value: `${currency} ${(product.sales || 0).toLocaleString()} (${product.quantity || 0} units)`,
           })),
         ];
         break;
       case "sales":
         exportData = (currentData.dailySales || []).map((sale) => ({
           Date: sale.date,
-          Amount: `₦${(sale.amount || 0).toLocaleString()}`,
+          Amount: `${currency} ${(sale.amount || 0).toLocaleString()}`,
           Transactions: sale.transactions || 0,
         }));
         break;
@@ -348,7 +353,7 @@ function Reports() {
       case "customers":
         exportData = (currentData.topCustomers || []).map((customer) => ({
           "Customer Name": customer.name,
-          "Total Spent": `₦${(customer.totalSpent || 0).toLocaleString()}`,
+          "Total Spent": `${currency} ${(customer.totalSpent || 0).toLocaleString()}`,
           Visits: customer.visits || 0,
         }));
         break;
@@ -410,7 +415,7 @@ function Reports() {
             <div
               style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{(reportData.overview.totalSales || 0).toLocaleString()}
+              {currency} {(reportData.overview.totalSales || 0).toLocaleString()}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Total Sales
@@ -471,7 +476,8 @@ function Reports() {
             <div
               style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}
             >
-              ₦{(reportData.overview.averageOrderValue || 0).toFixed(0)}
+              {currency}{" "}
+              {(reportData.overview.averageOrderValue || 0).toFixed(0)}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Avg Order Value
@@ -521,7 +527,7 @@ function Reports() {
                 </div>
               </div>
               <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                ₦{(product.sales || 0).toLocaleString()}
+                {currency} {(product.sales || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -583,7 +589,7 @@ function Reports() {
                   {category.percentage}%
                 </span>
                 <span style={{ fontWeight: "bold", color: "#1f2937" }}>
-                  ₦{(category.amount || 0).toLocaleString()}
+                  {currency} {(category.amount || 0).toLocaleString()}
                 </span>
               </div>
             </div>
@@ -649,7 +655,7 @@ function Reports() {
                   paddingBottom: "4px",
                 }}
               >
-                ₦{((day.amount || 0) / 1000).toFixed(1)}k
+                {currency} {((day.amount || 0) / 1000).toFixed(1)}k
               </div>
               <div style={{ fontSize: "10px", color: "#6b7280" }}>
                 {new Date(day.date).toLocaleDateString("en-US", {
@@ -722,7 +728,7 @@ function Reports() {
                   color: "#10b981",
                 }}
               >
-                ₦{(month.amount || 0).toLocaleString()}
+                {currency} {(month.amount || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -1085,7 +1091,7 @@ function Reports() {
                 </div>
               </div>
               <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                ₦{(customer.totalSpent || 0).toLocaleString()}
+                {currency} {(customer.totalSpent || 0).toLocaleString()}
               </div>
             </div>
           ))}
@@ -1166,7 +1172,7 @@ function Reports() {
           <div
             style={{ fontSize: "20px", fontWeight: "bold", color: "#10b981" }}
           >
-            ₦{(sectionData.quickStats.todayRevenue || 0).toLocaleString()}
+            {currency} {(sectionData.quickStats.todayRevenue || 0).toLocaleString()}
           </div>
           <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
             Today's Revenue
@@ -1474,7 +1480,7 @@ function Reports() {
                       color: activity.type === "return" ? "#ef4444" : "#10b981",
                     }}
                   >
-                    {activity.type === "return" ? "-" : "+"}₦{activity.amount}
+                    {activity.type === "return" ? "-" : "+"}{currency} {activity.amount}
                   </div>
                 )}
               </div>
@@ -1536,7 +1542,7 @@ function Reports() {
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦{(product.revenue || 0).toLocaleString()}
+                    {currency} {(product.revenue || 0).toLocaleString()}
                   </div>
                   <div
                     style={{
@@ -1619,7 +1625,7 @@ function Reports() {
                     marginTop: "4px",
                   }}
                 >
-                  ₦{(category.revenue || 0).toLocaleString()}
+                  {currency} {(category.revenue || 0).toLocaleString()}
                 </div>
               </div>
             ))}

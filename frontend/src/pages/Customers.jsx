@@ -31,8 +31,13 @@ import {
 import ImportModal from "../components/ImportModal";
 import { dbHelpers } from "../lib/db";
 import { dataService } from "../services";
+import { useSettingsStore } from "../store";
 
 function Customers() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const navigate = useNavigate();
   const location = useLocation();
   const [customers, setCustomers] = useState([]);
@@ -541,7 +546,8 @@ function Customers() {
                   color: "#1f2937",
                 }}
               >
-                ₦{(stats.totalRevenue || 0).toLocaleString()}
+                {currency}
+                {(stats.totalRevenue || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -587,7 +593,8 @@ function Customers() {
                   color: "#1f2937",
                 }}
               >
-                ₦{(stats.averageSpending || 0).toLocaleString()}
+                {currency}
+                {(stats.averageSpending || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -878,7 +885,7 @@ function Customers() {
                   </td>
                   <td style={{ padding: "16px 12px" }}>
                     <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                      ₦
+                      {currency}
                       {(
                         customer.total_spent ||
                         customer.totalSpent ||

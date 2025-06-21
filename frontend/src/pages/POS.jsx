@@ -9,7 +9,7 @@ import {
   FiCreditCard,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useNotificationsStore } from "../store";
+import { useNotificationsStore, useSettingsStore } from "../store";
 
 // Add CSS for loading spinner
 const loadingStyles = `
@@ -27,6 +27,10 @@ if (typeof document !== "undefined") {
 }
 
 function POS() {
+  // Settings store for currency and receipt settings
+  const { settings } = useSettingsStore();
+  const { currency, taxRate, receiptHeader, receiptFooter } = settings;
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -223,7 +227,7 @@ function POS() {
         ? `\nCustomer: ${customer.firstName || customer.first_name || ""} ${customer.lastName || customer.last_name || ""}`.trim()
         : "";
       alert(
-        `Sale completed! Transaction: ${transactionNumber}\nTotal: ₦${totalAmount.toFixed(2)}${customerInfo}\nPayment: ${paymentMethod.replace("_", " ").toUpperCase()}`
+        `Sale completed! Transaction: ${transactionNumber}\nTotal: ${currency} ${totalAmount.toFixed(2)}${customerInfo}\nPayment: ${paymentMethod.replace("_", " ").toUpperCase()}`
       );
     } catch (error) {
       console.error("❌ [POS] Error completing sale:", error);
@@ -759,7 +763,7 @@ function POS() {
                     color: "#10b981",
                   }}
                 >
-                  ₦{(product.price || 0).toFixed(2)}
+                  {currency} {(product.price || 0).toFixed(2)}
                 </span>
                 <span
                   style={{
@@ -922,7 +926,7 @@ function POS() {
                         }}
                         title="Click to edit price"
                       >
-                        ₦{(item.price || 0).toFixed(2)} each ✏️
+                        {currency} {(item.price || 0).toFixed(2)} each ✏️
                       </span>
                     )}
                   </div>
@@ -978,7 +982,7 @@ function POS() {
                     fontWeight: "600",
                   }}
                 >
-                  ₦{(item.total || 0).toFixed(2)}
+                  {currency} {(item.total || 0).toFixed(2)}
                 </div>
                 {/* Price Editing */}
                 {editingPrice === item.id ? (
@@ -1067,7 +1071,9 @@ function POS() {
               }}
             >
               <span>Total:</span>
-              <span>₦{(getCartTotal() || 0).toFixed(2)}</span>
+              <span>
+                {currency} {(getCartTotal() || 0).toFixed(2)}
+              </span>
             </div>
 
             {/* Payment Method Selector */}

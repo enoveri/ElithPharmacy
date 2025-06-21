@@ -879,9 +879,9 @@ export const dbHelpers = {
         const basicUpdates = { ...dbUpdates };
         delete basicUpdates.gender;
         delete basicUpdates.allergies;
-        delete basicUpdates.medical_conditions;
         delete basicUpdates.emergency_contact;
         delete basicUpdates.emergency_phone;
+        delete basicUpdates.medical_conditions;
 
         const { data: retryData, error: retryError } = await supabase
           .from("customers")
@@ -930,8 +930,8 @@ export const dbHelpers = {
   // Notifications functions
   getNotifications: async (userId = null) => {
     try {
-      console.log('🔄 [DB] Fetching notifications...');
-      
+      console.log("🔄 [DB] Fetching notifications...");
+
       let query = supabase
         .from("notifications")
         .select("*")
@@ -945,13 +945,19 @@ export const dbHelpers = {
 
       if (error) {
         console.error("❌ [DB] Error fetching notifications:", error);
-        
+
         // Check if the error is about table not existing
-        if (error.message?.includes('relation "notifications" does not exist')) {
-          console.error("🚨 [DB] NOTIFICATIONS TABLE DOES NOT EXIST IN SUPABASE!");
-          console.error("📋 [DB] Please create the notifications table in your Supabase database.");
+        if (
+          error.message?.includes('relation "notifications" does not exist')
+        ) {
+          console.error(
+            "🚨 [DB] NOTIFICATIONS TABLE DOES NOT EXIST IN SUPABASE!"
+          );
+          console.error(
+            "📋 [DB] Please create the notifications table in your Supabase database."
+          );
         }
-        
+
         return { data: [], error };
       }
 
@@ -964,62 +970,75 @@ export const dbHelpers = {
   },
   createNotification: async (notificationData) => {
     try {
-      console.log('🔄 [DB] Creating notification:', notificationData);
-      
+      console.log("🔄 [DB] Creating notification:", notificationData);
+
+      // Clean notification data to match database schema exactly
+      const cleanNotification = {
+        user_id: notificationData.userId || null,
+        type: notificationData.type || "info",
+        title: notificationData.title,
+        message: notificationData.message,
+        priority: notificationData.priority || "medium",
+        data: notificationData.data || {},
+        source: notificationData.source || "system",
+        category: notificationData.category || "general",
+        is_read: false,
+      };
+
+      // Remove any undefined values and fields not in schema
+      Object.keys(cleanNotification).forEach((key) => {
+        if (cleanNotification[key] === undefined) {
+          delete cleanNotification[key];
+        }
+      });
+
       const { data, error } = await supabase
         .from("notifications")
-        .insert({
-          user_id: notificationData.userId || null,
-          type: notificationData.type || 'info',
-          title: notificationData.title,
-          message: notificationData.message,
-          is_read: false,
-          data: notificationData.data || null,
-          priority: notificationData.priority || 'normal',
-          action_url: notificationData.actionUrl || null,
-        })
+        .insert([cleanNotification])
         .select()
         .single();
 
       if (error) {
         console.error("❌ [DB] Error creating notification:", error);
-        
-        // Check if the error is about table not existing
-        if (error.message?.includes('relation "notifications" does not exist')) {
-          console.error("🚨 [DB] NOTIFICATIONS TABLE DOES NOT EXIST IN SUPABASE!");
-          console.error("📋 [DB] Please create the notifications table in your Supabase database:");
-          console.error(`
-CREATE TABLE notifications (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL DEFAULT 'info',
-  title TEXT NOT NULL,
-  message TEXT NOT NULL,
-  is_read BOOLEAN DEFAULT FALSE,
-  data JSONB,
-  priority TEXT DEFAULT 'normal',
-  action_url TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  read_at TIMESTAMP WITH TIME ZONE
-);
-
--- Enable RLS
-ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
-
--- Create policy for authenticated users
-CREATE POLICY "Users can manage their own notifications" ON notifications
-  FOR ALL USING (auth.uid() = user_id OR user_id IS NULL);
-          `);
-        }
-        
-        return { success: false, error };
+        throw error;
       }
 
-      console.log('✅ [DB] Notification created successfully:', data);
-      return { success: true, data };
+      console.log("✅ [DB] Created notification:", data);
+      return data;
     } catch (error) {
-      console.error("❌ [DB] Error in createNotification:", error);
-      return { success: false, error };
+      console.error("❌ [DB] Error creating notification:", error);
+      throw error;
+    }
+  },
+
+  // Create notification with duplicate prevention
+  createNotificationSafe: async (notification) => {
+    try {
+      // Check for duplicate notifications in the last hour
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+
+      const { data: existing } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("user_id", notification.user_id)
+        .eq("type", notification.type)
+        .eq("title", notification.title)
+        .eq("category", notification.category || "general")
+        .gte("created_at", oneHourAgo)
+        .limit(1);
+
+      if (existing && existing.length > 0) {
+        console.log(
+          "⚠️ [DB] Duplicate notification prevented:",
+          notification.title
+        );
+        return existing[0];
+      }
+
+      return await dbHelpers.createNotification(notification);
+    } catch (error) {
+      console.error("❌ [DB] Error in createNotificationSafe:", error);
+      throw error;
     }
   },
 
@@ -1027,45 +1046,35 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
     try {
       const { data, error } = await supabase
         .from("notifications")
-        .update({ is_read: true, read_at: new Date().toISOString() })
+        .update({ is_read: true, updated_at: new Date().toISOString() })
         .eq("id", notificationId)
         .select()
         .single();
 
-      if (error) {
-        console.error("Error marking notification as read:", error);
-        return { success: false, error };
-      }
-
-      return { success: true, data };
+      if (error) throw error;
+      console.log("✅ [DB] Marked notification as read:", data);
+      return data;
     } catch (error) {
-      console.error("Error in markNotificationAsRead:", error);
-      return { success: false, error };
+      console.error("❌ [DB] Error marking notification as read:", error);
+      throw error;
     }
   },
 
-  markAllNotificationsAsRead: async (userId = null) => {
+  markAllNotificationsAsRead: async (userId) => {
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("notifications")
-        .update({ is_read: true, read_at: new Date().toISOString() })
-        .eq("is_read", false);
+        .update({ is_read: true, updated_at: new Date().toISOString() })
+        .eq("user_id", userId)
+        .eq("is_read", false)
+        .select();
 
-      if (userId) {
-        query = query.eq("user_id", userId);
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Error marking all notifications as read:", error);
-        return { success: false, error };
-      }
-
-      return { success: true, data };
+      if (error) throw error;
+      console.log("✅ [DB] Marked all notifications as read for user:", userId);
+      return data;
     } catch (error) {
-      console.error("Error in markAllNotificationsAsRead:", error);
-      return { success: false, error };
+      console.error("❌ [DB] Error marking all notifications as read:", error);
+      throw error;
     }
   },
 
@@ -1076,37 +1085,34 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
         .delete()
         .eq("id", notificationId);
 
-      if (error) {
-        console.error("Error deleting notification:", error);
-        return { success: false, error };
-      }
-
-      return { success: true };
+      if (error) throw error;
+      console.log("✅ [DB] Deleted notification:", notificationId);
+      return true;
     } catch (error) {
-      console.error("Error in deleteNotification:", error);
-      return { success: false, error };
+      console.error("❌ [DB] Error deleting notification:", error);
+      throw error;
     }
   },
 
-  deleteAllNotifications: async (userId = null) => {
+  // Clean up old notifications (older than 30 days)
+  cleanupOldNotifications: async (userId) => {
     try {
-      let query = supabase.from("notifications").delete();
+      const thirtyDaysAgo = new Date(
+        Date.now() - 30 * 24 * 60 * 60 * 1000
+      ).toISOString();
 
-      if (userId) {
-        query = query.eq("user_id", userId);
-      }
+      const { data, error } = await supabase
+        .from("notifications")
+        .delete()
+        .eq("user_id", userId)
+        .lt("created_at", thirtyDaysAgo);
 
-      const { error } = await query;
-
-      if (error) {
-        console.error("Error deleting all notifications:", error);
-        return { success: false, error };
-      }
-
-      return { success: true };
+      if (error) throw error;
+      console.log("✅ [DB] Cleaned up old notifications for user:", userId);
+      return data;
     } catch (error) {
-      console.error("Error in deleteAllNotifications:", error);
-      return { success: false, error };
+      console.error("❌ [DB] Error cleaning up notifications:", error);
+      throw error;
     }
   },
 
@@ -1114,10 +1120,10 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
   createLowStockNotification: async (product) => {
     try {
       const notification = {
-        type: 'warning',
-        title: 'Low Stock Alert',
+        type: "warning",
+        title: "Low Stock Alert",
         message: `${product.name} is running low (${product.quantity || 0} left, minimum: ${product.min_stock_level || product.minStockLevel || 0})`,
-        priority: 'high',
+        priority: "high",
         data: { productId: product.id, currentStock: product.quantity },
         actionUrl: `/inventory/${product.id}`,
       };
@@ -1131,16 +1137,19 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
 
   createSaleNotification: async (sale) => {
     try {
-      const customerName = sale.customer 
-        ? `${sale.customer.first_name || sale.customer.firstName || ''} ${sale.customer.last_name || sale.customer.lastName || ''}`.trim()
-        : 'Walk-in Customer';
+      const customerName = sale.customer
+        ? `${sale.customer.first_name || sale.customer.firstName || ""} ${sale.customer.last_name || sale.customer.lastName || ""}`.trim()
+        : "Walk-in Customer";
 
       const notification = {
-        type: 'success',
-        title: 'Sale Completed',
+        type: "success",
+        title: "Sale Completed",
         message: `Sale #${sale.transaction_number} completed for ${customerName} - ₦${(sale.total_amount || sale.totalAmount || 0).toFixed(2)}`,
-        priority: 'normal',
-        data: { saleId: sale.id, amount: sale.total_amount || sale.totalAmount },
+        priority: "normal",
+        data: {
+          saleId: sale.id,
+          amount: sale.total_amount || sale.totalAmount,
+        },
         actionUrl: `/sales/${sale.id}`,
       };
 
@@ -1154,13 +1163,15 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
   createExpiryNotification: async (product) => {
     try {
       const expiryDate = new Date(product.expiry_date || product.expiryDate);
-      const daysUntilExpiry = Math.ceil((expiryDate - new Date()) / (1000 * 60 * 60 * 24));
+      const daysUntilExpiry = Math.ceil(
+        (expiryDate - new Date()) / (1000 * 60 * 60 * 24)
+      );
 
       const notification = {
-        type: 'warning',
-        title: 'Product Expiry Alert',
+        type: "warning",
+        title: "Product Expiry Alert",
         message: `${product.name} expires in ${daysUntilExpiry} days (${expiryDate.toLocaleDateString()})`,
-        priority: daysUntilExpiry <= 7 ? 'high' : 'normal',
+        priority: daysUntilExpiry <= 7 ? "high" : "normal",
         data: { productId: product.id, expiryDate: expiryDate.toISOString() },
         actionUrl: `/inventory/${product.id}`,
       };
@@ -1176,7 +1187,7 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
   checkAndCreateAutoNotifications: async () => {
     try {
       console.log("🔄 [Notifications] Checking for automatic notifications...");
-      
+
       // Check for low stock products
       const { data: lowStockProducts } = await dbHelpers.getLowStockProducts();
       for (const product of lowStockProducts || []) {
@@ -1186,9 +1197,9 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       // Check for expiring products (within 30 days)
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-      
+
       const { data: products } = await dbHelpers.getProducts();
-      const expiringProducts = (products || []).filter(product => {
+      const expiringProducts = (products || []).filter((product) => {
         const expiryDate = new Date(product.expiry_date || product.expiryDate);
         return expiryDate <= thirtyDaysFromNow && expiryDate > new Date();
       });
@@ -1416,7 +1427,8 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
 
       return { success: true, data };
     } catch (error) {
-      console.error("Error in createSupplier:", error);      return { success: false, error };
+      console.error("Error in createSupplier:", error);
+      return { success: false, error };
     }
   },
   // Dashboard Stats
@@ -1428,11 +1440,11 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       const [
         { data: products, error: productsError },
         { data: customers, error: customersError },
-        { data: allSales, error: salesError }
+        { data: allSales, error: salesError },
       ] = await Promise.all([
         supabase.from("products").select("*"),
         supabase.from("customers").select("*"),
-        supabase.from("sales").select("*")
+        supabase.from("sales").select("*"),
       ]);
 
       if (productsError) {
@@ -1453,7 +1465,7 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       console.log("📊 [DB] Raw data counts:", {
         products: products?.length || 0,
         customers: customers?.length || 0,
-        sales: allSales?.length || 0
+        sales: allSales?.length || 0,
       });
 
       // Log first sale to see structure
@@ -1463,28 +1475,42 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
 
       // Get today's date range
       const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+      const todayStart = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      );
+      const todayEnd = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() + 1
+      );
 
       // Filter today's sales - try both date and created_at fields
-      const todaysSales = (allSales || []).filter(sale => {
-        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+      const todaysSales = (allSales || []).filter((sale) => {
+        const saleDate = new Date(
+          sale.date || sale.created_at || sale.sale_date
+        );
         return saleDate >= todayStart && saleDate < todayEnd;
       });
 
       // Get current month sales
       const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
       const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      
-      const monthlySales = (allSales || []).filter(sale => {
-        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+
+      const monthlySales = (allSales || []).filter((sale) => {
+        const saleDate = new Date(
+          sale.date || sale.created_at || sale.sale_date
+        );
         return saleDate >= monthStart && saleDate <= monthEnd;
       });
 
       // Calculate revenue - try multiple field names
       const calculateRevenue = (sales) => {
         return sales.reduce((sum, sale) => {
-          const amount = parseFloat(sale.total_amount || sale.total || sale.amount || 0);
+          const amount = parseFloat(
+            sale.total_amount || sale.total || sale.amount || 0
+          );
           return sum + amount;
         }, 0);
       };
@@ -1494,9 +1520,11 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       const totalRevenue = calculateRevenue(allSales || []);
 
       // Calculate low stock items
-      const lowStockItems = (products || []).filter(product => {
+      const lowStockItems = (products || []).filter((product) => {
         const quantity = parseInt(product.quantity || 0);
-        const minStock = parseInt(product.min_stock_level || product.minStockLevel || 0);
+        const minStock = parseInt(
+          product.min_stock_level || product.minStockLevel || 0
+        );
         return quantity <= minStock;
       }).length;
 
@@ -1505,18 +1533,30 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
       const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
 
       // Calculate monthly growth (compare with previous month)
-      const previousMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-      const previousMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
-      
-      const previousMonthSales = (allSales || []).filter(sale => {
-        const saleDate = new Date(sale.date || sale.created_at || sale.sale_date);
+      const previousMonthStart = new Date(
+        today.getFullYear(),
+        today.getMonth() - 1,
+        1
+      );
+      const previousMonthEnd = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        0
+      );
+
+      const previousMonthSales = (allSales || []).filter((sale) => {
+        const saleDate = new Date(
+          sale.date || sale.created_at || sale.sale_date
+        );
         return saleDate >= previousMonthStart && saleDate <= previousMonthEnd;
       });
 
       const previousMonthRevenue = calculateRevenue(previousMonthSales);
-      const monthlyGrowth = previousMonthRevenue > 0 
-        ? ((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue) * 100 
-        : 0;
+      const monthlyGrowth =
+        previousMonthRevenue > 0
+          ? ((monthlyRevenue - previousMonthRevenue) / previousMonthRevenue) *
+            100
+          : 0;
 
       const stats = {
         // Dashboard page expects these fields
@@ -1526,14 +1566,14 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
         totalRevenue: totalRevenue,
         averageOrderValue: averageOrderValue,
         lowStockCount: lowStockItems,
-        
-        // Reports page expects these fields  
+
+        // Reports page expects these fields
         todaysSales: todaysSalesAmount,
         todaysTransactions: todaysSales.length,
         monthlyRevenue: monthlyRevenue,
         monthlyGrowth: monthlyGrowth,
         recentSales: todaysSales.length,
-        recentRevenue: todaysSalesAmount
+        recentRevenue: todaysSalesAmount,
       };
 
       console.log("✅ [DB] Dashboard stats calculated:", stats);
@@ -1546,7 +1586,8 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
         data: {
           totalProducts: 0,
           totalCustomers: 0,
-          totalSales: 0,          totalRevenue: 0,
+          totalSales: 0,
+          totalRevenue: 0,
           averageOrderValue: 0,
           lowStockCount: 0,
           todaysSales: 0,
@@ -1554,8 +1595,8 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
           monthlyRevenue: 0,
           monthlyGrowth: 0,
           recentSales: 0,
-          recentRevenue: 0
-        }
+          recentRevenue: 0,
+        },
       };
     }
   },
@@ -1563,58 +1604,62 @@ CREATE POLICY "Users can manage their own notifications" ON notifications
   // Debug function to check sales data
   debugSalesData: async () => {
     try {
-      console.log('🔍 [Debug] Checking sales data...');
-      
+      console.log("🔍 [Debug] Checking sales data...");
+
       // Get all sales
       const { data: sales, error: salesError } = await supabase
-        .from('sales')
-        .select('*')
-        .order('created_at', { ascending: false })
+        .from("sales")
+        .select("*")
+        .order("created_at", { ascending: false })
         .limit(10);
-      
+
       if (salesError) {
-        console.error('❌ [Debug] Error fetching sales:', salesError);
+        console.error("❌ [Debug] Error fetching sales:", salesError);
         return { error: salesError };
       }
-      
-      console.log('📊 [Debug] Sales data:', sales);
-      console.log('📊 [Debug] Number of sales:', sales?.length || 0);
-      
+
+      console.log("📊 [Debug] Sales data:", sales);
+      console.log("📊 [Debug] Number of sales:", sales?.length || 0);
+
       // Check total sales value
-      const totalSales = sales?.reduce((sum, sale) => {
-        const total = parseFloat(sale.total_amount || sale.total || 0);
-        console.log(`💰 [Debug] Sale ${sale.id}: ${total}`);
-        return sum + total;
-      }, 0) || 0;
-      
-      console.log('💰 [Debug] Total sales calculated:', totalSales);
-      
+      const totalSales =
+        sales?.reduce((sum, sale) => {
+          const total = parseFloat(sale.total_amount || sale.total || 0);
+          console.log(`💰 [Debug] Sale ${sale.id}: ${total}`);
+          return sum + total;
+        }, 0) || 0;
+
+      console.log("💰 [Debug] Total sales calculated:", totalSales);
+
       // Get all sale items
       const { data: saleItems, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('*')
+        .from("sale_items")
+        .select("*")
         .limit(10);
-      
+
       if (itemsError) {
-        console.error('❌ [Debug] Error fetching sale items:', itemsError);
+        console.error("❌ [Debug] Error fetching sale items:", itemsError);
       } else {
-        console.log('📦 [Debug] Sale items:', saleItems);
+        console.log("📦 [Debug] Sale items:", saleItems);
       }
-      
-      return { 
-        success: true, 
-        data: { 
-          sales, 
-          saleItems, 
+
+      return {
+        success: true,
+        data: {
+          sales,
+          saleItems,
           totalSales,
-          salesCount: sales?.length || 0 
-        } 
+          salesCount: sales?.length || 0,
+        },
       };
     } catch (error) {
-      console.error('❌ [Debug] Error in debugSalesData:', error);
+      console.error("❌ [Debug] Error in debugSalesData:", error);
       return { error };
     }
   },
 };
 
 export default dbHelpers;
+
+// Export supabase client for external use
+export { supabase };

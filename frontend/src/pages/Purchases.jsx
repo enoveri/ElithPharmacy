@@ -18,8 +18,13 @@ import {
   FiAlertTriangle,
 } from "react-icons/fi";
 import { dataService } from "../services";
+import { useSettingsStore } from "../store";
 
 function Purchases() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const navigate = useNavigate();
   const location = useLocation();
   const [purchases, setPurchases] = useState([]);
@@ -729,7 +734,7 @@ function Purchases() {
                         >
                           <FiDollarSign size={16} color="#6b7280" />
                           <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                            ₦
+                            {currency}
                             {(
                               purchase.total_amount ||
                               purchase.totalAmount ||

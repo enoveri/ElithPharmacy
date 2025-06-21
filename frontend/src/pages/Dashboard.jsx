@@ -13,13 +13,18 @@ import {
   FiPlus,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useNotificationsStore } from "../store";
+import { useNotificationsStore, useSettingsStore } from "../store";
 
 const Dashboard = () => {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const [selectedPeriod, setSelectedPeriod] = useState("Month to date");
   const [recentSales, setRecentSales] = useState([]);
   const [lowStockProducts, setLowStockProducts] = useState([]);
-  const [topCustomers, setTopCustomers] = useState([]);  const [dashboardStats, setDashboardStats] = useState({
+  const [topCustomers, setTopCustomers] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
     // Dashboard display fields
     todaysSales: 0,
     todaysTransactions: 0,
@@ -42,19 +47,21 @@ const Dashboard = () => {
   useEffect(() => {
     async function fetchData() {
       try {
-        setLoading(true);        // Fetch all dashboard data in parallel
-        const [statsResult, salesData, stockData, customerData] = await Promise.all([
-          dataService.dashboard.getStats(),
-          dataService.sales.getRecent(3),
-          dataService.products.getLowStock(),
-          dataService.customers.getTop(3),
-        ]);
+        setLoading(true);
+        // Fetch all dashboard data in parallel
+        const [statsResult, salesData, stockData, customerData] =
+          await Promise.all([
+            dataService.dashboard.getStats(),
+            dataService.sales.getRecent(3),
+            dataService.products.getLowStock(),
+            dataService.customers.getTop(3),
+          ]);
 
         // Handle the stats result which might be wrapped in success/data structure
         let stats;
         if (statsResult && statsResult.success && statsResult.data) {
           stats = statsResult.data;
-        } else if (statsResult && typeof statsResult === 'object') {
+        } else if (statsResult && typeof statsResult === "object") {
           stats = statsResult;
         } else {
           stats = {
@@ -63,10 +70,11 @@ const Dashboard = () => {
             totalSales: 0,
             totalRevenue: 0,
             averageOrderValue: 0,
-            lowStockCount: 0
+            lowStockCount: 0,
           };
-        }        console.log('📊 [Dashboard] Stats received:', stats);
-        console.log('📊 [Dashboard] Setting dashboard stats to:', stats);
+        }
+        console.log("📊 [Dashboard] Stats received:", stats);
+        console.log("📊 [Dashboard] Setting dashboard stats to:", stats);
         setDashboardStats(stats);
         setRecentSales(salesData || []);
         setLowStockProducts(stockData || []);
@@ -211,7 +219,8 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                ₦{(dashboardStats.todaysSales || 0).toLocaleString()}
+                {currency}
+                {(dashboardStats.todaysSales || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -347,8 +356,11 @@ const Dashboard = () => {
                   fontSize: "24px",
                   fontWeight: "bold",
                   color: "#1f2937",
-                }}              >
-                {dashboardStats.lowStockCount || dashboardStats.lowStockItems || 0}
+                }}
+              >
+                {dashboardStats.lowStockCount ||
+                  dashboardStats.lowStockItems ||
+                  0}
               </div>
             </div>
           </div>
@@ -412,7 +424,8 @@ const Dashboard = () => {
                     </div>
                   </div>{" "}
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦{(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
+                    {currency}
+                    {(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
                   </div>
                 </div>
               ))
@@ -595,7 +608,7 @@ const Dashboard = () => {
                     </div>
                   </div>{" "}
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
-                    ₦
+                    {currency}
                     {(
                       customer.total_spent ||
                       customer.totalSpent ||
@@ -715,7 +728,8 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                ₦{(dashboardStats.totalRevenue || 0).toLocaleString()}
+                {currency}
+                {(dashboardStats.totalRevenue || 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -795,7 +809,8 @@ const Dashboard = () => {
                   color: "#1f2937",
                 }}
               >
-                ₦{(dashboardStats.averageOrderValue || 0).toFixed(2)}
+                {currency}
+                {(dashboardStats.averageOrderValue || 0).toFixed(2)}
               </div>
             </div>
           </div>
@@ -807,7 +822,8 @@ const Dashboard = () => {
               alignItems: "center",
               gap: "12px",
               padding: "16px",
-              backgroundColor: dashboardStats.lowStockCount > 0 ? "#fef2f2" : "#f8fafc",
+              backgroundColor:
+                dashboardStats.lowStockCount > 0 ? "#fef2f2" : "#f8fafc",
               borderRadius: "8px",
             }}
           >
@@ -815,14 +831,18 @@ const Dashboard = () => {
               style={{
                 width: "40px",
                 height: "40px",
-                backgroundColor: dashboardStats.lowStockCount > 0 ? "#fecaca" : "#e2e8f0",
+                backgroundColor:
+                  dashboardStats.lowStockCount > 0 ? "#fecaca" : "#e2e8f0",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <FiPackage color={dashboardStats.lowStockCount > 0 ? "#dc2626" : "#64748b"} size={20} />
+              <FiPackage
+                color={dashboardStats.lowStockCount > 0 ? "#dc2626" : "#64748b"}
+                size={20}
+              />
             </div>
             <div>
               <div style={{ fontSize: "12px", color: "#6b7280" }}>
@@ -832,10 +852,13 @@ const Dashboard = () => {
                 style={{
                   fontSize: "20px",
                   fontWeight: "bold",
-                  color: dashboardStats.lowStockCount > 0 ? "#dc2626" : "#1f2937",
+                  color:
+                    dashboardStats.lowStockCount > 0 ? "#dc2626" : "#1f2937",
                 }}
               >
-                {dashboardStats.lowStockCount || dashboardStats.lowStockItems || 0}
+                {dashboardStats.lowStockCount ||
+                  dashboardStats.lowStockItems ||
+                  0}
               </div>
             </div>
           </div>

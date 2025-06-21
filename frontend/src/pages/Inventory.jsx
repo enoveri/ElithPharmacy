@@ -18,10 +18,14 @@ import {
   FiDollarSign,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useProductsStore } from "../store";
+import { useProductsStore, useSettingsStore } from "../store";
 
 // Inventory page
 function Inventory() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const location = useLocation();
   const navigate = useNavigate();
   const { products, fetchProducts, isLoading } = useProductsStore();
@@ -371,7 +375,8 @@ function Inventory() {
                       fontSize: "14px",
                     }}
                   >
-                    ₦{(product.price || 0).toFixed(2)}
+                    {currency}
+                    {(product.price || 0).toFixed(2)}
                   </div>
                 </td>
                 <td style={{ padding: "16px 12px" }}>
@@ -490,7 +495,8 @@ function Inventory() {
                   fontSize: "16px",
                 }}
               >
-                ₦{(product.price || 0).toFixed(2)}
+                {currency}
+                {(product.price || 0).toFixed(2)}
               </div>
             </div>
 
@@ -806,7 +812,8 @@ function Inventory() {
                   color: "#1f2937",
                 }}
               >
-                ₦{(totalValue || 0).toLocaleString()}
+                {currency}
+                {(totalValue || 0).toLocaleString()}
               </div>
             </div>
           </div>

@@ -8,9 +8,13 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useSalesStore } from "../store";
+import { useSalesStore, useSettingsStore } from "../store";
 
 function SalesHistory() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const location = useLocation();
   const navigate = useNavigate();
   const [sales, setSales] = useState([]);
@@ -309,7 +313,7 @@ function SalesHistory() {
                           color: "#10b981",
                         }}
                       >
-                        ₦
+                        {currency}
                         {(sale.totalAmount || sale.total_amount || 0).toFixed(
                           2
                         )}
@@ -379,7 +383,8 @@ function SalesHistory() {
                         <div>
                           {" "}
                           <div style={{ fontWeight: "500", color: "#1f2937" }}>
-                            ₦{(sale.subtotal || 0).toFixed(2)}
+                            {currency}
+                            {(sale.subtotal || 0).toFixed(2)}
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             Subtotal

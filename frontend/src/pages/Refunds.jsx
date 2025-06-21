@@ -2,13 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiSearch, FiArrowLeft, FiShoppingCart } from "react-icons/fi";
 import { dataService } from "../services";
-
-// Helper function to format currency
-const formatCurrency = (amount) => {
-  return `₦${(amount || 0).toFixed(2)}`;
-};
+import { useSettingsStore } from "../store";
 
 function Refunds() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return `${currency} ${(amount || 0).toFixed(2)}`;
+  };
+
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTransaction, setSelectedTransaction] = useState(null);

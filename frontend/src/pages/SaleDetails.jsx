@@ -19,9 +19,13 @@ import {
   FiX,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useSalesStore } from "../store";
+import { useSalesStore, useSettingsStore } from "../store";
 
 function SaleDetails() {
+  // Settings store for currency
+  const { settings } = useSettingsStore();
+  const { currency } = settings;
+
   const { id } = useParams();
   const navigate = useNavigate();
   const [sale, setSale] = useState(null);
@@ -104,14 +108,13 @@ function SaleDetails() {
       ${sale.items
         .map(
           (item) =>
-            `${getProductName(item.productId || item.product_id, item)} x${item.quantity || 0} - ₦${(item.total || 0).toFixed(2)}`
+            `${getProductName(item.productId || item.product_id, item)} x${item.quantity || 0} - ${currency} ${(item.total || 0).toFixed(2)}`
         )
         .join("\n")}
-      
-      ------      Subtotal: ₦${(sale.subtotal || 0).toFixed(2)}
-      Tax: ₦${(sale.tax || 0).toFixed(2)}
-      ${(sale.discount || 0) > 0 ? `Discount: -₦${(sale.discount || 0).toFixed(2)}` : ""}
-      Total: ₦${(sale.totalAmount || 0).toFixed(2)}
+        ------      Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
+      Tax: ${currency} ${(sale.tax || 0).toFixed(2)}
+      ${(sale.discount || 0) > 0 ? `Discount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
+      Total: ${currency} ${(sale.totalAmount || 0).toFixed(2)}
         Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
       Status: ${(sale.status || "N/A").toUpperCase()}
       
@@ -265,8 +268,8 @@ function SaleDetails() {
                     (item) => `
                   <tr>
                     <td>${getProductName(item.productId)}</td>
-                    <td>${item.quantity}</td>                    <td>₦{(item.price || 0).toFixed(2)}</td>
-                    <td>₦{(item.total || 0).toFixed(2)}</td>
+                    <td>${item.quantity}</td>                    <td>{currency} {(item.price || 0).toFixed(2)}</td>
+                    <td>{currency} {(item.total || 0).toFixed(2)}</td>
                   </tr>
                 `
                   )
@@ -276,25 +279,25 @@ function SaleDetails() {
 
             <div class="totals">              <div class="total-row">
                 <span>Subtotal:</span>
-                <span>₦${(sale.subtotal || 0).toFixed(2)}</span>
+                <span>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
               <div class="total-row">
                 <span>Tax:</span>
-                <span>₦${(sale.tax || 0).toFixed(2)}</span>
+                <span>{currency} {(sale.tax || 0).toFixed(2)}</span>
               </div>
               ${
                 (sale.discount || 0) > 0
                   ? `
                 <div class="total-row">
                   <span>Discount:</span>
-                  <span>-₦${(sale.discount || 0).toFixed(2)}</span>
+                  <span>-{currency} {(sale.discount || 0).toFixed(2)}</span>
                 </div>
               `
                   : ""
               }
               <div class="total-row final">
                 <span>TOTAL:</span>
-                <span>₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
+                <span>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -333,7 +336,7 @@ function SaleDetails() {
     setGeneratingPDF(true);
 
     try {
-      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ₦${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
+      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
 
       const phoneNumber = customer?.phone?.replace(/[^\d]/g, "") || "";
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -368,12 +371,12 @@ Date: ${new Date(sale.date).toLocaleDateString()}
 Time: ${new Date(sale.date).toLocaleTimeString()}
 
 ITEMS PURCHASED:
-${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ₦${(item.total || 0).toFixed(2)}`).join("\n")}
+${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}
 
 PAYMENT SUMMARY:
-Subtotal: ₦${(sale.subtotal || 0).toFixed(2)}
-Tax: ₦${(sale.tax || 0).toFixed(2)}${(sale.discount || 0) > 0 ? `\nDiscount: -₦${(sale.discount || 0).toFixed(2)}` : ""}
-TOTAL: ₦${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
+Tax: ${currency} ${(sale.tax || 0).toFixed(2)}${(sale.discount || 0) > 0 ? `\nDiscount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
+TOTAL: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
 
 Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
 
@@ -864,7 +867,7 @@ Email: info@elithpharmacy.com`;
                           color: "#6b7280",
                         }}
                       >
-                        ₦{(item.price || 0).toFixed(2)}
+                        {currency} {(item.price || 0).toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -883,7 +886,7 @@ Email: info@elithpharmacy.com`;
                           color: "#1f2937",
                         }}
                       >
-                        ₦{(item.total || 0).toFixed(2)}
+                        {currency} {(item.total || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -971,7 +974,8 @@ Email: info@elithpharmacy.com`;
                       fontSize: "18px",
                     }}
                   >
-                    ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                    {currency}{" "}
+                    {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                   </div>
                 </div>
               </div>

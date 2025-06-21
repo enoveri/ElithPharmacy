@@ -21,6 +21,7 @@ import Reports from "../pages/Reports";
 import ViewProduct from "../pages/ViewProduct";
 import Purchases from "../pages/Purchases";
 import PurchaseDetails from "../pages/PurchaseDetails";
+import Settings from "../pages/Settings";
 
 export const router = createBrowserRouter([
   {
@@ -46,7 +47,8 @@ export const router = createBrowserRouter([
       {
         path: "/inventory/edit/:id",
         element: <EditProduct />,
-      },      {
+      },
+      {
         path: "/pos",
         element: <POS />,
       },
@@ -89,9 +91,14 @@ export const router = createBrowserRouter([
       {
         path: "/purchases",
         element: <Purchases />,
-      },      {
+      },
+      {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
+      },
+      {
+        path: "/settings",
+        element: <Settings />,
       },
     ],
   },
