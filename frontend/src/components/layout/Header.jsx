@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   FiSearch,
-  FiSettings,
+  
   FiBell,
   FiMenu,
   FiUser,
