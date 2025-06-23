@@ -10,9 +10,15 @@ const useNotificationsStore = create((set, get) => ({
   // Fetch notifications from database
   fetchNotifications: async (userId = null) => {
     try {
+      console.log('🔄 [Notifications] Starting fetchNotifications...');
       set({ loading: true, error: null });
       
+      // Add detailed debugging
+      console.log('🔍 [Debug] Fetching notifications with userId:', userId);
+      
       const notifications = await dataService.notifications.getAll(userId);
+      console.log('📦 [Debug] Raw notifications from service:', notifications);
+      
       const unreadCount = notifications.filter(n => !n.is_read).length;
       
       set({ 
@@ -22,8 +28,14 @@ const useNotificationsStore = create((set, get) => ({
       });
       
       console.log(`📬 [Notifications] Loaded ${notifications.length} notifications (${unreadCount} unread)`);
+      console.log('🔍 [Debug] Final notifications state:', notifications);
     } catch (error) {
       console.error('❌ [Notifications] Error fetching notifications:', error);
+      console.error('🔍 [Debug] Full error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       set({ 
         error: error.message, 
         loading: false,
@@ -219,55 +231,42 @@ const useNotificationsStore = create((set, get) => ({
       return { success: false, error };
     }
   },
-
   // Manual notification creation for debugging
   createManualNotifications: async () => {
     try {
       console.log('🔧 [Debug] Creating manual notifications for testing...');
       
-      // Get low stock products
-      const lowStockProducts = await dataService.products.getLowStock();
-      console.log('📦 [Debug] Found low stock products:', lowStockProducts);
+      // First, try to create a simple test notification
+      const testNotification = {
+        type: 'info',
+        title: 'Test Notification',
+        message: 'This is a test notification to verify the system is working.',
+        priority: 'medium',
+        data: { test: true },
+      };
 
-      // Create notifications for each low stock product
-      for (const product of lowStockProducts) {
-        const notification = {
-          type: 'warning',
-          title: 'Low Stock Alert',
-          message: `${product.name} is running low (${product.quantity || 0} left, minimum: ${product.min_stock_level || product.minStockLevel || 0})`,
-          priority: 'high',
-          data: { productId: product.id, currentStock: product.quantity },
-          action_url: `/inventory/${product.id}`,
-        };
+      console.log('� [Debug] Creating test notification:', testNotification);
+      const testResult = await dataService.notifications.create(testNotification);
+      console.log('🔧 [Debug] Test notification result:', testResult);
 
-        const result = await dataService.notifications.create(notification);
-        console.log('🔔 [Debug] Created notification:', result);
-      }
+      // Try to create another notification for low stock
+      const lowStockNotification = {
+        type: 'warning',
+        title: 'Low Stock Alert',
+        message: 'Sample product is running low (5 left, minimum: 10)',
+        priority: 'high',
+        data: { productId: 'test-product', currentStock: 5 },
+      };
 
-      // Get out of stock products
-      const allProducts = await dataService.products.getAll();
-      const outOfStockProducts = allProducts.filter(product => (product.quantity || 0) === 0);
-      console.log('❌ [Debug] Found out of stock products:', outOfStockProducts);
-
-      // Create notifications for out of stock products
-      for (const product of outOfStockProducts) {
-        const notification = {
-          type: 'error',
-          title: 'Out of Stock Alert',
-          message: `${product.name} is completely out of stock!`,
-          priority: 'high',
-          data: { productId: product.id, currentStock: 0 },
-          action_url: `/inventory/${product.id}`,
-        };
-
-        const result = await dataService.notifications.create(notification);
-        console.log('🚨 [Debug] Created out of stock notification:', result);
-      }
+      console.log('🔧 [Debug] Creating low stock notification:', lowStockNotification);
+      const lowStockResult = await dataService.notifications.create(lowStockNotification);
+      console.log('� [Debug] Low stock notification result:', lowStockResult);
 
       // Refresh notifications
+      console.log('🔧 [Debug] Refreshing notifications...');
       await get().fetchNotifications();
       
-      return { success: true };
+      return { success: true, message: 'Test notifications created' };
     } catch (error) {
       console.error('❌ [Debug] Error creating manual notifications:', error);
       return { success: false, error };

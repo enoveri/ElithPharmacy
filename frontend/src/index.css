@@ -798,19 +798,106 @@ body {
   .topbar {
     padding: 1rem;
   }
+
+  /* Header adjustments */
+  .header-mobile {
+    padding: 0 16px !important;
+    height: 56px !important;
+  }
+
+  /* Sidebar mobile overlay */
+  .sidebar-mobile-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+  }
+
+  /* Mobile sidebar transitions */
+  .sidebar-mobile {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  .sidebar-mobile.open {
+    transform: translateX(0);
+  }
+
+  /* Main content adjustments on mobile */
+  .main-content-mobile {
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Notification panel mobile adjustments */
+  .notification-panel-mobile {
+    left: 8px !important;
+    right: 8px !important;
+    width: auto !important;
+    max-width: none !important;
+  }
+
+  /* Hide certain elements on very small screens */
+  .mobile-hide {
+    display: none !important;
+  }
+
+  /* Compact spacing for mobile */
+  .mobile-compact {
+    padding: 8px 12px !important;
+  }
+
+  /* Touch-friendly button sizes */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
 }
 
-@media (max-width: 640px) {
-  .mobile-hide {
-    display: none;
+@media (max-width: 480px) {
+  /* Very small screens - even more compact */
+  .header-mobile {
+    padding: 0 12px !important;
+    height: 52px !important;
   }
 
-  .mobile-full {
-    width: 100%;
+  /* Smaller text on very small screens */
+  .text-mobile-sm {
+    font-size: 14px !important;
   }
 
-  .mobile-stack {
-    flex-direction: column;
+  /* Hide time display on very small screens */
+  .time-display-mobile {
+    display: none !important;
+  }
+}
+
+/* Improved touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  /* Remove hover effects on touch devices */
+  .sidebar-item:hover {
+    background-color: transparent !important;
+    transform: none !important;
+  }
+
+  /* Larger touch targets */
+  .touch-optimized {
+    padding: 12px !important;
+    min-height: 48px;
+  }
+}
+
+/* Landscape orientation on mobile */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .header-mobile {
+    height: 48px !important;
+  }
+
+  .sidebar-mobile {
+    width: 240px !important;
   }
 }
 

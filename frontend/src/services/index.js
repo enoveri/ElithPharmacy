@@ -196,12 +196,17 @@ export const dataService = {
       return await dbHelpers.deleteCategory(id);
     },
   },
-
   // Notifications
   notifications: {
     getAll: async () => {
+      console.log('🔄 [Service] notifications.getAll called');
       const { data, error } = await dbHelpers.getNotifications();
-      if (error) throw error;
+      console.log('🔍 [Service] getNotifications result:', { data, error });
+      if (error) {
+        console.error('❌ [Service] Error in getNotifications:', error);
+        throw error;
+      }
+      console.log('✅ [Service] Returning notifications:', data);
       return data || [];
     },
 
@@ -211,10 +216,11 @@ export const dataService = {
 
     getUnread: async () => {
       return await dbHelpers.getUnreadNotifications();
-    },
-
-    create: async (notification) => {
-      return await dbHelpers.createNotification(notification);
+    },    create: async (notification) => {
+      console.log('🔄 [Service] Creating notification:', notification);
+      const result = await dbHelpers.createNotification(notification);
+      console.log('🔍 [Service] Create notification result:', result);
+      return result;
     },
 
     markAsRead: async (id) => {

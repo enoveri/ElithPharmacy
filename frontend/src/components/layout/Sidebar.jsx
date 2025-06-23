@@ -16,9 +16,22 @@ import {
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
 
-const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
+const Sidebar = ({ 
+  collapsed = false, 
+  onToggleCollapse, 
+  isMobile = false, 
+  mobileMenuOpen = false, 
+  onCloseMobileMenu 
+}) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
+
+  // Handle navigation click on mobile
+  const handleNavClick = () => {
+    if (isMobile && onCloseMobileMenu) {
+      onCloseMobileMenu();
+    }
+  };
 
   const navItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
@@ -30,25 +43,23 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
     { path: "/reports", label: "Reports", icon: FiBarChart },
     { path: "/settings", label: "Settings", icon: FiRotateCcw },
   ];
-
   return (
     <aside
-      className={`h-full ${collapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out shadow-xl border-r flex flex-col`}
+      className={`h-full ${isMobile ? 'w-64' : (collapsed ? "w-16" : "w-64")} transition-all duration-300 ease-in-out shadow-xl border-r flex flex-col bg-white`}
       style={{
         background: "var(--color-sidebar-bg)",
         borderColor: "var(--color-border-light)",
         fontFamily: "var(--font-family-sans)",
       }}
-    >
-      {/* Header Section - 20% */}
+    >      {/* Header Section - 20% */}
       <div
-        className={`${collapsed ? "p-3" : "p-6"} flex items-center border-b backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] relative`}
+        className={`${collapsed && !isMobile ? "p-3" : "p-6"} flex items-center border-b backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] relative`}
         style={{
           borderColor: "var(--color-border-light)",
           backgroundColor: "rgba(0, 0, 0, 0.1)",
         }}
       >
-        {/* Pin Toggle Button - Top Left */}
+        {/* Pin Toggle Button - Top Left (Desktop) / Close Button (Mobile) */}
         <button
           onClick={onToggleCollapse}
           className="absolute top-2 left-2 p-2 rounded-lg transition-all duration-200 z-10"
@@ -65,7 +76,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
             e.target.style.color = "var(--color-sidebar-text)";
           }}
         >
-          {collapsed ? (
+          {isMobile ? (
+            <FiX className="w-5 h-5" />
+          ) : collapsed ? (
             <TbPin className="w-5 h-5" />
           ) : (
             <TbPinFilled className="w-5 h-5" />
@@ -73,7 +86,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
         </button>
 
         {/* Logo and Title */}
-        {!collapsed && (
+        {(!collapsed || isMobile) && (
           <div className="flex items-center ml-10 transition-all duration-300">
             <div
               className="rounded-xl w-12 h-12 flex items-center justify-center text-white font-bold shadow-lg text-xl"
@@ -102,19 +115,18 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Navigation Section - 60% */}
+      </div>      {/* Navigation Section - 60% */}
       <nav
-        className={`${collapsed ? "px-3 py-6" : "px-6 py-8"} transition-all duration-300 flex flex-col flex-[0_0_60%]`}
+        className={`${collapsed && !isMobile ? "px-3 py-6" : "px-6 py-8"} transition-all duration-300 flex flex-col flex-[0_0_60%]`}
       >
         <ul className="flex flex-col h-full justify-stretch space-y-0">
           {navItems.map((item, index) => (
             <li key={index} className="flex-1">
               <Link
                 to={item.path}
+                onClick={handleNavClick}
                 className={`group flex items-center justify-center gap-4 h-full ${
-                  collapsed ? "p-4" : "px-6 py-4"
+                  collapsed && !isMobile ? "p-4" : "px-6 py-4"
                 } transition-all duration-200 relative rounded-xl`}
                 style={{
                   color: isActive(item.path)
@@ -125,7 +137,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
                     : "transparent",
                   transform: isActive(item.path) ? "scale(1.05)" : "scale(1)",
                 }}
-                title={collapsed ? item.label : ""}
+                title={collapsed && !isMobile ? item.label : ""}
                 onMouseEnter={(e) => {
                   if (!isActive(item.path)) {
                     e.target.style.backgroundColor =
@@ -146,7 +158,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
                 <item.icon className="text-2xl transition-all duration-200" />
 
                 {/* Label */}
-                {!collapsed && (
+                {(!collapsed || isMobile) && (
                   <span
                     className="ml-4 font-medium transition-all duration-200 text-lg"
                     style={{ fontFamily: "var(--font-family-sans)" }}
@@ -156,7 +168,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
                 )}
 
                 {/* Active Indicator */}
-                {isActive(item.path) && !collapsed && (
+                {isActive(item.path) && (!collapsed || isMobile) && (
                   <div
                     className="ml-auto w-2 h-2 rounded-full animate-pulse"
                     style={{
@@ -165,8 +177,8 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
                   ></div>
                 )}
 
-                {/* Hover tooltip for collapsed state */}
-                {collapsed && (
+                {/* Hover tooltip for collapsed state (desktop only) */}
+                {collapsed && !isMobile && (
                   <div
                     className="absolute left-16 top-1/2 transform -translate-y-1/2 px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50"
                     style={{
@@ -188,11 +200,9 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
             </li>
           ))}
         </ul>
-      </nav>
-
-      {/* Footer Section - 20% */}
+      </nav>      {/* Footer Section - 20% */}
       <div
-        className={`${collapsed ? "p-3" : "p-6"} border-t backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] flex flex-col justify-center`}
+        className={`${collapsed && !isMobile ? "p-3" : "p-6"} border-t backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] flex flex-col justify-center`}
         style={{
           borderColor: "var(--color-border-light)",
           backgroundColor: "rgba(0, 0, 0, 0.1)",
@@ -201,7 +211,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
         {/* Logout Button */}
         <button
           className={`w-full group flex items-center justify-center gap-4 ${
-            collapsed ? "p-4" : "px-6 py-4"
+            collapsed && !isMobile ? "p-4" : "px-6 py-4"
           } rounded-xl transition-all duration-200`}
           style={{
             color: "var(--color-danger-400)",
@@ -217,7 +227,7 @@ const Sidebar = ({ collapsed = false, onToggleCollapse }) => {
           }}
         >
           <FiLogOut className="text-2xl transition-all duration-200" />
-          {!collapsed && (
+          {(!collapsed || isMobile) && (
             <span
               className="font-medium text-lg"
               style={{ fontFamily: "var(--font-family-sans)" }}

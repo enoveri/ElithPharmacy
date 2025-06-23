@@ -1,28 +1,85 @@
 import { Outlet } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
 const MainLayout = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Check if device is mobile
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkIsMobile();
+    window.addEventListener("resize", checkIsMobile);
+
+    return () => window.removeEventListener("resize", checkIsMobile);
+  }, []);
+
+  // Auto-collapse sidebar on mobile
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarCollapsed(true);
+      setMobileMenuOpen(false);
+    }
+  }, [isMobile]);
+
+  const handleToggleSidebar = () => {
+    if (isMobile) {
+      setMobileMenuOpen(!mobileMenuOpen);
+    } else {
+      setSidebarCollapsed(!sidebarCollapsed);
+    }
+  };
+
+  const handleCloseMobileMenu = () => {
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 overflow-hidden">
-      {/* Enhanced Sidebar with collapse functionality */}
+      {/* Mobile Overlay */}
+      {isMobile && mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={handleCloseMobileMenu}
+        ></div>
+      )}
+
+      {/* Enhanced Sidebar with mobile responsiveness */}
       <div
-        className={`${sidebarCollapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out flex-shrink-0`}
+        className={`
+          ${isMobile ? 'fixed' : 'relative'} 
+          ${isMobile ? 'z-50' : 'z-10'}
+          ${isMobile ? 'h-full' : 'h-screen'}
+          ${isMobile && !mobileMenuOpen ? '-translate-x-full' : 'translate-x-0'}
+          ${!isMobile && sidebarCollapsed ? "w-16" : "w-64"} 
+          transition-all duration-300 ease-in-out flex-shrink-0
+          ${isMobile ? 'lg:relative lg:translate-x-0' : ''}
+        `}
       >
         <Sidebar
-          collapsed={sidebarCollapsed}
-          onToggleCollapse={() => setSidebarCollapsed(!sidebarCollapsed)}
+          collapsed={!isMobile && sidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
+          isMobile={isMobile}
+          mobileMenuOpen={mobileMenuOpen}
+          onCloseMobileMenu={handleCloseMobileMenu}
         />
-      </div>
-
-      {/* Main Content Area */}
+      </div>      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Enhanced Header with better spacing */}
         <div className="flex-shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm shadow-sm">
-          <Header />
+          <Header 
+            onToggleMobileMenu={handleToggleSidebar}
+            isMobile={isMobile}
+            mobileMenuOpen={mobileMenuOpen}
+          />
         </div>
 
         {/* Enhanced Main Content with better padding and animations */}

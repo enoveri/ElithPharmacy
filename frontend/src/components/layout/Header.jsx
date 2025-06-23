@@ -19,7 +19,7 @@ import { useNotificationsStore } from "../../store";
 import NotificationPanel from "../NotificationPanel.jsx";
 import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
 
-const Header = () => {
+const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }) => {
   const { user, logout } = useAuth(); // Call useAuth at the beginning
 
   const [time, setTime] = useState(new Date());
@@ -201,7 +201,6 @@ const Header = () => {
         return FiBell;
     }
   };
-
   return (
     <header
       style={{
@@ -220,9 +219,30 @@ const Header = () => {
     >
       {/* Left section */}
       <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+        {/* Mobile Menu Button */}
+        {isMobile && (
+          <button
+            onClick={onToggleMobileMenu}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 md:hidden"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#374151",
+            }}
+          >
+            {mobileMenuOpen ? (
+              <FiX className="w-6 h-6" />
+            ) : (
+              <FiMenu className="w-6 h-6" />
+            )}
+          </button>
+        )}
+        
         <h1
+          className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-800 m-0`}
           style={{
-            fontSize: "20px",
+            fontSize: isMobile ? "18px" : "20px",
             fontWeight: "600",
             color: "#1f2937",
             margin: 0,
@@ -230,31 +250,31 @@ const Header = () => {
         >
           Elith Pharmacy
         </h1>
-      </div>
-
-      {/* Right section */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-        {/* Time display */}
-        <div
-          style={{
-            fontSize: "14px",
-            color: "#6b7280",
-            fontWeight: "500",
-          }}
-        >
-          {time.toLocaleTimeString("en-US", {
-            hour12: true,
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </div>
-        {/* Notifications */}
+      </div>      {/* Right section */}
+      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "16px" }}>
+        {/* Time display - hide on very small screens */}
+        {!isMobile && (
+          <div
+            style={{
+              fontSize: "14px",
+              color: "#6b7280",
+              fontWeight: "500",
+            }}
+            className="hidden sm:block"
+          >
+            {time.toLocaleTimeString("en-US", {
+              hour12: true,
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        )}        {/* Notifications */}
         <div style={{ position: "relative" }} ref={notificationRef}>
           <button
             onClick={toggleNotifications}
             style={{
               position: "relative",
-              padding: "8px",
+              padding: isMobile ? "6px" : "8px",
               border: "none",
               background: "none",
               cursor: "pointer",
@@ -271,7 +291,7 @@ const Header = () => {
               e.target.style.backgroundColor = "transparent";
             }}
           >
-            <FiBell size={20} color="#374151" />
+            <FiBell size={isMobile ? 18 : 20} color="#374151" />
             {unreadCount > 0 && (
               <span
                 style={{
@@ -281,30 +301,29 @@ const Header = () => {
                   backgroundColor: "#ef4444",
                   color: "white",
                   borderRadius: "50%",
-                  width: "18px",
-                  height: "18px",
-                  fontSize: "10px",
+                  width: isMobile ? "16px" : "18px",
+                  height: isMobile ? "16px" : "18px",
+                  fontSize: isMobile ? "9px" : "10px",
                   fontWeight: "600",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  minWidth: "18px",
+                  minWidth: isMobile ? "16px" : "18px",
                 }}
               >
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-          </button>
-
-          {/* Notifications Panel */}
+          </button>          {/* Notifications Panel */}
           {showNotifications && (
             <div
               style={{
                 position: "absolute",
                 top: "calc(100% + 8px)",
                 right: "0",
-                width: "360px",
-                maxHeight: "400px",
+                width: isMobile ? "90vw" : "360px",
+                maxWidth: isMobile ? "350px" : "360px",
+                maxHeight: isMobile ? "70vh" : "400px",
                 backgroundColor: "white",
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
@@ -546,16 +565,17 @@ const Header = () => {
             </div>
           )}
         </div>{" "}
-        {/* Settings */}
+        {/* Settings */}        {/* Settings Button - hide on small mobile screens */}
         <button
+          className={isMobile ? "hidden sm:flex" : ""}
           onClick={() => navigate("/settings")}
           style={{
-            padding: "8px",
+            padding: isMobile ? "6px" : "8px",
             border: "none",
             background: "none",
             cursor: "pointer",
             borderRadius: "50%",
-            display: "flex",
+            display: isMobile ? "none" : "flex",
             alignItems: "center",
             justifyContent: "center",
             transition: "background-color 0.2s",
@@ -568,12 +588,12 @@ const Header = () => {
             e.target.style.backgroundColor = "transparent";
           }}
         >
-          <FiSettings size={20} color="#374151" />
+          <FiSettings size={isMobile ? 18 : 20} color="#374151" />
         </button>
         {/* User Profile */}
         <button
           style={{
-            padding: "8px",
+            padding: isMobile ? "6px" : "8px",
             border: "none",
             background: "none",
             cursor: "pointer",
@@ -590,7 +610,7 @@ const Header = () => {
             e.target.style.backgroundColor = "transparent";
           }}
         >
-          <FiUser size={20} color="#374151" />
+          <FiUser size={isMobile ? 18 : 20} color="#374151" />
         </button>
       </div>
     </header>

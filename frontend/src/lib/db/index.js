@@ -926,25 +926,37 @@ export const dbHelpers = {
     }
 
     return { success: true };
-  },
-  // Notifications functions
+  },  // Notifications functions
   getNotifications: async (userId = null) => {
     try {
       console.log("🔄 [DB] Fetching notifications...");
+      console.log("🔍 [DB] userId parameter:", userId);
 
       let query = supabase
         .from("notifications")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (userId) {
-        query = query.eq("user_id", userId);
-      }
+      console.log("🔍 [DB] Base query created");
 
+      // For now, let's not filter by user_id to see if RLS is the issue
+      // if (userId) {
+      //   query = query.eq("user_id", userId);
+      //   console.log("🔍 [DB] Added user_id filter:", userId);
+      // }
+
+      console.log("🔍 [DB] Executing query...");
       const { data, error } = await query;
+      
+      console.log("🔍 [DB] Query result:", { 
+        dataLength: data?.length, 
+        error: error?.message,
+        fullData: data 
+      });
 
       if (error) {
         console.error("❌ [DB] Error fetching notifications:", error);
+        console.error("🔍 [DB] Full error object:", JSON.stringify(error, null, 2));
 
         // Check if the error is about table not existing
         if (
@@ -965,16 +977,19 @@ export const dbHelpers = {
       return { data: data || [], error: null };
     } catch (error) {
       console.error("❌ [DB] Error in getNotifications:", error);
+      console.error("🔍 [DB] Caught error details:", {
+        message: error.message,
+        stack: error.stack
+      });
       return { data: [], error };
     }
-  },
-  createNotification: async (notificationData) => {
+  },  createNotification: async (notificationData) => {
     try {
       console.log("🔄 [DB] Creating notification:", notificationData);
 
       // Clean notification data to match database schema exactly
       const cleanNotification = {
-        user_id: notificationData.userId || null,
+        user_id: null, // Set to null for now since we're using mock auth
         type: notificationData.type || "info",
         title: notificationData.title,
         message: notificationData.message,
@@ -985,6 +1000,8 @@ export const dbHelpers = {
         is_read: false,
       };
 
+      console.log("🔍 [DB] Clean notification data:", cleanNotification);
+
       // Remove any undefined values and fields not in schema
       Object.keys(cleanNotification).forEach((key) => {
         if (cleanNotification[key] === undefined) {
@@ -992,22 +1009,38 @@ export const dbHelpers = {
         }
       });
 
+      console.log("🔍 [DB] Final notification data:", cleanNotification);
+
       const { data, error } = await supabase
         .from("notifications")
         .insert([cleanNotification])
         .select()
         .single();
 
+      console.log("🔍 [DB] Insert result:", { data, error });
+
       if (error) {
         console.error("❌ [DB] Error creating notification:", error);
-        throw error;
+        console.error("🔍 [DB] Full error details:", JSON.stringify(error, null, 2));
+        
+        // If RLS error, provide helpful message
+        if (error.code === '42501' || error.message?.includes('row-level security')) {
+          console.error("🚨 [DB] RLS POLICY BLOCKING NOTIFICATION CREATION!");
+          console.error("💡 [DB] Solution: Run 'ALTER TABLE public.notifications DISABLE ROW LEVEL SECURITY;' in Supabase SQL editor");
+        }
+        
+        return { success: false, error, data: null };
       }
 
       console.log("✅ [DB] Created notification:", data);
-      return data;
+      return { success: true, data, error: null };
     } catch (error) {
       console.error("❌ [DB] Error creating notification:", error);
-      throw error;
+      console.error("🔍 [DB] Caught error details:", {
+        message: error.message,
+        stack: error.stack
+      });
+      return { success: false, error, data: null };
     }
   },
 
