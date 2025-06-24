@@ -22,6 +22,7 @@ import ViewProduct from "../pages/ViewProduct";
 import Purchases from "../pages/Purchases";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Settings from "../pages/Settings";
+import AdminPanel from "../pages/AdminPanel";
 
 export const router = createBrowserRouter([
   {
@@ -95,10 +96,13 @@ export const router = createBrowserRouter([
       {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
-      },
-      {
+      },      {
         path: "/settings",
         element: <Settings />,
+      },
+      {
+        path: "/admin",
+        element: <AdminPanel />,
       },
     ],
   },
