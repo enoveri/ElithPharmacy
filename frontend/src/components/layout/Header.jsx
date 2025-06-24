@@ -18,10 +18,11 @@ const Header = ({
   onToggleMobileMenu,
   isMobile = false,
   mobileMenuOpen = false,
-}) => {  const { user, logout } = useAuth();
-
+}) => {
+  const { user, logout } = useAuth();
   const [time, setTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
+  const [deletingNotifications, setDeletingNotifications] = useState(new Set());
   const notificationRef = useRef(null);
   const navigate = useNavigate();
 
@@ -88,7 +89,8 @@ const Header = ({
     } catch (error) {
       console.error("Error clearing notifications:", error);
     }
-  };  const handleNotificationClick = async (notification) => {
+  };
+  const handleNotificationClick = async (notification) => {
     // Mark as read first
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -114,46 +116,34 @@ const Header = ({
       setShowNotifications(false);
     }
   };
+  const handleDeleteNotification = async (notificationId, event) => {
+    // Prevent the notification click event from firing
+    event.stopPropagation();
 
-  // Notification action handlers
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await markNotificationAsRead(notificationId);
-      // Refresh notifications
-      const updatedNotifications = notifications.map((n) =>
-        n.id === notificationId ? { ...n, is_read: true } : n
-      );
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
+    // Add to deleting set for animation
+    setDeletingNotifications((prev) => new Set([...prev, notificationId]));
+
+    // Wait for animation to complete before actually deleting
+    setTimeout(async () => {
+      try {
+        await deleteNotification(notificationId);
+        // Remove from deleting set after successful deletion
+        setDeletingNotifications((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      } catch (error) {
+        console.error("Error deleting notification:", error);
+        // Remove from deleting set if error occurs
+        setDeletingNotifications((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(notificationId);
+          return newSet;
+        });
+      }
+    }, 300); // Animation duration
   };
-
-  const handleMarkAllAsRead = async () => {
-    try {
-      await markAllNotificationsAsRead(user?.id);
-      // Refresh notifications
-      const updatedNotifications = notifications.map((n) => ({
-        ...n,
-        is_read: true,
-      }));
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  };
-
-  const handleDeleteNotification = async (notificationId) => {
-    try {
-      await deleteNotification(notificationId);
-      // Remove from local state
-      const updatedNotifications = notifications.filter(
-        (n) => n.id !== notificationId
-      );
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }  };
 
   // Get notification icon based on type
   const getNotificationIcon = (type) => {
@@ -349,8 +339,54 @@ const Header = ({
                     <FiCheck size={12} />
                     Mark all read
                   </button>
-                )}
+                )}{" "}
               </div>
+
+              {/* Show All Notifications Button - only show when there are notifications */}
+              {notifications.length > 0 && (
+                <div
+                  style={{
+                    padding: "12px 16px",
+                    borderBottom: "1px solid #e5e7eb",
+                  }}
+                >
+                  <button
+                    onClick={() => {
+                      navigate("/notifications");
+                      setShowNotifications(false);
+                    }}
+                    style={{
+                      width: "100%",
+                      padding: "8px 16px",
+                      backgroundColor: "#f8fafc",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      cursor: "pointer",
+                      fontSize: "14px",
+                      color: "#374151",
+                      fontWeight: "500",
+                      transition: "all 0.2s ease",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor = "#3b82f6";
+                      e.target.style.color = "white";
+                      e.target.style.borderColor = "#3b82f6";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor = "#f8fafc";
+                      e.target.style.color = "#374151";
+                      e.target.style.borderColor = "#e5e7eb";
+                    }}
+                  >
+                    <FiBell size={16} />
+                    View All Notifications
+                  </button>
+                </div>
+              )}
 
               {/* Notifications List */}
               <div
@@ -372,53 +408,11 @@ const Header = ({
                       size={32}
                       style={{ marginBottom: "8px", opacity: 0.5 }}
                     />
-                    <div style={{ fontSize: "14px", marginBottom: "16px" }}>
-                      No notifications
-                    </div>
-                    {/* Debug buttons */}
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <button
-                        onClick={handleCreateTestNotifications}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#3b82f6",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Create Test Notifications
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          navigate("/database-setup");
-                          setShowNotifications(false);
-                        }}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#10b981",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Database Setup
-                      </button>
-                    </div>
+                    <div style={{ fontSize: "14px" }}>No notifications</div>
                   </div>
                 ) : (
-                  notifications.map((notification) => {
+                  // Show only the first 5 notifications in the dropdown
+                  notifications.slice(0, 5).map((notification) => {
                     const NotificationIcon = getNotificationIcon(
                       notification.type
                     );
@@ -431,29 +425,47 @@ const Header = ({
                             ? "#ef4444"
                             : "#6b7280";
 
+                    const isDeleting = deletingNotifications.has(
+                      notification.id
+                    );
+
                     return (
                       <div
                         key={notification.id}
-                        onClick={() => handleNotificationClick(notification)}
+                        onClick={() =>
+                          !isDeleting && handleNotificationClick(notification)
+                        }
                         style={{
                           padding: "12px 16px",
                           borderBottom: "1px solid #f3f4f6",
-                          cursor: "pointer",
+                          cursor: isDeleting ? "default" : "pointer",
                           backgroundColor: notification.is_read
                             ? "transparent"
                             : "#f8fafc",
-                          transition: "background-color 0.2s",
+                          transition: "all 0.3s ease",
                           display: "flex",
                           gap: "12px",
                           alignItems: "flex-start",
+                          transform: isDeleting
+                            ? "translateX(-100%)"
+                            : "translateX(0)",
+                          opacity: isDeleting ? 0 : 1,
+                          maxHeight: isDeleting ? "0" : "200px",
+                          overflow: "hidden",
+                          paddingTop: isDeleting ? "0" : "12px",
+                          paddingBottom: isDeleting ? "0" : "12px",
+                          marginBottom: isDeleting ? "0" : "0",
                         }}
                         onMouseEnter={(e) => {
-                          e.target.style.backgroundColor = "#f3f4f6";
+                          if (!isDeleting) {
+                            e.currentTarget.style.backgroundColor = "#f3f4f6";
+                          }
                         }}
                         onMouseLeave={(e) => {
-                          e.target.style.backgroundColor = notification.is_read
-                            ? "transparent"
-                            : "#f8fafc";
+                          if (!isDeleting) {
+                            e.currentTarget.style.backgroundColor =
+                              notification.is_read ? "transparent" : "#f8fafc";
+                          }
                         }}
                       >
                         <div
@@ -470,7 +482,6 @@ const Header = ({
                         >
                           <NotificationIcon size={16} color={iconColor} />
                         </div>
-
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
@@ -509,35 +520,92 @@ const Header = ({
                               notification.created_at
                             ).toLocaleDateString()}
                           </div>
-                        </div>
-
+                        </div>{" "}
                         <button
                           onClick={(e) =>
                             handleDeleteNotification(notification.id, e)
                           }
+                          disabled={isDeleting}
                           style={{
-                            padding: "4px",
+                            padding: "6px",
                             border: "none",
                             background: "none",
-                            cursor: "pointer",
+                            cursor: isDeleting ? "default" : "pointer",
                             borderRadius: "4px",
                             color: "#9ca3af",
                             flexShrink: 0,
-                            opacity: 0.7,
-                            transition: "opacity 0.2s",
+                            opacity: isDeleting ? 0.3 : 0.6,
+                            transition: "all 0.2s ease",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            pointerEvents: isDeleting ? "none" : "auto",
                           }}
                           onMouseEnter={(e) => {
-                            e.target.style.opacity = "1";
+                            if (!isDeleting) {
+                              e.target.style.opacity = "1";
+                              e.target.style.backgroundColor = "#fee2e2";
+                              e.target.style.color = "#dc2626";
+                            }
                           }}
                           onMouseLeave={(e) => {
-                            e.target.style.opacity = "0.7";
+                            if (!isDeleting) {
+                              e.target.style.opacity = "0.6";
+                              e.target.style.backgroundColor = "transparent";
+                              e.target.style.color = "#9ca3af";
+                            }
                           }}
+                          title={
+                            isDeleting ? "Deleting..." : "Delete notification"
+                          }
                         >
-                          <FiX size={14} />
-                        </button>
+                          <FiX size={16} />
+                        </button>{" "}
                       </div>
                     );
                   })
+                )}
+                {/* View All Button for more than 5 notifications */}
+                {notifications.length > 5 && (
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      borderTop: "1px solid #f3f4f6",
+                      backgroundColor: "#f9fafb",
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        navigate("/notifications");
+                        setShowNotifications(false);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "8px 16px",
+                        backgroundColor: "#3b82f6",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: "pointer",
+                        fontSize: "14px",
+                        color: "white",
+                        fontWeight: "500",
+                        transition: "background-color 0.2s ease",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "8px",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.target.style.backgroundColor = "#2563eb";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.target.style.backgroundColor = "#3b82f6";
+                      }}
+                    >
+                      <FiBell size={16} />
+                      View All {notifications.length} Notifications
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
