@@ -3,16 +3,13 @@ import { router } from "./routes/index.jsx";
 import { AppProvider } from "./contexts/AppContext.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { dataService } from "./services";
-import { notificationTester } from "./lib/notificationTester.js";
 import { supabase } from "./lib/supabase";
 import "./App.css";
 
-function App() {
-  // Add debug helpers to window object for console testing
+function App() {  // Add debug helpers to window object for console testing
   if (typeof window !== "undefined") {
     window.debugPharmacy = {
       dataService,
-      notificationTester,
       // Authentication helpers
       auth: {
         getUser: async () => {
@@ -58,28 +55,6 @@ function App() {
         console.log("🧪 Testing sales data...");
         const result = await dataService.debug.salesData();
         console.log("💰 Sales result:", result);
-        return result;
-      },
-      testNotifications: async () => {
-        console.log("🧪 Testing notification system...");
-
-        // Check auth first
-        const authCheck = await notificationTester.checkAuthentication();
-        if (!authCheck.authenticated) {
-          console.warn(
-            '⚠️ Please sign in first: window.debugPharmacy.auth.signIn("email", "password")'
-          );
-          return { error: "Authentication required", authCheck };
-        }
-
-        const result = await notificationTester.runAllTests();
-        console.log("🔔 Notification test result:", result);
-        return result;
-      },
-      checkNotificationHealth: async () => {
-        console.log("🏥 Checking notification system health...");
-        const result = await notificationTester.quickHealthCheck();
-        console.log("💚 Health check result:", result);
         return result;
       },
     };

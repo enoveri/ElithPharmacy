@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Forgot Password Component
 function ForgotPasswordForm({ onBackToLogin }) {
@@ -6,27 +8,36 @@ function ForgotPasswordForm({ onBackToLogin }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false);
   const [error, setError] = useState('');
+  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (email) {
-      setIsEmailSent(true);
-    } else {
-      setError('Please enter a valid email address');
+    try {
+      const { data, error } = await resetPassword(email);
+      if (error) {
+        setError(error.message);
+      } else {
+        setIsEmailSent(true);
+      }
+    } catch (err) {
+      setError('Failed to send reset email. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleResendEmail = async () => {
     setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
+    try {
+      await resetPassword(email);
+    } catch (err) {
+      console.error('Error resending email:', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (isEmailSent) {
@@ -154,28 +165,26 @@ function Login() {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const navigate = useNavigate();
+  const { signIn } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsLoading(true);
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const mockUsers = {
-      'admin@example.com': { password: 'admin123', token: 'mock-token-123' },
-      'staff@example.com': { password: 'staff123', token: 'mock-token-456' },
-    };
-
-    if (mockUsers[email] && mockUsers[email].password === password) {
-      localStorage.setItem('authToken', mockUsers[email].token);
-      localStorage.setItem('userEmail', email);
-      window.location.href = '/';
-    } else {
-      setError('Invalid email or password');
+    try {
+      const { data, error } = await signIn(email, password);
+      if (error) {
+        setError(error.message);
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setError('Failed to sign in. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   const handleForgotPassword = () => {

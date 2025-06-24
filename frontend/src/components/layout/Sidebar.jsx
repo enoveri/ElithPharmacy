@@ -13,6 +13,7 @@ import {
   FiMenu,
   FiX,
   FiTruck,
+  FiShield,
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
 
@@ -32,7 +33,6 @@ const Sidebar = ({
       onCloseMobileMenu();
     }
   };
-
   const navItems = [
     { path: "/", label: "Dashboard", icon: FiHome },
     { path: "/pos", label: "Point of Sale", icon: FiPlus },
@@ -41,6 +41,7 @@ const Sidebar = ({
     { path: "/sales", label: "Sales", icon: FiList },
     { path: "/customers", label: "Customers", icon: FiUser },
     { path: "/reports", label: "Reports", icon: FiBarChart },
+    { path: "/admin", label: "Admin Panel", icon: FiShield },
     { path: "/settings", label: "Settings", icon: FiRotateCcw },
   ];
   return (
