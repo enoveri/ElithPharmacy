@@ -6,7 +6,8 @@ import { dataService } from "./services";
 import { supabase } from "./lib/supabase";
 import "./App.css";
 
-function App() {  // Add debug helpers to window object for console testing
+function App() {
+  // Add debug helpers to window object for console testing
   if (typeof window !== "undefined") {
     window.debugPharmacy = {
       dataService,
@@ -50,7 +51,8 @@ function App() {  // Add debug helpers to window object for console testing
         const result = await dataService.dashboard.getStats();
         console.log("📊 Dashboard result:", result);
         return result;
-      },      testSales: async () => {
+      },
+      testSales: async () => {
         console.log("🧪 Testing sales data...");
         const result = await dataService.debug.salesData();
         console.log("💰 Sales result:", result);

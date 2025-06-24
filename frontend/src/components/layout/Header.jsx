@@ -31,7 +31,6 @@ const Header = ({
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
-
   // Use notification store
   const {
     notifications,
@@ -41,7 +40,6 @@ const Header = ({
     markAllAsRead,
     deleteNotification,
     checkAutoNotifications,
-    createManualNotifications, // Add this debug function
   } = useNotificationsStore();
 
   useEffect(() => {
@@ -188,47 +186,6 @@ const Header = ({
       cleanupOldNotifications(user.id).catch(console.error);
     }
   }, [user?.id]);
-  // Debug function to manually create notifications
-  const handleCreateTestNotifications = async () => {
-    console.log("🔧 [Debug] Manually creating test notifications...");
-    try {
-      await createManualNotifications();
-      console.log("✅ [Debug] Test notifications created");
-
-      // Also create a simple test notification for route testing
-      const testNotification = {
-        type: "info",
-        title: "Route Test Notification",
-        message: "Click to test navigation to inventory",
-        action_url: "/inventory",
-        priority: "medium",
-      };
-
-      const { data, error } = await supabase
-        .from("notifications")
-        .insert([testNotification])
-        .select();
-
-      if (error) throw error;
-      console.log("✅ [Debug] Route test notification created:", data);
-
-      // Refresh notifications
-      loadNotifications();
-    } catch (error) {
-      console.error("❌ [Debug] Error creating test notifications:", error);
-    }
-  };
-
-  // Load notifications function
-  const loadNotifications = async () => {
-    try {
-      const data = await getNotifications();
-      setNotifications(data || []);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-      setNotifications([]);
-    }
-  };
 
   // Handle logout
   const handleLogout = async () => {
@@ -457,50 +414,7 @@ const Header = ({
                       size={32}
                       style={{ marginBottom: "8px", opacity: 0.5 }}
                     />
-                    <div style={{ fontSize: "14px", marginBottom: "16px" }}>
-                      No notifications
-                    </div>
-                    {/* Debug buttons */}
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "8px",
-                        flexDirection: "column",
-                      }}
-                    >
-                      <button
-                        onClick={handleCreateTestNotifications}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#3b82f6",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Create Test Notifications
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          navigate("/database-setup");
-                          setShowNotifications(false);
-                        }}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#10b981",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "6px",
-                          fontSize: "12px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Database Setup
-                      </button>
-                    </div>
+                    <div style={{ fontSize: "14px" }}>No notifications</div>
                   </div>
                 ) : (
                   notifications.map((notification) => {
