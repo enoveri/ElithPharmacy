@@ -22,7 +22,6 @@ import ViewProduct from "../pages/ViewProduct";
 import Purchases from "../pages/Purchases";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Settings from "../pages/Settings";
-import Notifications from "../pages/Notifications";
 
 export const router = createBrowserRouter([
   {
@@ -100,10 +99,6 @@ export const router = createBrowserRouter([
       {
         path: "/settings",
         element: <Settings />,
-      },
-      {
-        path: "/notifications",
-        element: <Notifications />,
       },
     ],
   },
