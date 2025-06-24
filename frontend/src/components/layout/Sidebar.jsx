@@ -16,12 +16,12 @@ import {
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
 
-const Sidebar = ({ 
-  collapsed = false, 
-  onToggleCollapse, 
-  isMobile = false, 
-  mobileMenuOpen = false, 
-  onCloseMobileMenu 
+const Sidebar = ({
+  collapsed = false,
+  onToggleCollapse,
+  isMobile = false,
+  mobileMenuOpen = false,
+  onCloseMobileMenu,
 }) => {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
@@ -45,13 +45,15 @@ const Sidebar = ({
   ];
   return (
     <aside
-      className={`h-full ${isMobile ? 'w-64' : (collapsed ? "w-16" : "w-64")} transition-all duration-300 ease-in-out shadow-xl border-r flex flex-col bg-white`}
+      className={`h-full ${isMobile ? "w-64" : collapsed ? "w-16" : "w-64"} transition-all duration-300 ease-in-out shadow-xl border-r flex flex-col bg-white`}
       style={{
         background: "var(--color-sidebar-bg)",
         borderColor: "var(--color-border-light)",
         fontFamily: "var(--font-family-sans)",
       }}
-    >      {/* Header Section - 20% */}
+    >
+      {" "}
+      {/* Header Section - 20% */}
       <div
         className={`${collapsed && !isMobile ? "p-3" : "p-6"} flex items-center border-b backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] relative`}
         style={{
@@ -115,7 +117,8 @@ const Sidebar = ({
             </div>
           </div>
         )}
-      </div>      {/* Navigation Section - 60% */}
+      </div>{" "}
+      {/* Navigation Section - 60% */}
       <nav
         className={`${collapsed && !isMobile ? "px-3 py-6" : "px-6 py-8"} transition-all duration-300 flex flex-col flex-[0_0_60%]`}
       >
@@ -200,7 +203,8 @@ const Sidebar = ({
             </li>
           ))}
         </ul>
-      </nav>      {/* Footer Section - 20% */}
+      </nav>{" "}
+      {/* Footer Section - 20% */}
       <div
         className={`${collapsed && !isMobile ? "p-3" : "p-6"} border-t backdrop-blur-sm transition-all duration-300 flex-[0_0_20%] flex flex-col justify-center`}
         style={{

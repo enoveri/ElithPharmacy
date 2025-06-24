@@ -1,7 +1,9 @@
 // Data service that provides a unified interface to the database
 import { dbHelpers } from "../lib/db";
+import { notificationService } from "./notificationService";
+import { NotificationTriggers } from "./notificationIntegration";
 
-// Data service that provides a unified interface
+// Enhanced data service with integrated notifications
 export const dataService = {
   // Products
   products: {
@@ -34,13 +36,26 @@ export const dataService = {
     search: async (query) => {
       return await dbHelpers.searchProducts(query);
     },
-
     create: async (product) => {
-      return await dbHelpers.createProduct(product);
+      const result = await dbHelpers.createProduct(product);
+
+      // Trigger notification check for new product
+      if (result) {
+        await NotificationTriggers.productChanged(result, "create");
+      }
+
+      return result;
     },
 
     update: async (id, updates) => {
-      return await dbHelpers.updateProduct(id, updates);
+      const result = await dbHelpers.updateProduct(id, updates);
+
+      // Trigger notification check for updated product
+      if (result) {
+        await NotificationTriggers.productChanged(result, "update");
+      }
+
+      return result;
     },
 
     delete: async (id) => {
@@ -67,9 +82,15 @@ export const dataService = {
     search: async (query) => {
       return await dbHelpers.searchCustomers(query);
     },
-
     create: async (customer) => {
-      return await dbHelpers.createCustomer(customer);
+      const result = await dbHelpers.createCustomer(customer);
+
+      // Trigger notification for new customer
+      if (result) {
+        await NotificationTriggers.customerCreated(result);
+      }
+
+      return result;
     },
 
     update: async (id, updates) => {
@@ -108,9 +129,15 @@ export const dataService = {
     getToday: async () => {
       return await dbHelpers.getTodaysSales();
     },
-
     create: async (sale) => {
-      return await dbHelpers.createSale(sale);
+      const result = await dbHelpers.createSale(sale);
+
+      // Trigger notification for completed sale
+      if (result) {
+        await NotificationTriggers.saleCompleted(result);
+      }
+
+      return result;
     },
 
     update: async (id, updates) => {
@@ -195,18 +222,18 @@ export const dataService = {
     delete: async (id) => {
       return await dbHelpers.deleteCategory(id);
     },
-  },
-  // Notifications
+  }, // Enhanced Notifications with comprehensive service
   notifications: {
+    // Basic CRUD operations
     getAll: async () => {
-      console.log('🔄 [Service] notifications.getAll called');
+      console.log("🔄 [Service] notifications.getAll called");
       const { data, error } = await dbHelpers.getNotifications();
-      console.log('🔍 [Service] getNotifications result:', { data, error });
+      console.log("🔍 [Service] getNotifications result:", { data, error });
       if (error) {
-        console.error('❌ [Service] Error in getNotifications:', error);
+        console.error("❌ [Service] Error in getNotifications:", error);
         throw error;
       }
-      console.log('✅ [Service] Returning notifications:', data);
+      console.log("✅ [Service] Returning notifications:", data);
       return data || [];
     },
 
@@ -216,10 +243,12 @@ export const dataService = {
 
     getUnread: async () => {
       return await dbHelpers.getUnreadNotifications();
-    },    create: async (notification) => {
-      console.log('🔄 [Service] Creating notification:', notification);
+    },
+
+    create: async (notification) => {
+      console.log("🔄 [Service] Creating notification:", notification);
       const result = await dbHelpers.createNotification(notification);
-      console.log('🔍 [Service] Create notification result:', result);
+      console.log("🔍 [Service] Create notification result:", result);
       return result;
     },
 
@@ -239,105 +268,79 @@ export const dataService = {
       return await dbHelpers.deleteAllNotifications();
     },
 
-    // Check for and create automatic notifications for low stock and expiring products
+    // Enhanced notification methods using the comprehensive service
+    runComprehensiveCheck: async () => {
+      return await notificationService.runComprehensiveCheck();
+    },
+
+    checkInventoryNotifications: async () => {
+      return await notificationService.checkInventoryNotifications();
+    },
+
+    // Specific notification creators
+    createLowStockAlert: async (product) => {
+      return await notificationService.createNotification(
+        notificationService.notificationTypes.LOW_STOCK,
+        "Low Stock Alert",
+        `${product.name} is running low (${product.quantity || 0} left, minimum: ${product.min_stock_level || product.minStockLevel || 0})`,
+        {
+          priority: notificationService.priorities.HIGH,
+          data: { productId: product.id, currentStock: product.quantity },
+          actionUrl: `/inventory/${product.id}`,
+          category: "inventory",
+        }
+      );
+    },
+
+    createSaleAlert: async (sale) => {
+      return await notificationService.notifySaleCompleted(sale);
+    },
+
+    createExpiryAlert: async (product) => {
+      const expiryDate = new Date(product.expiry_date || product.expiryDate);
+      const daysUntilExpiry = Math.ceil(
+        (expiryDate - new Date()) / (1000 * 60 * 60 * 24)
+      );
+
+      const notificationType =
+        daysUntilExpiry <= 0
+          ? notificationService.notificationTypes.EXPIRED
+          : notificationService.notificationTypes.EXPIRING_SOON;
+
+      const title =
+        daysUntilExpiry <= 0 ? "Product Expired" : "Product Expiring Soon";
+      const message =
+        daysUntilExpiry <= 0
+          ? `${product.name} has expired on ${expiryDate.toLocaleDateString()}`
+          : `${product.name} expires in ${daysUntilExpiry} day${daysUntilExpiry === 1 ? "" : "s"} (${expiryDate.toLocaleDateString()})`;
+
+      return await notificationService.createNotification(
+        notificationType,
+        title,
+        message,
+        {
+          priority:
+            daysUntilExpiry <= 7
+              ? notificationService.priorities.HIGH
+              : notificationService.priorities.MEDIUM,
+          data: {
+            productId: product.id,
+            expiryDate: expiryDate.toISOString(),
+            daysUntilExpiry,
+          },
+          actionUrl: `/inventory/${product.id}`,
+          category: "inventory",
+        }
+      );
+    }, // Legacy method for backward compatibility
     checkAutoNotifications: async () => {
-      try {
-        console.log('🔄 [Notifications] Checking for automatic notifications...');
-        
-        // Get low stock products
-        const lowStockProducts = await dbHelpers.getLowStockProducts();
-        console.log(`📦 [Notifications] Found ${lowStockProducts.length} low stock products`);
-        
-        // Get all products to check for out of stock
-        const allProducts = await dbHelpers.getProducts();
-        const outOfStockProducts = allProducts.data?.filter(product => (product.quantity || 0) === 0) || [];
-        console.log(`❌ [Notifications] Found ${outOfStockProducts.length} out of stock products`);
-        
-        // Get expiring products (within 30 days)
-        const expiringProducts = await dbHelpers.getExpiringProducts(30);
-        console.log(`⏰ [Notifications] Found ${expiringProducts.length} expiring products`);
-        
-        let createdCount = 0;
-        
-        // Check if notifications already exist for these products to avoid duplicates
-        const existingNotifications = await dbHelpers.getNotifications();
-        const existingProductIds = new Set();
-        
-        if (existingNotifications.data) {
-          existingNotifications.data.forEach(notification => {
-            if (notification.data?.productId) {
-              existingProductIds.add(notification.data.productId);
-            }
-          });
-        }
-        
-        // Create notifications for low stock products
-        for (const product of lowStockProducts) {
-          if (!existingProductIds.has(product.id)) {
-            const result = await dbHelpers.createNotification({
-              type: 'warning',
-              title: 'Low Stock Alert',
-              message: `${product.name} is running low (${product.quantity || 0} left, minimum: ${product.min_stock_level || product.minStockLevel || 0})`,
-              priority: 'high',
-              data: { productId: product.id, currentStock: product.quantity },
-              actionUrl: `/inventory/${product.id}`,
-            });
-            
-            if (result.success) {
-              createdCount++;
-              console.log(`🔔 [Notifications] Created low stock alert for ${product.name}`);
-            }
-          }
-        }
-        
-        // Create notifications for out of stock products
-        for (const product of outOfStockProducts) {
-          if (!existingProductIds.has(product.id)) {
-            const result = await dbHelpers.createNotification({
-              type: 'error',
-              title: 'Out of Stock Alert',
-              message: `${product.name} is completely out of stock!`,
-              priority: 'high',
-              data: { productId: product.id, currentStock: 0 },
-              actionUrl: `/inventory/${product.id}`,
-            });
-            
-            if (result.success) {
-              createdCount++;
-              console.log(`🚨 [Notifications] Created out of stock alert for ${product.name}`);
-            }
-          }
-        }
-        
-        // Create notifications for expiring products
-        for (const product of expiringProducts) {
-          if (!existingProductIds.has(product.id)) {
-            const daysUntilExpiry = Math.ceil((new Date(product.expiry_date || product.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-            const result = await dbHelpers.createNotification({
-              type: 'warning',
-              title: 'Product Expiring Soon',
-              message: `${product.name} will expire in ${daysUntilExpiry} days`,
-              priority: 'medium',
-              data: { productId: product.id, daysUntilExpiry },
-              actionUrl: `/inventory/${product.id}`,
-            });
-            
-            if (result.success) {
-              createdCount++;
-              console.log(`⏰ [Notifications] Created expiry alert for ${product.name}`);
-            }
-          }
-        }
-        
-        console.log(`✅ [Notifications] Auto-check complete. Created ${createdCount} new notifications.`);
-        return { success: true, createdCount };
-        
-      } catch (error) {
-        console.error('❌ [Notifications] Error in checkAutoNotifications:', error);
-        return { success: false, error };
-      }
+      console.log(
+        "🔄 [Service] Running legacy checkAutoNotifications (redirecting to comprehensive check)..."
+      );
+      return await notificationService.runComprehensiveCheck();
     },
   },
+
   // Analytics & Reports
   analytics: {
     getDashboardStats: async () => {

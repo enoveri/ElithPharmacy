@@ -51,17 +51,16 @@ const MainLayout = () => {
           onClick={handleCloseMobileMenu}
         ></div>
       )}
-
       {/* Enhanced Sidebar with mobile responsiveness */}
       <div
         className={`
-          ${isMobile ? 'fixed' : 'relative'} 
-          ${isMobile ? 'z-50' : 'z-10'}
-          ${isMobile ? 'h-full' : 'h-screen'}
-          ${isMobile && !mobileMenuOpen ? '-translate-x-full' : 'translate-x-0'}
+          ${isMobile ? "fixed" : "relative"} 
+          ${isMobile ? "z-50" : "z-10"}
+          ${isMobile ? "h-full" : "h-screen"}
+          ${isMobile && !mobileMenuOpen ? "-translate-x-full" : "translate-x-0"}
           ${!isMobile && sidebarCollapsed ? "w-16" : "w-64"} 
           transition-all duration-300 ease-in-out flex-shrink-0
-          ${isMobile ? 'lg:relative lg:translate-x-0' : ''}
+          ${isMobile ? "lg:relative lg:translate-x-0" : ""}
         `}
       >
         <Sidebar
@@ -71,11 +70,12 @@ const MainLayout = () => {
           mobileMenuOpen={mobileMenuOpen}
           onCloseMobileMenu={handleCloseMobileMenu}
         />
-      </div>      {/* Main Content Area */}
+      </div>{" "}
+      {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Enhanced Header with better spacing */}
         <div className="flex-shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm shadow-sm">
-          <Header 
+          <Header
             onToggleMobileMenu={handleToggleSidebar}
             isMobile={isMobile}
             mobileMenuOpen={mobileMenuOpen}
@@ -98,7 +98,6 @@ const MainLayout = () => {
           </div>
         </main>
       </div>
-
       {/* Enhanced scroll indicator */}
       <div
         className="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500 transform scale-x-0 origin-left transition-transform duration-300 ease-out z-50"

@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FiSearch,
   FiSettings,
   FiBell,
   FiMenu,
@@ -10,21 +9,19 @@ import {
   FiAlertTriangle,
   FiInfo,
   FiCheckCircle,
-  FiPackage,
-  FiClock,
-  FiExternalLink,
   FiCheck,
 } from "react-icons/fi";
 import { useNotificationsStore } from "../../store";
-import NotificationPanel from "../NotificationPanel.jsx";
-import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
+import { useAuth } from "../../contexts/AuthContext";
 
-const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }) => {
-  const { user, logout } = useAuth(); // Call useAuth at the beginning
+const Header = ({
+  onToggleMobileMenu,
+  isMobile = false,
+  mobileMenuOpen = false,
+}) => {  const { user, logout } = useAuth();
 
   const [time, setTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
 
@@ -37,7 +34,6 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
     markAllAsRead,
     deleteNotification,
     checkAutoNotifications,
-    createManualNotifications, // Add this debug function
   } = useNotificationsStore();
 
   useEffect(() => {
@@ -92,9 +88,7 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
     } catch (error) {
       console.error("Error clearing notifications:", error);
     }
-  };
-
-  const handleNotificationClick = async (notification) => {
+  };  const handleNotificationClick = async (notification) => {
     // Mark as read first
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -102,7 +96,21 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
 
     // Navigate to action URL if available
     if (notification.action_url) {
-      navigate(notification.action_url);
+      // Fix route mismatch issues
+      let targetUrl = notification.action_url;
+
+      // Fix inventory URLs: /inventory/4 -> /inventory/view/4
+      if (targetUrl.match(/^\/inventory\/\d+$/)) {
+        const id = targetUrl.split("/")[2];
+        targetUrl = `/inventory/view/${id}`;
+      }
+
+      // Fix sales URLs: /sales/view/4 -> /sales/4
+      if (targetUrl.startsWith("/sales/view/")) {
+        targetUrl = targetUrl.replace("/sales/view/", "/sales/");
+      }
+
+      navigate(targetUrl);
       setShowNotifications(false);
     }
   };
@@ -145,46 +153,7 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
       setNotifications(updatedNotifications);
     } catch (error) {
       console.error("Error deleting notification:", error);
-    }
-  };
-  // Cleanup old notifications on mount
-  useEffect(() => {
-    if (user?.id) {
-      cleanupOldNotifications(user.id).catch(console.error);
-    }
-  }, [user?.id]);
-
-  // Debug function to manually create notifications
-  const handleCreateTestNotifications = async () => {
-    console.log("🔧 [Debug] Manually creating test notifications...");
-    try {
-      await createManualNotifications();
-      console.log("✅ [Debug] Test notifications created");
-    } catch (error) {
-      console.error("❌ [Debug] Error creating test notifications:", error);
-    }
-  };
-
-  // Load notifications function
-  const loadNotifications = async () => {
-    try {
-      const data = await getNotifications();
-      setNotifications(data || []);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-      setNotifications([]);
-    }
-  };
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setShowProfileMenu(false);
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
+    }  };
 
   // Get notification icon based on type
   const getNotificationIcon = (type) => {
@@ -238,9 +207,9 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
             )}
           </button>
         )}
-        
+
         <h1
-          className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-gray-800 m-0`}
+          className={`${isMobile ? "text-lg" : "text-xl"} font-semibold text-gray-800 m-0`}
           style={{
             fontSize: isMobile ? "18px" : "20px",
             fontWeight: "600",
@@ -250,8 +219,15 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
         >
           Elith Pharmacy
         </h1>
-      </div>      {/* Right section */}
-      <div style={{ display: "flex", alignItems: "center", gap: isMobile ? "8px" : "16px" }}>
+      </div>{" "}
+      {/* Right section */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: isMobile ? "8px" : "16px",
+        }}
+      >
         {/* Time display - hide on very small screens */}
         {!isMobile && (
           <div
@@ -268,7 +244,8 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
               minute: "2-digit",
             })}
           </div>
-        )}        {/* Notifications */}
+        )}{" "}
+        {/* Notifications */}
         <div style={{ position: "relative" }} ref={notificationRef}>
           <button
             onClick={toggleNotifications}
@@ -314,7 +291,8 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
             )}
-          </button>          {/* Notifications Panel */}
+          </button>{" "}
+          {/* Notifications Panel */}
           {showNotifications && (
             <div
               style={{
@@ -565,7 +543,7 @@ const Header = ({ onToggleMobileMenu, isMobile = false, mobileMenuOpen = false }
             </div>
           )}
         </div>{" "}
-        {/* Settings */}        {/* Settings Button - hide on small mobile screens */}
+        {/* Settings */} {/* Settings Button - hide on small mobile screens */}
         <button
           className={isMobile ? "hidden sm:flex" : ""}
           onClick={() => navigate("/settings")}
