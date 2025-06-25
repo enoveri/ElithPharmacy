@@ -97,7 +97,8 @@ export const router = createBrowserRouter([
       {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
-      },      {
+      },
+      {
         path: "/settings",
         element: <Settings />,
       },

@@ -6,7 +6,8 @@ import { dataService } from "./services";
 import { supabase } from "./lib/supabase";
 import "./App.css";
 
-function App() {  // Add debug helpers to window object for console testing
+function App() {
+  // Add debug helpers to window object for console testing
   if (typeof window !== "undefined") {
     window.debugPharmacy = {
       dataService,
