@@ -18,877 +18,418 @@ import {
   FiMapPin,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useProductsStore } from "../store";
+import { useSettings } from "../contexts/SettingsContext";
 
 function ViewProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { currency = "UGX" } = settings;
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("overview");
-
-  // Mock analytics data for the product
   const [productAnalytics, setProductAnalytics] = useState({
-    salesHistory: [
-      { date: "2024-01-20", quantity: 5, revenue: 127.5, profit: 37.5 },
-      { date: "2024-01-19", quantity: 3, revenue: 76.5, profit: 22.5 },
-      { date: "2024-01-18", quantity: 8, revenue: 204.0, profit: 60.0 },
-      { date: "2024-01-17", quantity: 2, revenue: 51.0, profit: 15.0 },
-      { date: "2024-01-16", quantity: 6, revenue: 153.0, profit: 45.0 },
-    ],
-    totalSales: 24,
-    totalRevenue: 612.0,
-    totalProfit: 180.0,
-    averageQuantityPerSale: 4.8,
-    topCustomers: [
-      { name: "John Doe", purchases: 8, totalSpent: 204.0 },
-      { name: "Sarah Johnson", purchases: 6, totalSpent: 153.0 },
-      { name: "Michael Brown", purchases: 5, totalSpent: 127.5 },
-    ],
-    stockMovement: {
-      received: 200,
-      sold: 24,
-      remaining: 176,
-      turnoverRate: 12.0,
-    },
-    profitMargin: 29.4,
-    demandTrend: "increasing",
+    totalSold: 0,
+    totalRevenue: 0,
+    totalProfit: 0,
+    averageRating: 0,
+    recentSales: [],
+    topCustomers: [],
   });
+
   useEffect(() => {
-    // Load product details from data service
     const loadProduct = async () => {
       try {
-        const foundProduct = await dataService.products.getById(id);
-        setProduct(foundProduct);
-        setLoading(false);
+        setLoading(true);
+        const productData = await dataService.products.getById(id);
+        setProduct(productData);
+
+        // Load analytics data
+        const analytics = await loadProductAnalytics(id);
+        setProductAnalytics(analytics);
       } catch (error) {
         console.error("Error loading product:", error);
+        navigate("/inventory");
+      } finally {
         setLoading(false);
       }
     };
 
-    loadProduct();
-  }, [id]);
+    if (id) {
+      loadProduct();
+    }
+  }, [id, navigate]);
+
+  const loadProductAnalytics = async (productId) => {
+    try {
+      // Mock analytics data - replace with actual data service calls
+      const salesData = await dataService.sales.getAll();
+      const productSales = salesData.filter((sale) =>
+        sale.items?.some(
+          (item) =>
+            item.product_id === productId || item.productId === productId
+        )
+      );
+
+      let totalSold = 0;
+      let totalRevenue = 0;
+      let totalProfit = 0;
+      const recentSales = [];
+
+      productSales.forEach((sale) => {
+        const productItem = sale.items?.find(
+          (item) =>
+            item.product_id === productId || item.productId === productId
+        );
+        if (productItem) {
+          totalSold += productItem.quantity || 0;
+          const revenue =
+            (productItem.price || 0) * (productItem.quantity || 0);
+          totalRevenue += revenue;
+
+          // Calculate profit (assuming cost price is available)
+          const cost =
+            (product?.costPrice || product?.cost_price || 0) *
+            (productItem.quantity || 0);
+          totalProfit += revenue - cost;
+
+          recentSales.push({
+            id: sale.id,
+            date: sale.created_at || sale.date,
+            quantity: productItem.quantity,
+            revenue,
+            profit: revenue - cost,
+            customer: sale.customer_name || "Walk-in",
+          });
+        }
+      });
+
+      // Sort recent sales by date
+      recentSales.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      return {
+        totalSold,
+        totalRevenue,
+        totalProfit,
+        averageRating: 4.2, // Mock rating
+        recentSales: recentSales.slice(0, 10),
+        topCustomers: [], // Mock customers
+      };
+    } catch (error) {
+      console.error("Error loading analytics:", error);
+      return {
+        totalSold: 0,
+        totalRevenue: 0,
+        totalProfit: 0,
+        averageRating: 0,
+        recentSales: [],
+        topCustomers: [],
+      };
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/products/edit/${id}`);
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await dataService.products.delete(id);
+        navigate("/inventory");
+      } catch (error) {
+        console.error("Error deleting product:", error);
+        alert("Error deleting product. Please try again.");
+      }
+    }
+  };
+
+  const getStockStatus = (quantity) => {
+    if (quantity === 0)
+      return {
+        status: "Out of Stock",
+        color: "text-red-600",
+        bg: "bg-red-100",
+      };
+    if (quantity < 10)
+      return {
+        status: "Low Stock",
+        color: "text-yellow-600",
+        bg: "bg-yellow-100",
+      };
+    return { status: "In Stock", color: "text-green-600", bg: "bg-green-100" };
+  };
 
   if (loading) {
     return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          backgroundColor: "#f8fafc",
-        }}
-      >
-        <div
-          style={{
-            width: "48px",
-            height: "48px",
-            border: "4px solid #f3f4f6",
-            borderTop: "4px solid #3b82f6",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        />
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   if (!product) {
     return (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          backgroundColor: "#f8fafc",
-          textAlign: "center",
-        }}
-      >
-        <FiPackage
-          size={64}
-          style={{ color: "#9ca3af", marginBottom: "16px" }}
-        />
-        <h2
-          style={{
-            fontSize: "24px",
-            fontWeight: "bold",
-            color: "#374151",
-            marginBottom: "8px",
-          }}
-        >
-          Product Not Found
-        </h2>
-        <p style={{ color: "#6b7280", marginBottom: "24px" }}>
-          The product you're looking for doesn't exist or has been removed.
-        </p>
-        <button
-          onClick={() => navigate("/inventory")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "12px 20px",
-            backgroundColor: "#3b82f6",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: "pointer",
-          }}
-        >
-          <FiArrowLeft size={16} />
-          Back to Inventory
-        </button>
+      <div className="p-6">
+        <div className="text-center">
+          <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
+          <h3 className="mt-2 text-sm font-medium text-gray-900">
+            Product not found
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            The product you're looking for doesn't exist.
+          </p>
+          <div className="mt-6">
+            <button
+              onClick={() => navigate("/inventory")}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            >
+              <FiArrowLeft className="mr-2 h-4 w-4" />
+              Back to Inventory
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const getStockStatus = () => {
-    if (product.quantity === 0)
-      return { color: "#ef4444", text: "Out of Stock", bg: "#fef2f2" };
-    if (product.quantity <= product.minStockLevel)
-      return { color: "#f59e0b", text: "Low Stock", bg: "#fffbeb" };
-    return { color: "#10b981", text: "In Stock", bg: "#f0fdf4" };
-  };
-
-  const getExpiryStatus = () => {
-    const daysUntilExpiry = Math.ceil(
-      (new Date(product.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
-    );
-    if (daysUntilExpiry <= 0)
-      return { color: "#ef4444", text: "Expired", bg: "#fef2f2" };
-    if (daysUntilExpiry <= 30)
-      return {
-        color: "#f59e0b",
-        text: `${daysUntilExpiry} days left`,
-        bg: "#fffbeb",
-      };
-    return { color: "#10b981", text: "Fresh", bg: "#f0fdf4" };
-  };
-
-  const stockStatus = getStockStatus();
-  const expiryStatus = getExpiryStatus();
-
-  const tabs = [
-    { id: "overview", label: "Overview", icon: FiBarChart },
-    { id: "analytics", label: "Analytics", icon: FiTrendingUp },
-    { id: "sales", label: "Sales History", icon: FiShoppingCart },
-    { id: "customers", label: "Top Customers", icon: FiUser },
-  ];
-
-  const renderOverview = () => (
-    <div
-      style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}
-    >
-      {/* Product Details */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#1f2937",
-            marginBottom: "20px",
-          }}
-        >
-          Product Information
-        </h3>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Category:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {product.category}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Manufacturer:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {product.manufacturer}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Batch Number:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {product.batchNumber}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Barcode:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {product.barcode}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Expiry Date:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {new Date(product.expiryDate).toLocaleDateString()}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Pricing & Stock */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#1f2937",
-            marginBottom: "20px",
-          }}
-        >
-          Pricing & Stock
-        </h3>{" "}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Selling Price:</span>
-            <span
-              style={{ fontWeight: "600", color: "#10b981", fontSize: "16px" }}
-            >
-              ₦{(product.price || 0).toFixed(2)}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Cost Price:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦{(product.costPrice || product.cost_price || 0).toFixed(2)}
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Profit Margin:</span>
-            <span style={{ fontWeight: "600", color: "#10b981" }}>
-              {productAnalytics.profitMargin}%
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Current Stock:</span>
-            <span style={{ fontWeight: "600", color: stockStatus.color }}>
-              {product.quantity} units
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Min Stock Level:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {product.minStockLevel} units
-            </span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between" }}>
-            <span style={{ color: "#6b7280" }}>Total Value:</span>{" "}
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦
-              {(
-                (product.quantity || 0) *
-                (product.costPrice || product.cost_price || 0)
-              ).toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderAnalytics = () => (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gap: "24px",
-      }}
-    >
-      {/* Performance Metrics */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          gridColumn: "span 2",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#1f2937",
-            marginBottom: "20px",
-          }}
-        >
-          Performance Metrics
-        </h3>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(4, 1fr)",
-            gap: "16px",
-          }}
-        >
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              backgroundColor: "#f0fdf4",
-              borderRadius: "8px",
-            }}
-          >
-            <FiShoppingCart
-              size={24}
-              style={{ color: "#10b981", marginBottom: "8px" }}
-            />
-            <div
-              style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
-            >
-              {productAnalytics.totalSales}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Total Sales
-            </div>
-          </div>
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              backgroundColor: "#eff6ff",
-              borderRadius: "8px",
-            }}
-          >
-            <FiDollarSign
-              size={24}
-              style={{ color: "#3b82f6", marginBottom: "8px" }}
-            />{" "}
-            <div
-              style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
-            >
-              ₦{(productAnalytics.totalRevenue || 0).toFixed(2)}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Total Revenue
-            </div>
-          </div>
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              backgroundColor: "#fefce8",
-              borderRadius: "8px",
-            }}
-          >
-            <FiTrendingUp
-              size={24}
-              style={{ color: "#f59e0b", marginBottom: "8px" }}
-            />
-            <div
-              style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
-            >
-              ₦{(productAnalytics.totalProfit || 0).toFixed(2)}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Total Profit
-            </div>
-          </div>
-          <div
-            style={{
-              textAlign: "center",
-              padding: "16px",
-              backgroundColor: "#f3e8ff",
-              borderRadius: "8px",
-            }}
-          >
-            <FiBarChart
-              size={24}
-              style={{ color: "#8b5cf6", marginBottom: "8px" }}
-            />
-            <div
-              style={{ fontSize: "20px", fontWeight: "bold", color: "#1f2937" }}
-            >
-              {productAnalytics.stockMovement.turnoverRate}%
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Turnover Rate
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stock Movement */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#1f2937",
-            marginBottom: "20px",
-          }}
-        >
-          Stock Movement
-        </h3>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ color: "#6b7280" }}>Received:</span>
-            <span style={{ fontWeight: "600", color: "#10b981" }}>
-              +{productAnalytics.stockMovement.received} units
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ color: "#6b7280" }}>Sold:</span>
-            <span style={{ fontWeight: "600", color: "#ef4444" }}>
-              -{productAnalytics.stockMovement.sold} units
-            </span>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <span style={{ color: "#6b7280" }}>Remaining:</span>
-            <span style={{ fontWeight: "600", color: "#1f2937" }}>
-              {productAnalytics.stockMovement.remaining} units
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Demand Trend */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h3
-          style={{
-            fontSize: "18px",
-            fontWeight: "600",
-            color: "#1f2937",
-            marginBottom: "20px",
-          }}
-        >
-          Demand Trend
-        </h3>
-
-        <div style={{ textAlign: "center" }}>
-          {productAnalytics.demandTrend === "increasing" ? (
-            <FiTrendingUp
-              size={48}
-              style={{ color: "#10b981", marginBottom: "12px" }}
-            />
-          ) : (
-            <FiTrendingDown
-              size={48}
-              style={{ color: "#ef4444", marginBottom: "12px" }}
-            />
-          )}
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: "600",
-              color: "#1f2937",
-              marginBottom: "4px",
-            }}
-          >
-            {productAnalytics.demandTrend === "increasing"
-              ? "Increasing"
-              : "Decreasing"}
-          </div>
-          <div style={{ fontSize: "14px", color: "#6b7280" }}>
-            Based on recent sales data
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderSalesHistory = () => (
-    <div
-      style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        padding: "24px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h3
-        style={{
-          fontSize: "18px",
-          fontWeight: "600",
-          color: "#1f2937",
-          marginBottom: "20px",
-        }}
-      >
-        Sales History (Last 30 Days)
-      </h3>
-
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
-              <th
-                style={{
-                  padding: "12px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                }}
-              >
-                Date
-              </th>
-              <th
-                style={{
-                  padding: "12px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                }}
-              >
-                Quantity Sold
-              </th>
-              <th
-                style={{
-                  padding: "12px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                }}
-              >
-                Revenue
-              </th>
-              <th
-                style={{
-                  padding: "12px",
-                  textAlign: "left",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                }}
-              >
-                Profit
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {productAnalytics.salesHistory.map((sale, index) => (
-              <tr key={index} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                <td style={{ padding: "12px", color: "#1f2937" }}>
-                  {new Date(sale.date).toLocaleDateString()}
-                </td>
-                <td
-                  style={{
-                    padding: "12px",
-                    color: "#1f2937",
-                    fontWeight: "600",
-                  }}
-                >
-                  {sale.quantity} units
-                </td>
-                <td
-                  style={{
-                    padding: "12px",
-                    color: "#10b981",
-                    fontWeight: "600",
-                  }}
-                >
-                  ₦{(sale.revenue || 0).toFixed(2)}
-                </td>
-                <td
-                  style={{
-                    padding: "12px",
-                    color: "#f59e0b",
-                    fontWeight: "600",
-                  }}
-                >
-                  ₦{(sale.profit || 0).toFixed(2)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  const renderTopCustomers = () => (
-    <div
-      style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        padding: "24px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-      }}
-    >
-      <h3
-        style={{
-          fontSize: "18px",
-          fontWeight: "600",
-          color: "#1f2937",
-          marginBottom: "20px",
-        }}
-      >
-        Top Customers
-      </h3>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-        {productAnalytics.topCustomers.map((customer, index) => (
-          <div
-            key={index}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "16px",
-              backgroundColor: "#f9fafb",
-              borderRadius: "8px",
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                {customer.name}
-              </div>
-              <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                {customer.purchases} purchases
-              </div>
-            </div>{" "}
-            <div style={{ fontWeight: "bold", color: "#10b981" }}>
-              ₦{(customer.totalSpent || 0).toFixed(2)}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const stockStatus = getStockStatus(product.quantity || 0);
 
   return (
-    <div
-      style={{
-        padding: "24px",
-        backgroundColor: "#f8fafc",
-        minHeight: "100vh",
-      }}
-    >
+    <div className="p-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button
-            onClick={() => navigate("/inventory")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "#6b7280",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
-          >
-            <FiArrowLeft size={16} />
-            Back to Inventory
-          </button>
-          <div>
-            <h1
-              style={{
-                fontSize: "28px",
-                fontWeight: "bold",
-                color: "#1f2937",
-                margin: "0 0 4px 0",
-              }}
-            >
-              {product.name}
-            </h1>
-            <p style={{ color: "#6b7280", margin: 0 }}>{product.description}</p>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            onClick={() => navigate(`/inventory/edit/${product.id}`)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            <FiEdit size={16} />
-            Edit Product
-          </button>
-        </div>
-      </div>
-
-      {/* Status Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(2, 1fr)",
-          gap: "16px",
-          marginBottom: "32px",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: stockStatus.bg,
-            border: `1px solid ${stockStatus.color}40`,
-            borderRadius: "12px",
-            padding: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <FiPackage size={24} color={stockStatus.color} />
-          <div>
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: stockStatus.color,
-              }}
-            >
-              {stockStatus.text}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Current stock level
-            </div>
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: expiryStatus.bg,
-            border: `1px solid ${expiryStatus.color}40`,
-            borderRadius: "12px",
-            padding: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <FiClock size={24} color={expiryStatus.color} />
-          <div>
-            <div
-              style={{
-                fontSize: "14px",
-                fontWeight: "600",
-                color: expiryStatus.color,
-              }}
-            >
-              {expiryStatus.text}
-            </div>
-            <div style={{ fontSize: "12px", color: "#6b7280" }}>
-              Product expiry status
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          marginBottom: "24px",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            borderBottom: "1px solid #e5e7eb",
-          }}
-        >
-          {tabs.map((tab) => (
+      <div className="mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "16px 24px",
-                backgroundColor: "transparent",
-                border: "none",
-                borderBottom:
-                  activeTab === tab.id
-                    ? "2px solid #3b82f6"
-                    : "2px solid transparent",
-                color: activeTab === tab.id ? "#3b82f6" : "#6b7280",
-                fontWeight: activeTab === tab.id ? "600" : "500",
-                cursor: "pointer",
-                fontSize: "14px",
-              }}
+              onClick={() => navigate("/inventory")}
+              className="flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
             >
-              <tab.icon size={16} />
-              {tab.label}
+              <FiArrowLeft className="mr-2 h-4 w-4" />
+              Back to Inventory
             </button>
-          ))}
+          </div>
+          <div className="flex space-x-3">
+            <button
+              onClick={handleEdit}
+              className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              <FiEdit className="mr-2 h-4 w-4" />
+              Edit
+            </button>
+            <button
+              onClick={handleDelete}
+              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+            >
+              <FiTrash2 className="mr-2 h-4 w-4" />
+              Delete
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Tab Content */}
-      <div>
-        {activeTab === "overview" && renderOverview()}
-        {activeTab === "analytics" && renderAnalytics()}
-        {activeTab === "sales" && renderSalesHistory()}
-        {activeTab === "customers" && renderTopCustomers()}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Product Information */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="flex items-start justify-between mb-6">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                  {product.name}
+                </h1>
+                <p className="text-sm text-gray-500 mb-4">
+                  {product.manufacturer || product.category}
+                </p>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">
+                      Selling Price
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {currency} {(product.price || 0).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">
+                      Cost Price
+                    </p>
+                    <p className="text-lg font-semibold text-gray-900">
+                      {currency}{" "}
+                      {(product.costPrice || product.cost_price || 0).toFixed(
+                        2
+                      )}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">
+                      Profit Margin
+                    </p>
+                    <p className="text-lg font-semibold text-green-600">
+                      {currency}
+                      {(
+                        (product.price || 0) -
+                        (product.costPrice || product.cost_price || 0)
+                      ).toFixed(2)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Stock</p>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}
+                    >
+                      {product.quantity || 0} units
+                    </span>
+                  </div>
+                </div>
+
+                {product.description && (
+                  <div className="mb-6">
+                    <h3 className="text-sm font-medium text-gray-900 mb-2">
+                      Description
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      {product.description}
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <p className="font-medium text-gray-500">SKU</p>
+                    <p className="text-gray-900">
+                      {product.sku || product.barcode || "N/A"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-500">Category</p>
+                    <p className="text-gray-900">
+                      {product.category || "Uncategorized"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-500">Status</p>
+                    <span
+                      className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}
+                    >
+                      {stockStatus.status}
+                    </span>
+                  </div>
+                  {product.expiry_date && (
+                    <div>
+                      <p className="font-medium text-gray-500">Expiry Date</p>
+                      <p className="text-gray-900">
+                        {new Date(product.expiry_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Analytics Sidebar */}
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h3 className="text-lg font-medium text-gray-900 mb-4">
+              Performance
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FiShoppingCart className="h-5 w-5 text-blue-600 mr-2" />
+                  <span className="text-sm text-gray-600">Total Sold</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {productAnalytics.totalSold} units
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FiDollarSign className="h-5 w-5 text-green-600 mr-2" />
+                  <span className="text-sm text-gray-600">Revenue</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {currency} {(productAnalytics.totalRevenue || 0).toFixed(2)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <FiTrendingUp className="h-5 w-5 text-purple-600 mr-2" />
+                  <span className="text-sm text-gray-600">Profit</span>
+                </div>
+                <span className="text-sm font-medium text-gray-900">
+                  {currency} {(productAnalytics.totalProfit || 0).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Sales */}
+          {productAnalytics.recentSales.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Recent Sales
+              </h3>
+              <div className="space-y-3">
+                {productAnalytics.recentSales.slice(0, 5).map((sale, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
+                  >
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-gray-900">
+                        {sale.quantity} units
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {new Date(sale.date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900">
+                        {currency} {(sale.revenue || 0).toFixed(2)}
+                      </p>
+                      <p className="text-xs text-green-600">
+                        {currency} {(sale.profit || 0).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Top Customers */}
+          {productAnalytics.topCustomers.length > 0 && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Top Customers
+              </h3>
+              <div className="space-y-3">
+                {productAnalytics.topCustomers
+                  .slice(0, 5)
+                  .map((customer, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        <FiUser className="h-4 w-4 text-gray-400 mr-2" />
+                        <span className="text-sm text-gray-900">
+                          {customer.name}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {currency} {(customer.totalSpent || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -97,7 +97,7 @@ export const validateProductData = (data) => {
     });
 
     // Price validation
-    if (row.Price && isNaN(parseFloat(row.Price.replace(/[₦,]/g, "")))) {
+    if (row.Price && isNaN(parseFloat(row.Price.replace(/[UGX,]/g, "")))) {
       rowErrors.push("Invalid price format");
     }
 
@@ -140,8 +140,8 @@ export const transformImportedProductData = (data) => {
   return data.map((row) => ({
     name: row["Product Name"],
     category: row["Category"],
-    price: parseFloat(row["Price"].replace(/[₦,]/g, "")),
-    costPrice: parseFloat(row["Cost Price"]?.replace(/[₦,]/g, "") || 0),
+    price: parseFloat(row["Price"].replace(/[UGX,]/g, "")),
+    costPrice: parseFloat(row["Cost Price"]?.replace(/[UGX,]/g, "") || 0),
     quantity: parseInt(row["Quantity"]),
     minStockLevel: parseInt(row["Min Stock Level"] || 10),
     status: row["Status"] || "active",

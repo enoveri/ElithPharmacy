@@ -741,7 +741,7 @@ function AddProduct() {
           </label>
           <input
             type="text"
-            value={`₦${(productData.costPrice * purchaseDetails.quantity).toFixed(2)}`}
+            value={`${currency}${(productData.costPrice * purchaseDetails.quantity).toFixed(2)}`}
             readOnly
             style={{
               width: "100%",
@@ -945,7 +945,8 @@ function AddProduct() {
               Cost Price:
             </span>
             <div style={{ fontWeight: "600", color: "#1f2937" }}>
-              ₦{(parseFloat(productData.costPrice) || 0).toFixed(2)}
+              {currency}
+              {(parseFloat(productData.costPrice) || 0).toFixed(2)}
             </div>
           </div>
           <div>
@@ -955,7 +956,8 @@ function AddProduct() {
             <div
               style={{ fontWeight: "600", color: "#10b981", fontSize: "16px" }}
             >
-              ₦{(parseFloat(productData.price) || 0).toFixed(2)}
+              {currency}
+              {(parseFloat(productData.price) || 0).toFixed(2)}
             </div>
           </div>
         </div>
@@ -1025,7 +1027,8 @@ function AddProduct() {
                   fontSize: "16px",
                 }}
               >
-                ₦{(productData.costPrice * purchaseDetails.quantity).toFixed(2)}
+                {currency}
+                {(productData.costPrice * purchaseDetails.quantity).toFixed(2)}
               </div>
             </div>
           </div>

@@ -18,10 +18,13 @@ import {
   FiClock,
   FiFileText,
 } from "react-icons/fi";
+import { useSettings } from "../contexts/SettingsContext";
 
 function PurchaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { currency = "UGX" } = settings;
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -407,7 +410,8 @@ function PurchaseDetails() {
                           color: "#6b7280",
                         }}
                       >
-                        ₦{(item.unitCost || 0).toFixed(2)}
+                        {currency}
+                        {(item.unitCost || 0).toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -426,7 +430,8 @@ function PurchaseDetails() {
                           color: "#1f2937",
                         }}
                       >
-                        ₦{(item.total || 0).toFixed(2)}
+                        {currency}
+                        {(item.total || 0).toFixed(2)}
                       </td>
                     </tr>
                   ))}
@@ -556,13 +561,15 @@ function PurchaseDetails() {
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(purchase.subtotal || 0).toFixed(2)}
+                  {currency}
+                  {(purchase.subtotal || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Tax:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(purchase.tax || 0).toFixed(2)}
+                  {currency}
+                  {(purchase.tax || 0).toFixed(2)}
                 </span>
               </div>
               {purchase.discount > 0 && (
@@ -571,7 +578,8 @@ function PurchaseDetails() {
                 >
                   <span style={{ color: "#6b7280" }}>Discount:</span>
                   <span style={{ fontWeight: "600", color: "#ef4444" }}>
-                    -₦{(purchase.discount || 0).toFixed(2)}
+                    -{currency}
+                    {(purchase.discount || 0).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -599,7 +607,8 @@ function PurchaseDetails() {
                     color: "#10b981",
                   }}
                 >
-                  ₦{(purchase.totalAmount || 0).toFixed(2)}
+                  {currency}
+                  {(purchase.totalAmount || 0).toFixed(2)}
                 </span>
               </div>
             </div>

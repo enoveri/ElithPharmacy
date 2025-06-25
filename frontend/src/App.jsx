@@ -2,6 +2,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/index.jsx";
 import { AppProvider } from "./contexts/AppContext.jsx";
 import { AuthProvider } from "./contexts/AuthContext.jsx";
+import { SettingsProvider } from "./contexts/SettingsContext.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { dataService } from "./services";
 import { supabase } from "./lib/supabase";
@@ -65,9 +66,11 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <AppProvider>
-          <RouterProvider router={router} />
-        </AppProvider>
+        <SettingsProvider>
+          <AppProvider>
+            <RouterProvider router={router} />
+          </AppProvider>
+        </SettingsProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

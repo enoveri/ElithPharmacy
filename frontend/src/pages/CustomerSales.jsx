@@ -432,7 +432,7 @@ function CustomerSales() {
                             color: "var(--color-text-primary)",
                           }}
                         >
-                          ₦
+                          UGX
                           {(
                             sale.total_amount ||
                             sale.totalAmount ||
