@@ -1686,8 +1686,81 @@ export const dbHelpers = {
         },
       };
     } catch (error) {
-      console.error("❌ [Debug] Error in debugSalesData:", error);
-      return { error };
+      console.error("❌ [Debug] Error in debugSalesData:", error);      return { error };
+    }
+  },
+
+  // User Management Functions
+  getAdminUsers: async () => {
+    try {
+      console.log("🔄 [DB] Fetching admin users...");
+      
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .eq("role", "admin")
+        .eq("is_active", true);
+
+      if (error) {
+        console.error("❌ [DB] Error fetching admin users:", error);
+        return { success: false, error, data: [] };
+      }
+
+      console.log(`✅ [DB] Found ${data?.length || 0} admin users`);
+      return { success: true, data: data || [], error: null };
+    } catch (error) {
+      console.error("❌ [DB] Error in getAdminUsers:", error);
+      return { success: false, error, data: [] };
+    }
+  },
+
+  createAdminUser: async (userData) => {
+    try {
+      console.log("🔄 [DB] Creating admin user:", userData.email);
+
+      const { data, error } = await supabase
+        .from("admin_users")
+        .insert([userData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error creating admin user:", error);
+        return { success: false, error, data: null };
+      }
+
+      console.log("✅ [DB] Admin user created:", data);
+      return { success: true, data, error: null };
+    } catch (error) {
+      console.error("❌ [DB] Error in createAdminUser:", error);
+      return { success: false, error, data: null };
+    }
+  },
+
+  getUserByEmail: async (email) => {
+    try {
+      console.log("🔄 [DB] Fetching user by email:", email);
+
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // No rows found
+          return { success: true, data: null, error: null };
+        }
+        console.error("❌ [DB] Error fetching user:", error);
+        return { success: false, error, data: null };
+      }
+
+      console.log("✅ [DB] User found:", data?.email);
+      return { success: true, data, error: null };
+    } catch (error) {
+      console.error("❌ [DB] Error in getUserByEmail:", error);
+      return { success: false, error, data: null };
     }
   },
 };

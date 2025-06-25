@@ -24,6 +24,10 @@ import PurchaseDetails from "../pages/PurchaseDetails";
 import Settings from "../pages/Settings";
 import Notifications from "../pages/Notifications";
 
+import AdminSetup from "../pages/AdminSetup";
+import AdminPanel from "../pages/AdminPanel";
+
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -92,17 +96,17 @@ export const router = createBrowserRouter([
       {
         path: "/purchases",
         element: <Purchases />,
-      },
-      {
+      },      {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
-      },      {
+      },
+      {
         path: "/settings",
         element: <Settings />,
       },
       {
-        path: "/admin",
-        element: <AdminPanel />,
+        path: "/notifications",
+        element: <Notifications />,
       },
       {
         path: "/admin",
@@ -113,5 +117,9 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/admin-setup",
+    element: <AdminSetup />,
   },
 ]);

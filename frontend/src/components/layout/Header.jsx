@@ -18,6 +18,7 @@ import {
 import { useNotificationsStore } from "../../store";
 import NotificationPanel from "../NotificationPanel.jsx";
 import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
+import { dbHelpers } from "../../lib/db"; // Import db helpers for cleanup function
 
 const Header = ({
   onToggleMobileMenu,
@@ -179,11 +180,10 @@ const Header = ({
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
-  };
-  // Cleanup old notifications on mount
+  };  // Cleanup old notifications on mount
   useEffect(() => {
     if (user?.id) {
-      cleanupOldNotifications(user.id).catch(console.error);
+      dbHelpers.cleanupOldNotifications(user.id).catch(console.error);
     }
   }, [user?.id]);
 
