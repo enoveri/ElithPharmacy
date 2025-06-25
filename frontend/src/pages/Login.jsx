@@ -1,304 +1,376 @@
 import React, { useState } from 'react';
+import { FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
 
-// Forgot Password Component
-function ForgotPasswordForm({ onBackToLogin }) {
-  const [email, setEmail] = useState('');
+const Login = () => {
+  const [formData, setFormData] = useState({
+    email: '',
+    password: ''
+  });
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isEmailSent, setIsEmailSent] = useState(false);
-  const [error, setError] = useState('');
+
+  // Add keyframes for spinning animation
+  const spinKeyframes = `
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  `;
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
-
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    if (email) {
-      setIsEmailSent(true);
-    } else {
-      setError('Please enter a valid email address');
-    }
     
-    setIsLoading(false);
+    // Add your login logic here
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('Login attempt:', formData);
+    } catch (error) {
+      console.error('Login error:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleResendEmail = async () => {
-    setIsLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsLoading(false);
+  const handleGoogleLogin = () => {
+    // Add Google OAuth logic here
+    console.log('Google login attempt');
   };
-
-  if (isEmailSent) {
-    return (
-      <div className="text-center p-6">
-        <div className="w-16 h-16 bg-green-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-          <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 19v-8.93a2 2 0 01.89-1.664l7-4.666a2 2 0 012.22 0l7 4.666A2 2 0 0121 10.07V19M3 19a2 2 0 002 2h14a2 2 0 002-2M3 19l6.75-4.5M21 19l-6.75-4.5M12 2v6.5" />
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Check Your Email</h1>
-        <p className="text-gray-600 mb-6">
-          We've sent password reset instructions to <strong>{email}</strong>
-        </p>
-        
-        <div className="bg-purple-50 border border-purple-200 rounded-xl px-6 py-4 mb-6">
-          <p className="text-purple-800 text-sm">
-            <strong>Didn't receive the email?</strong> Check your spam folder or wait a few minutes.
-          </p>
-        </div>
-
-        <div className="space-y-4">
-          <button
-            onClick={handleResendEmail}
-            disabled={isLoading}
-            className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transform transition-all duration-200 hover:scale-105 disabled:opacity-50"
-          >
-            {isLoading ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>Resending...</span>
-              </div>
-            ) : (
-              'Resend Email'
-            )}
-          </button>
-          
-          <button
-            onClick={onBackToLogin}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            <span>Back to Login</span>
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="text-center mb-6">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m0 0a2 2 0 012 2m-2-2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V9a2 2 0 012-2m0 0V7a2 2 0 012-2m-2 2a2 2 0 00-2-2" />
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Forgot Password?</h1>
-        <p className="text-gray-600">No worries! Enter your email and we'll send you reset instructions.</p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 block">Email Address</label>
-          <div className="relative">
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 pl-12"
-              placeholder="Enter your registered email"
-              required
-            />
-            <svg className="w-5 h-5 text-purple-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-            </svg>
-          </div>
-        </div>
-
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center space-x-2">
-            <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-red-700 text-sm">{error}</span>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transform transition-all duration-200 hover:scale-105 disabled:opacity-50"
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center space-x-2">
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              <span>Sending...</span>
+      <style>{spinKeyframes}</style>
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-6">
+      <div className="w-full max-w-7xl bg-white rounded-2xl shadow-xl overflow-hidden">
+        <div className="flex min-h-[700px]">
+          {/* Left Side - Illustration */}
+          <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-green-100 via-emerald-100 to-teal-100 relative">            {/* Decorative floating elements */}
+            <div className="absolute inset-0 overflow-hidden">
+              {/* Medical/Pharmacy symbols */}
+              <div className="absolute top-16 left-8 text-2xl text-gray-400 opacity-50">Rx</div>
+              <div className="absolute top-12 right-16 text-xl text-gray-400 opacity-50">mg</div>
+              <div className="absolute top-24 right-8 text-lg text-gray-400 opacity-50">₼</div>
+              <div className="absolute bottom-32 left-12 text-xl text-gray-400 opacity-50">+</div>
+              <div className="absolute bottom-20 left-6 text-lg text-gray-400 opacity-50">ml</div>
+              
+              {/* Medical cross */}
+              <div className="absolute top-20 left-16 w-12 h-12 opacity-40">
+                <div className="absolute top-1/2 left-1/2 w-8 h-2 bg-red-400 transform -translate-x-1/2 -translate-y-1/2"></div>
+                <div className="absolute top-1/2 left-1/2 w-2 h-8 bg-red-400 transform -translate-x-1/2 -translate-y-1/2"></div>
+              </div>
+              
+              {/* Pills icon */}
+              <div className="absolute top-28 right-24 w-8 h-8 opacity-30">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-gray-400">
+                  <ellipse cx="12" cy="12" rx="10" ry="6" strokeWidth="1.5"/>
+                  <path d="M12 2v20" strokeWidth="1.5"/>
+                </svg>
+              </div>
+              
+              {/* Medicine bottle */}
+              <div className="absolute bottom-16 left-16 w-6 h-8 opacity-40">
+                <div className="w-4 h-2 bg-blue-400 mx-auto mb-1 rounded-t"></div>
+                <div className="w-6 h-5 bg-blue-500 rounded-b"></div>
+              </div>
             </div>
-          ) : (
-            'Send Reset Instructions'
-          )}
-        </button>
-
-        <button
-          type="button"
-          onClick={onBackToLogin}
-          className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-all duration-200 flex items-center justify-center space-x-2"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-          <span>Back to Login</span>
-        </button>
-      </form>
-    </>
-  );
-}
-
-// Main Login Component
-function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const mockUsers = {
-      'admin@example.com': { password: 'admin123', token: 'mock-token-123' },
-      'staff@example.com': { password: 'staff123', token: 'mock-token-456' },
-    };
-
-    if (mockUsers[email] && mockUsers[email].password === password) {
-      localStorage.setItem('authToken', mockUsers[email].token);
-      localStorage.setItem('userEmail', email);
-      window.location.href = '/';
-    } else {
-      setError('Invalid email or password');
-    }
-    
-    setIsLoading(false);
-  };
-
-  const handleForgotPassword = () => {
-    setShowForgotPassword(true);
-  };
-
-  const handleBackToLogin = () => {
-    setShowForgotPassword(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100 flex items-center justify-center p-4">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-70 animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl opacity-50 animate-pulse delay-500"></div>
-      </div>
-
-      {/* Main card */}
-      <div className="relative w-full max-w-md">
-        <div className="bg-white shadow-xl rounded-2xl border border-purple-100 p-6 transform transition-all duration-300 hover:shadow-lg">
-          
-          {showForgotPassword ? (
-            <ForgotPasswordForm onBackToLogin={handleBackToLogin} />
-          ) : (
-            <>
-              {/* Login Header */}
-              <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-gradient-to-r from-purple-400 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
-                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                  </svg>
-                </div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h1>
-                <p className="text-gray-600">Sign in to your pharmacy account</p>
+            
+            {/* Main content */}
+            <div className="flex flex-col justify-center items-center w-full px-12 py-16 relative z-10">
+              {/* Main Illustration */}
+              <div className="mb-8">                <img 
+                  src="/10447680.jpg" 
+                  alt="Elith Pharmacy Management Illustration" 
+                  className="w-72 h-72 object-contain mx-auto"
+                />
+              </div>
+                <h2 className="text-3xl font-bold text-gray-800 mb-4 text-center">
+                Elith Pharmacy Hub
+              </h2>
+              <p className="text-base text-gray-600 max-w-sm mx-auto leading-relaxed text-center">
+                Streamline Your Pharmacy Operations with Elith Pharmacy Hub's Complete Management Platform
+              </p>
+              
+              {/* Decorative dots */}
+              <div className="mt-8 flex justify-center space-x-2">
+                <div className="w-2 h-2 bg-teal-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-teal-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-teal-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              </div>
+            </div>
+          </div>          {/* Right Side - Login Form */}
+          <div className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16">
+            <div className="w-full max-w-sm">              {/* Mobile Header */}
+              <div className="lg:hidden text-center mb-8">
+                <h1 className="text-2xl font-bold text-gray-800">ELITH PHARMACY</h1>
+                <p className="text-gray-600 mt-2">Welcome back!</p>
               </div>
 
-              {/* Login Form */}
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-700 block">Email Address</label>
-                  <div className="relative">
+              {/* Desktop Header */}
+              <div className="hidden lg:block text-center mb-12">
+                <div className="flex items-center justify-center">
+                  <div 
+                    className="w-10 h-10 flex items-center justify-center mr-3" 
+                    style={{
+                      backgroundColor: '#14b8a6',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 8.172V5L8 4z"/>
+                    </svg>
+                  </div>
+                  <span 
+                    className="text-2xl font-bold" 
+                    style={{
+                      color: '#1f2937',
+                      letterSpacing: '0.5px'
+                    }}
+                  >
+                    ELITH PHARMACY
+                  </span>
+                </div>
+              </div><form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                {/* Email Field */}
+                <div>
+                  <label 
+                    htmlFor="email" 
+                    style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    Username or email
+                  </label>                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    placeholder="example@gmail.com"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      backgroundColor: '#f9fafb',
+                      transition: 'all 0.2s ease',
+                      outline: 'none'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.backgroundColor = '#ffffff';
+                      e.target.style.borderColor = '#3b82f6';
+                      e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.1)';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.backgroundColor = '#f9fafb';
+                      e.target.style.borderColor = '#e5e7eb';
+                      e.target.style.boxShadow = 'none';
+                    }}
+                    required
+                  />
+                </div>
+
+                {/* Password Field */}
+                <div>
+                  <label 
+                    htmlFor="password" 
+                    style={{
+                      display: 'block',
+                      fontSize: '14px',
+                      fontWeight: '500',
+                      color: '#374151',
+                      marginBottom: '8px'
+                    }}
+                  >
+                    Password
+                  </label>
+                  <div style={{ position: 'relative' }}>
                     <input
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 pl-12"
-                      placeholder="Enter your email"
+                      type={showPassword ? "text" : "password"}
+                      id="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="••••••••••"
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        paddingRight: '48px',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        backgroundColor: '#f9fafb',
+                        transition: 'all 0.2s ease',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.backgroundColor = '#ffffff';
+                        e.target.style.borderColor = '#3b82f6';
+                        e.target.style.boxShadow = '0 0 0 2px rgba(59, 130, 246, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.backgroundColor = '#f9fafb';
+                        e.target.style.borderColor = '#e5e7eb';
+                        e.target.style.boxShadow = 'none';
+                      }}
                       required
                     />
-                    <svg className="w-5 h-5 text-purple-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
-                    </svg>
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '12px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        color: '#9ca3af',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        transition: 'color 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => e.target.style.color = '#6b7280'}
+                      onMouseLeave={(e) => e.target.style.color = '#9ca3af'}
+                    >
+                      {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-sm font-medium text-gray-700 block">Password</label>
-                  <div className="relative">
-                    <input
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full px-4 py-3 bg-white border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-200 pl-12"
-                      placeholder="Enter your password"
-                      required
-                    />
-                    <svg className="w-5 h-5 text-purple-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                    </svg>
-                  </div>
+                {/* Forgot Password */}
+                <div style={{ textAlign: 'right' }}>
+                  <Link 
+                    to="/forgot-password" 
+                    style={{
+                      fontSize: '14px',
+                      color: '#14b8a6',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#0f766e'}
+                    onMouseLeave={(e) => e.target.style.color = '#14b8a6'}
+                  >
+                    Forgot password?
+                  </Link>
                 </div>
 
-                {error && (
-                  <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center space-x-2">
-                    <svg className="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-red-700 text-sm">{error}</span>
-                  </div>
-                )}
-
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transform transition-all duration-200 hover:scale-105 disabled:opacity-50"
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    fontWeight: '500',
+                    fontSize: '14px',
+                    color: '#ffffff',
+                    backgroundColor: isLoading ? '#9ca3af' : '#374151',
+                    border: 'none',
+                    cursor: isLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isLoading) {
+                      e.target.style.backgroundColor = '#111827';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isLoading) {
+                      e.target.style.backgroundColor = '#374151';
+                    }
+                  }}
                 >
                   {isLoading ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Signing in...</span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg style={{ animation: 'spin 1s linear infinite', marginRight: '12px' }} width="16" height="16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle style={{ opacity: 0.25 }} cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path style={{ opacity: 0.75 }} fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Signing in...
                     </div>
                   ) : (
-                    'Sign In'
+                    'Sign in'
                   )}
                 </button>
 
-                <div className="text-center">
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    className="text-purple-600 hover:text-purple-700 text-sm font-medium hover:underline transition-colors duration-200"
-                  >
-                    Forgot your password?
-                  </button>
+                {/* Divider */}
+                <div style={{ position: 'relative', margin: '24px 0' }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center' }}>
+                    <div style={{ width: '100%', borderTop: '1px solid #e5e7eb' }}></div>
+                  </div>
+                  <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', fontSize: '14px' }}>
+                    <span style={{ padding: '0 16px', backgroundColor: '#ffffff', color: '#6b7280' }}>or</span>
+                  </div>
                 </div>
-              </form>
 
-              <div className="mt-6 pt-4 border-t border-purple-100 text-center">
-                <p className="text-gray-600 text-sm">
-                  Don't have an account? 
-                  <a href="/register" className="text-purple-600 hover:text-purple-700 font-medium ml-1 hover:underline transition-colors duration-200">
-                    Contact Admin
-                  </a>
-                </p>
-              </div>
-            </>
-          )}
+                {/* Google Login */}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '12px 16px',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    backgroundColor: '#ffffff',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    outline: 'none'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = '#ffffff'}
+                >
+                  <FaGoogle style={{ color: '#ef4444', marginRight: '12px', transition: 'transform 0.2s ease' }} size={16} />
+                  <span style={{ color: '#374151' }}>Sign in with Google</span>
+                </button>
+
+                {/* Sign Up Link */}
+                <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                  <span style={{ color: '#6b7280', fontSize: '14px' }}>Are you new? </span>
+                  <Link 
+                    to="/register" 
+                    style={{
+                      color: '#14b8a6',
+                      fontWeight: '500',
+                      fontSize: '14px',
+                      textDecoration: 'none',
+                      transition: 'color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#0f766e'}
+                    onMouseLeave={(e) => e.target.style.color = '#14b8a6'}
+                  >
+                    Create an Account
+                  </Link>                </div>
+              </form>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
-}
+};
 
 export default Login;

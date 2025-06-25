@@ -50,6 +50,15 @@ export const AppProvider = ({ children }) => {
       fetchSettings();
     }
   }, [isAuthenticated, fetchSettings]);
+
+  // Cleanup notification system on unmount
+  useEffect(() => {
+    return () => {
+      if (notificationManager.current) {
+        notificationManager.current.cleanup();
+      }
+    };
+  }, []);
   const value = {
     // Add any global context values here
   };
