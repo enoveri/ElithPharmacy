@@ -13,8 +13,13 @@ import {
   FiCamera,
 } from "react-icons/fi";
 import { dataService } from "../../services";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const MobilePOS = () => {
+  // Get settings for currency and tax rate
+  const { settings } = useSettings();
+  const { currency = "UGX", taxRate = 18 } = settings;
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -28,6 +33,9 @@ const MobilePOS = () => {
   const [loading, setLoading] = useState(false);
   const [editingPrice, setEditingPrice] = useState(null);
   const [tempPrice, setTempPrice] = useState("");
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [newCustomerName, setNewCustomerName] = useState("");
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   // Remove cart animation to prevent interfering with centering
 
@@ -68,7 +76,7 @@ const MobilePOS = () => {
     return matchesSearch && matchesCategory && hasStock;
   });
 
-  // Cart functions
+  // Cart functions with proper increment/decrement logic like desktop
   const addToCart = (product) => {
     const existingItem = cart.find((item) => item.id === product.id);
 
@@ -77,7 +85,11 @@ const MobilePOS = () => {
         setCart(
           cart.map((item) =>
             item.id === product.id
-              ? { ...item, quantity: item.quantity + 1 }
+              ? { 
+                  ...item, 
+                  quantity: item.quantity + 1,
+                  total: (item.quantity + 1) * (item.price || 0)
+                }
               : item
           )
         );
@@ -88,7 +100,11 @@ const MobilePOS = () => {
         }
       }
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { 
+        ...product, 
+        quantity: 1, 
+        total: product.price || 0
+      }]);
 
       // Haptic feedback
       if (navigator.vibrate) {
@@ -97,24 +113,82 @@ const MobilePOS = () => {
     }
   };
 
-  const removeFromCart = (productId) => {
-    const existingItem = cart.find((item) => item.id === productId);
-
-    if (existingItem.quantity === 1) {
-      setCart(cart.filter((item) => item.id !== productId));
+  const updateQuantity = (productId, newQuantity) => {
+    if (newQuantity <= 0) {
+      removeFromCart(productId);
     } else {
+      // Check stock limit
+      const product = products.find(p => p.id === productId);
+      const maxQuantity = product ? product.quantity : 0;
+      
+      if (newQuantity > maxQuantity) {
+        alert(`Only ${maxQuantity} items available in stock`);
+        return;
+      }
+
       setCart(
         cart.map((item) =>
           item.id === productId
-            ? { ...item, quantity: item.quantity - 1 }
+            ? {
+                ...item,
+                quantity: newQuantity,
+                total: newQuantity * (item.price || 0),
+              }
             : item
         )
       );
     }
   };
 
+  const removeFromCart = (productId) => {
+    setCart(cart.filter((item) => item.id !== productId));
+  };
+
   const clearCart = () => {
     setCart([]);
+  };
+
+  // Customer creation functionality like desktop
+  const createNewCustomer = async (customerName) => {
+    if (!customerName.trim()) {
+      alert("Please enter a customer name");
+      return;
+    }
+
+    try {
+      setCreatingCustomer(true);
+      console.log("🔄 [Mobile POS] Creating new customer:", customerName);
+
+      // Parse the name into first and last name
+      const nameParts = customerName.trim().split(/\s+/);
+      const customerData = {
+        firstName: nameParts[0] || "Customer",
+        lastName: nameParts.slice(1).join(" ") || "",
+      };
+
+      const newCustomer = await dataService.customers.create(customerData);
+      console.log("✅ [Mobile POS] New customer created:", newCustomer);
+
+      if (!newCustomer) {
+        throw new Error("Customer creation returned null");
+      }
+
+      // Add to local customers list
+      setCustomers((prev) => [...prev, newCustomer]);
+
+      // Select the newly created customer
+      setSelectedCustomer(newCustomer);
+      setNewCustomerName("");
+      setShowCustomerModal(false);
+
+      return newCustomer;
+    } catch (error) {
+      console.error("❌ [Mobile POS] Error creating customer:", error);
+      alert("Error creating customer. Please try again.");
+      return null;
+    } finally {
+      setCreatingCustomer(false);
+    }
   };
 
   // Handle price editing
@@ -160,43 +234,77 @@ const MobilePOS = () => {
     }
   };
 
-  // Calculate totals
+  // Calculate totals with Uganda tax rate
   const subtotal = cart.reduce(
-    (sum, item) => sum + (item.price || 0) * item.quantity,
+    (sum, item) => sum + (item.total || (item.price || 0) * item.quantity),
     0
   );
-  const tax = subtotal * 0.075; // 7.5% VAT
+  const tax = subtotal * (taxRate / 100); // Use Uganda VAT rate (18%)
   const total = subtotal + tax;
 
-  // Complete sale
+  // Complete sale with better data structure like desktop
   const completeSale = async () => {
     if (cart.length === 0) return;
 
     setLoading(true);
     try {
+      console.log("🚀 [Mobile POS] Starting sale completion...");
+      console.log("🛒 [Mobile POS] Cart items:", cart);
+
+      // Generate transaction number
+      const transactionNumber = `TXN-${Date.now()}`;
+
       const saleData = {
+        transactionNumber,
+        customerId: selectedCustomer?.id || null,
+        date: new Date().toISOString(),
         items: cart.map((item) => ({
-          product_id: item.id,
+          productId: item.id,
+          productName: item.name,
           quantity: item.quantity,
-          unit_price: item.price || 0,
-          total: (item.price || 0) * item.quantity,
+          price: item.price || 0,
+          total: item.total || item.quantity * (item.price || 0),
         })),
-        customer_id: selectedCustomer?.id || null,
         subtotal,
         tax,
-        total,
-        payment_method: paymentMethod,
+        discount: 0,
+        totalAmount: total,
+        paymentMethod,
         status: "completed",
+        cashierId: 1, // TODO: Get from authenticated user
       };
 
-      await dataService.sales.create(saleData);
+      console.log("💾 [Mobile POS] Prepared sale data:", saleData);
+
+      const savedSale = await dataService.sales.create(saleData);
+      console.log("💰 [Mobile POS] Sale saved to database:", savedSale);
 
       // Update product quantities
-      for (const item of cart) {
-        await dataService.products.update(item.id, {
-          quantity: item.quantity - item.quantity,
-        });
-      }
+      const updatePromises = cart.map((item) => {
+        const currentProduct = products.find((p) => p.id === item.id);
+        if (currentProduct) {
+          const newQuantity = Math.max(0, currentProduct.quantity - item.quantity);
+          return dataService.products.update(item.id, {
+            quantity: newQuantity,
+          });
+        }
+      });
+
+      await Promise.all(updatePromises.filter(Boolean));
+
+      // Update local products state
+      setProducts(
+        products.map((product) => {
+          const cartItem = cart.find((item) => item.id === product.id);
+          if (cartItem) {
+            return {
+              ...product,
+              quantity: Math.max(0, product.quantity - cartItem.quantity),
+            };
+          }
+          return product;
+        })
+      );
 
       // Success feedback
       if (navigator.vibrate) {
@@ -206,11 +314,19 @@ const MobilePOS = () => {
       // Clear cart and close modals
       clearCart();
       setShowCart(false);
-      setSelectedCustomer(null);
+      // Keep customer selected for multiple purchases
 
-      alert("Sale completed successfully!");
+      const customerInfo = selectedCustomer
+        ? `\nCustomer: ${selectedCustomer.first_name || selectedCustomer.firstName || ""} ${selectedCustomer.last_name || selectedCustomer.lastName || ""}`.trim()
+        : "";
+        
+      alert(
+        `Sale completed! Transaction: ${transactionNumber}\nTotal: ${currency} ${total.toFixed(2)}${customerInfo}\nPayment: ${paymentMethod.replace("_", " ").toUpperCase()}`
+      );
+
+      console.log("✅ [Mobile POS] Sale completed successfully");
     } catch (error) {
-      console.error("Error completing sale:", error);
+      console.error("❌ [Mobile POS] Error completing sale:", error);
       alert("Error completing sale. Please try again.");
     } finally {
       setLoading(false);
@@ -313,7 +429,7 @@ const MobilePOS = () => {
           >
             <FiUser size={20} />
             {selectedCustomer
-              ? selectedCustomer.name
+              ? `${selectedCustomer.first_name || selectedCustomer.firstName || ""} ${selectedCustomer.last_name || selectedCustomer.lastName || ""}`.trim()
               : "Select Customer (Optional)"}
           </motion.button>
         </div>
@@ -342,7 +458,7 @@ const MobilePOS = () => {
 
                 <div className="mb-3">
                   <span className="text-lg font-bold gradient-text">
-                    ₦{product.price?.toFixed(2)}
+                    {currency} {product.price?.toFixed(2)}
                   </span>
                   <p className="text-xs text-gray-500 bg-gray-100 rounded-lg px-2 py-1 mt-1 inline-block">
                     Stock: {product.quantity}
@@ -414,7 +530,7 @@ const MobilePOS = () => {
                             <div className="text-xs text-gray-600 mb-2">
                               {editingPrice === item.id ? (
                                 <div className="flex items-center gap-1">
-                                  <span className="text-gray-500">₦</span>
+                                  <span className="text-gray-500">{currency}</span>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -440,22 +556,22 @@ const MobilePOS = () => {
                                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-50 border border-transparent hover:bg-gray-100 hover:border-gray-200 cursor-pointer transition-all duration-200"
                                   title="Tap to edit price"
                                 >
-                                  ₦{(item.price || 0).toFixed(2)} each
+                                  {currency}{(item.price || 0).toFixed(2)} each
                                   <span className="text-gray-400">✏️</span>
                                 </span>
                               )}
                             </div>
 
                             <div className="text-xs font-medium text-gray-800">
-                              Total: ₦
-                              {((item.price || 0) * item.quantity).toFixed(2)}
+                              Total: {currency}
+                              {(item.total || (item.price || 0) * item.quantity).toFixed(2)}
                             </div>
                           </div>
 
                           <div className="cart-quantity-controls">
                             <motion.button
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => removeFromCart(item.id)}
+                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
                               className="cart-quantity-button minus"
                             >
                               <FiMinus className="w-4 h-4" />
@@ -467,8 +583,8 @@ const MobilePOS = () => {
 
                             <motion.button
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => addToCart(item)}
-                              disabled={item.quantity >= item.quantity}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                              disabled={item.quantity >= (products.find(p => p.id === item.id)?.quantity || 0)}
                               className="cart-quantity-button plus"
                             >
                               <FiPlus className="w-4 h-4" />
@@ -496,19 +612,41 @@ const MobilePOS = () => {
                           paymentMethod === "cash" ? "active" : ""
                         }`}
                       >
-                        <FiDollarSign className="w-5 h-5" />
+                        <FiDollarSign className="w-4 h-4" />
                         Cash
                       </motion.button>
 
                       <motion.button
                         whileTap={{ scale: 0.98 }}
-                        onClick={() => setPaymentMethod("card")}
+                        onClick={() => setPaymentMethod("mobile_money")}
                         className={`payment-method-button ${
-                          paymentMethod === "card" ? "active" : ""
+                          paymentMethod === "mobile_money" ? "active" : ""
                         }`}
                       >
-                        <FiCreditCard className="w-5 h-5" />
-                        Card
+                        <FiCreditCard className="w-4 h-4" />
+                        Mobile
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setPaymentMethod("bank")}
+                        className={`payment-method-button ${
+                          paymentMethod === "bank" ? "active" : ""
+                        }`}
+                      >
+                        <FiCreditCard className="w-4 h-4" />
+                        Bank
+                      </motion.button>
+
+                      <motion.button
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setPaymentMethod("credit")}
+                        className={`payment-method-button ${
+                          paymentMethod === "credit" ? "active" : ""
+                        }`}
+                      >
+                        <FiCreditCard className="w-4 h-4" />
+                        Credit
                       </motion.button>
                     </div>
                   </div>
@@ -518,16 +656,16 @@ const MobilePOS = () => {
                     <div className="cart-total-row">
                       <span>Subtotal:</span>
                       <span className="font-semibold">
-                        ₦{subtotal.toFixed(2)}
+                        {currency}{subtotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="cart-total-row">
-                      <span>Tax (7.5%):</span>
-                      <span className="font-semibold">₦{tax.toFixed(2)}</span>
+                      <span>Tax ({taxRate}%):</span>
+                      <span className="font-semibold">{currency}{tax.toFixed(2)}</span>
                     </div>
                     <div className="cart-total-row final">
                       <span>Total:</span>
-                      <span>₦{total.toFixed(2)}</span>
+                      <span>{currency}{total.toFixed(2)}</span>
                     </div>
                   </div>
 
@@ -590,6 +728,28 @@ const MobilePOS = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4">
+                {/* Add new customer section */}
+                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 mb-2">Add New Customer</h3>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="Enter customer name..."
+                      value={newCustomerName}
+                      onChange={(e) => setNewCustomerName(e.target.value)}
+                      className="flex-1 px-3 py-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => createNewCustomer(newCustomerName)}
+                      disabled={!newCustomerName.trim() || creatingCustomer}
+                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {creatingCustomer ? "Adding..." : "Add"}
+                    </motion.button>
+                  </div>
+                </div>
+
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={() => {
@@ -613,7 +773,7 @@ const MobilePOS = () => {
                       className="w-full p-3 bg-gray-50 rounded-lg text-left"
                     >
                       <div className="font-semibold text-gray-900">
-                        {customer.first_name} {customer.last_name}
+                        {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
                       </div>
                       <div className="text-sm text-gray-500">
                         {customer.phone}
