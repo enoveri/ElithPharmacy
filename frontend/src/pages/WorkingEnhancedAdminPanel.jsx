@@ -163,15 +163,13 @@ const EnhancedAdminPanel = () => {
     try {
       console.log('🔄 [AdminPanel] Creating new user:', formData.email);
 
-      // Step 1: Create user using regular signup (this will work with anon key)
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Step 1: Create user using admin signup (this will create a confirmed user)
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: formData.email,
         password: formData.password,
-        options: {
-          data: {
-            full_name: formData.full_name,
-          },
-          emailRedirectTo: undefined, // Don't send confirmation email for admin-created users
+        email_confirm: true,
+        user_metadata: {
+          full_name: formData.full_name,
         }
       });
 
@@ -220,7 +218,7 @@ const EnhancedAdminPanel = () => {
       // Refresh users list
       await fetchUsers();
       
-      alert('User created successfully! The user will need to confirm their email before logging in, or you can manually confirm them in Supabase.');
+      alert('User created successfully! They can now log in immediately.');
     } catch (error) {
       console.error('Error creating user:', error);
       let errorMessage = 'Failed to create user';

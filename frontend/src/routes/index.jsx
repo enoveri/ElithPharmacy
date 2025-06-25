@@ -15,6 +15,7 @@ import ResponsivePOS from "../components/responsive/ResponsivePOS";
 // Import page components that don't need mobile versions yet
 import ResponsiveDashboard from "../pages/ResponsiveDashboard";
 import Login from "../pages/Login";
+import Signup from "../pages/Signup";
 import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
 import SaleDetails from "../pages/SaleDetails";
@@ -123,6 +124,10 @@ export const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <Signup />,
   },
   {
     path: "/admin-setup",
