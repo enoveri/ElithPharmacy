@@ -800,22 +800,45 @@
   display: none; /* WebKit */
 }
 
-/* Category button enhancements */
+/* Category button spacing and padding enhancements */
 .pos-categories-container {
   scrollbar-width: none;
   -ms-overflow-style: none;
+  padding: 12px 0; /* Vertical padding for breathing room */
 }
 
 .pos-categories-container::-webkit-scrollbar {
   display: none;
 }
 
-/* Enhanced gradient text for POS title */
-.pos-title {
-  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+.pos-categories-container .flex {
+  gap: 16px; /* Horizontal spacing between buttons */
+  padding-bottom: 8px; /* Bottom padding for visual breathing room */
+}
+
+.pos-categories-container button {
+  margin: 8px 0; /* Vertical margins for top and bottom spacing */
+  padding: 14px 24px !important; /* Increased padding for better touch targets */
+  min-height: 48px; /* Larger minimum touch target size */
+  min-width: 90px; /* Minimum width for consistency */
+}
+
+/* Enhanced category button styling with proper spacing */
+.category-button {
+  margin: 6px 8px 6px 0; /* Right, top, and bottom margins */
+  padding: 12px 24px; /* Internal padding */
+  border-radius: 24px; /* More rounded for modern look */
+  font-weight: 500;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.category-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.category-button.active {
+  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.3);
 }
