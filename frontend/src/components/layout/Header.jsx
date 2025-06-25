@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  FiSearch,
   FiSettings,
   FiBell,
   FiMenu,
@@ -9,23 +10,27 @@ import {
   FiAlertTriangle,
   FiInfo,
   FiCheckCircle,
+  FiPackage,
+  FiClock,
+  FiExternalLink,
   FiCheck,
 } from "react-icons/fi";
 import { useNotificationsStore } from "../../store";
-import { useAuth } from "../../contexts/AuthContext";
+import NotificationPanel from "../NotificationPanel.jsx";
+import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
 
 const Header = ({
   onToggleMobileMenu,
   isMobile = false,
   mobileMenuOpen = false,
 }) => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // Call useAuth at the beginning
+
   const [time, setTime] = useState(new Date());
   const [showNotifications, setShowNotifications] = useState(false);
-  const [deletingNotifications, setDeletingNotifications] = useState(new Set());
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const notificationRef = useRef(null);
   const navigate = useNavigate();
-
   // Use notification store
   const {
     notifications,
@@ -91,6 +96,9 @@ const Header = ({
     }
   };
   const handleNotificationClick = async (notification) => {
+    console.log("🔔 Notification clicked:", notification);
+    console.log("🔗 Action URL:", notification.action_url);
+
     // Mark as read first
     if (!notification.is_read) {
       await markAsRead(notification.id);
@@ -105,44 +113,88 @@ const Header = ({
       if (targetUrl.match(/^\/inventory\/\d+$/)) {
         const id = targetUrl.split("/")[2];
         targetUrl = `/inventory/view/${id}`;
+        console.log(
+          "🔧 Fixed inventory URL from",
+          notification.action_url,
+          "to",
+          targetUrl
+        );
       }
 
       // Fix sales URLs: /sales/view/4 -> /sales/4
       if (targetUrl.startsWith("/sales/view/")) {
         targetUrl = targetUrl.replace("/sales/view/", "/sales/");
+        console.log(
+          "🔧 Fixed sales URL from",
+          notification.action_url,
+          "to",
+          targetUrl
+        );
       }
 
+      console.log("📍 Navigating to:", targetUrl);
       navigate(targetUrl);
       setShowNotifications(false);
+    } else {
+      console.warn("⚠️ No action_url found for notification:", notification);
     }
   };
-  const handleDeleteNotification = async (notificationId, event) => {
-    // Prevent the notification click event from firing
-    event.stopPropagation();
 
-    // Add to deleting set for animation
-    setDeletingNotifications((prev) => new Set([...prev, notificationId]));
+  // Notification action handlers
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      // Refresh notifications
+      const updatedNotifications = notifications.map((n) =>
+        n.id === notificationId ? { ...n, is_read: true } : n
+      );
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
-    // Wait for animation to complete before actually deleting
-    setTimeout(async () => {
-      try {
-        await deleteNotification(notificationId);
-        // Remove from deleting set after successful deletion
-        setDeletingNotifications((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(notificationId);
-          return newSet;
-        });
-      } catch (error) {
-        console.error("Error deleting notification:", error);
-        // Remove from deleting set if error occurs
-        setDeletingNotifications((prev) => {
-          const newSet = new Set(prev);
-          newSet.delete(notificationId);
-          return newSet;
-        });
-      }
-    }, 300); // Animation duration
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead(user?.id);
+      // Refresh notifications
+      const updatedNotifications = notifications.map((n) => ({
+        ...n,
+        is_read: true,
+      }));
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const handleDeleteNotification = async (notificationId) => {
+    try {
+      await deleteNotification(notificationId);
+      // Remove from local state
+      const updatedNotifications = notifications.filter(
+        (n) => n.id !== notificationId
+      );
+      setNotifications(updatedNotifications);
+    } catch (error) {
+      console.error("Error deleting notification:", error);
+    }
+  };
+  // Cleanup old notifications on mount
+  useEffect(() => {
+    if (user?.id) {
+      cleanupOldNotifications(user.id).catch(console.error);
+    }
+  }, [user?.id]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowProfileMenu(false);
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   // Get notification icon based on type
@@ -339,54 +391,8 @@ const Header = ({
                     <FiCheck size={12} />
                     Mark all read
                   </button>
-                )}{" "}
+                )}
               </div>
-
-              {/* Show All Notifications Button - only show when there are notifications */}
-              {notifications.length > 0 && (
-                <div
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "1px solid #e5e7eb",
-                  }}
-                >
-                  <button
-                    onClick={() => {
-                      navigate("/notifications");
-                      setShowNotifications(false);
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 16px",
-                      backgroundColor: "#f8fafc",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "14px",
-                      color: "#374151",
-                      fontWeight: "500",
-                      transition: "all 0.2s ease",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "8px",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = "#3b82f6";
-                      e.target.style.color = "white";
-                      e.target.style.borderColor = "#3b82f6";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = "#f8fafc";
-                      e.target.style.color = "#374151";
-                      e.target.style.borderColor = "#e5e7eb";
-                    }}
-                  >
-                    <FiBell size={16} />
-                    View All Notifications
-                  </button>
-                </div>
-              )}
 
               {/* Notifications List */}
               <div
@@ -411,8 +417,7 @@ const Header = ({
                     <div style={{ fontSize: "14px" }}>No notifications</div>
                   </div>
                 ) : (
-                  // Show only the first 5 notifications in the dropdown
-                  notifications.slice(0, 5).map((notification) => {
+                  notifications.map((notification) => {
                     const NotificationIcon = getNotificationIcon(
                       notification.type
                     );
@@ -425,47 +430,29 @@ const Header = ({
                             ? "#ef4444"
                             : "#6b7280";
 
-                    const isDeleting = deletingNotifications.has(
-                      notification.id
-                    );
-
                     return (
                       <div
                         key={notification.id}
-                        onClick={() =>
-                          !isDeleting && handleNotificationClick(notification)
-                        }
+                        onClick={() => handleNotificationClick(notification)}
                         style={{
                           padding: "12px 16px",
                           borderBottom: "1px solid #f3f4f6",
-                          cursor: isDeleting ? "default" : "pointer",
+                          cursor: "pointer",
                           backgroundColor: notification.is_read
                             ? "transparent"
                             : "#f8fafc",
-                          transition: "all 0.3s ease",
+                          transition: "background-color 0.2s",
                           display: "flex",
                           gap: "12px",
                           alignItems: "flex-start",
-                          transform: isDeleting
-                            ? "translateX(-100%)"
-                            : "translateX(0)",
-                          opacity: isDeleting ? 0 : 1,
-                          maxHeight: isDeleting ? "0" : "200px",
-                          overflow: "hidden",
-                          paddingTop: isDeleting ? "0" : "12px",
-                          paddingBottom: isDeleting ? "0" : "12px",
-                          marginBottom: isDeleting ? "0" : "0",
                         }}
                         onMouseEnter={(e) => {
-                          if (!isDeleting) {
-                            e.currentTarget.style.backgroundColor = "#f3f4f6";
-                          }
+                          e.target.style.backgroundColor = "#f3f4f6";
                         }}
                         onMouseLeave={(e) => {
-                          if (!isDeleting) {
-                            e.currentTarget.style.backgroundColor =
-                              notification.is_read ? "transparent" : "#f8fafc";
-                          }
+                          e.target.style.backgroundColor = notification.is_read
+                            ? "transparent"
+                            : "#f8fafc";
                         }}
                       >
                         <div
@@ -482,6 +469,7 @@ const Header = ({
                         >
                           <NotificationIcon size={16} color={iconColor} />
                         </div>
+
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
@@ -520,92 +508,35 @@ const Header = ({
                               notification.created_at
                             ).toLocaleDateString()}
                           </div>
-                        </div>{" "}
+                        </div>
+
                         <button
                           onClick={(e) =>
                             handleDeleteNotification(notification.id, e)
                           }
-                          disabled={isDeleting}
                           style={{
-                            padding: "6px",
+                            padding: "4px",
                             border: "none",
                             background: "none",
-                            cursor: isDeleting ? "default" : "pointer",
+                            cursor: "pointer",
                             borderRadius: "4px",
                             color: "#9ca3af",
                             flexShrink: 0,
-                            opacity: isDeleting ? 0.3 : 0.6,
-                            transition: "all 0.2s ease",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            pointerEvents: isDeleting ? "none" : "auto",
+                            opacity: 0.7,
+                            transition: "opacity 0.2s",
                           }}
                           onMouseEnter={(e) => {
-                            if (!isDeleting) {
-                              e.target.style.opacity = "1";
-                              e.target.style.backgroundColor = "#fee2e2";
-                              e.target.style.color = "#dc2626";
-                            }
+                            e.target.style.opacity = "1";
                           }}
                           onMouseLeave={(e) => {
-                            if (!isDeleting) {
-                              e.target.style.opacity = "0.6";
-                              e.target.style.backgroundColor = "transparent";
-                              e.target.style.color = "#9ca3af";
-                            }
+                            e.target.style.opacity = "0.7";
                           }}
-                          title={
-                            isDeleting ? "Deleting..." : "Delete notification"
-                          }
                         >
-                          <FiX size={16} />
-                        </button>{" "}
+                          <FiX size={14} />
+                        </button>
                       </div>
                     );
                   })
-                )}
-                {/* View All Button for more than 5 notifications */}
-                {notifications.length > 5 && (
-                  <div
-                    style={{
-                      padding: "12px 16px",
-                      borderTop: "1px solid #f3f4f6",
-                      backgroundColor: "#f9fafb",
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        navigate("/notifications");
-                        setShowNotifications(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "8px 16px",
-                        backgroundColor: "#3b82f6",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: "pointer",
-                        fontSize: "14px",
-                        color: "white",
-                        fontWeight: "500",
-                        transition: "background-color 0.2s ease",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "8px",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.backgroundColor = "#2563eb";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.backgroundColor = "#3b82f6";
-                      }}
-                    >
-                      <FiBell size={16} />
-                      View All {notifications.length} Notifications
-                    </button>
-                  </div>
                 )}
               </div>
             </div>

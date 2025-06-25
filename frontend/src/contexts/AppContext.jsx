@@ -44,7 +44,6 @@ export const AppProvider = ({ children }) => {
       subscription?.unsubscribe();
     };
   }, [setUser, setLoading]);
-
   useEffect(() => {
     // Initialize app settings when authenticated
     if (isAuthenticated) {

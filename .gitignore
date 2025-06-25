@@ -110,7 +110,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+# lib/ - commented out as it conflicts with frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -207,7 +207,8 @@ Dockerfile.local
 
 # Local development files
 .local/
-local/
+/local/
+**/local/
 
 # Misc
 *.tgz
