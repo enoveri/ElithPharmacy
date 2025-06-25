@@ -27,7 +27,7 @@ import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
 
 import AdminSetup from "../pages/AdminSetup";
-import AdminPanel from "../pages/AdminPanel";
+
 
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
 
@@ -113,10 +113,7 @@ export const router = createBrowserRouter([
         path: "/notifications",
         element: <Notifications />,
       },
-      // {
-      //   path: "/admin",
-      //   element: <AdminPanel />,
-      // },
+
       {
         path: "/admin",
         element: <EnhancedAdminPanel />,
