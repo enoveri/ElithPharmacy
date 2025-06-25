@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { dataService } from "../services";
+import { useIsMobile } from "./useIsMobile";
 
 // Custom hook for fetching data with loading and error states
 export const useDataService = (serviceMethod, dependencies = []) => {
@@ -142,7 +143,7 @@ export const useAsyncOperation = () => {
   return { loading, error, execute, setError };
 };
 
-export default {
+export {
   useDataService,
   useProducts,
   useCustomers,
@@ -155,4 +156,5 @@ export default {
   useRecentSales,
   useSearch,
   useAsyncOperation,
+  useIsMobile,
 };
