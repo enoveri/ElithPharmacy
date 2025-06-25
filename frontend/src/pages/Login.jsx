@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Add keyframes for spinning animation
   const spinKeyframes = `
@@ -17,26 +20,47 @@ const Login = () => {
       to { transform: rotate(360deg); }
     }
   `;
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    setError(''); // Clear error when user starts typing
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     
-    // Add your login logic here
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Login attempt:', formData);
+      console.log('🔄 [Login] Attempting login...');
+      
+      // Sign in with Supabase Auth
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });      if (error) {
+        console.error('❌ [Login] Auth error:', error);
+        
+        // Handle specific error cases
+        if (error.message === 'Email not confirmed') {
+          setError('Account created but email not confirmed. For admin accounts, please contact your system administrator or check your Supabase email confirmation settings.');
+        } else {
+          setError(error.message);
+        }
+        return;
+      }
+
+      if (data.user) {
+        console.log('✅ [Login] Login successful, user:', data.user.id);
+        
+        // Redirect to admin panel
+        navigate('/admin');
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('❌ [Login] Unexpected error:', error);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +163,26 @@ const Login = () => {
                     ELITH PHARMACY
                   </span>
                 </div>
-              </div><form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              </div>
+
+              {error && (
+                <div 
+                  style={{
+                    backgroundColor: '#fef2f2',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <span style={{ color: '#dc2626', marginRight: '8px' }}>⚠️</span>
+                  <span style={{ color: '#991b1b', fontSize: '14px' }}>{error}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {/* Email Field */}
                 <div>
                   <label 
@@ -350,7 +393,7 @@ const Login = () => {
                 <div style={{ textAlign: 'center', marginTop: '24px' }}>
                   <span style={{ color: '#6b7280', fontSize: '14px' }}>Are you new? </span>
                   <Link 
-                    to="/register" 
+                    to="/admin-setup" 
                     style={{
                       color: '#14b8a6',
                       fontWeight: '500',

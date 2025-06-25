@@ -1,6 +1,7 @@
 import { RouterProvider } from "react-router-dom";
 import { router } from "./routes/index.jsx";
 import { AppProvider } from "./contexts/AppContext.jsx";
+import { AuthProvider } from "./contexts/AuthContext.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { dataService } from "./services";
 import { supabase } from "./lib/supabase";
@@ -61,12 +62,13 @@ function App() {
       },
     };
   }
-
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <RouterProvider router={router} />
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <RouterProvider router={router} />
+        </AppProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

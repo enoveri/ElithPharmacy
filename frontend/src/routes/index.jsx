@@ -25,7 +25,12 @@ import CustomerSales from "../pages/CustomerSales";
 import ViewProduct from "../pages/ViewProduct";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
-import AdminPanel from "../pages/EnhancedAdminPanel";
+
+import AdminSetup from "../pages/AdminSetup";
+import AdminPanel from "../pages/AdminPanel";
+
+import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
+
 
 export const router = createBrowserRouter([
   {
@@ -108,14 +113,22 @@ export const router = createBrowserRouter([
         path: "/notifications",
         element: <Notifications />,
       },
+      // {
+      //   path: "/admin",
+      //   element: <AdminPanel />,
+      // },
       {
         path: "/admin",
-        element: <AdminPanel />,
+        element: <EnhancedAdminPanel />,
       },
     ],
   },
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/admin-setup",
+    element: <AdminSetup />,
   },
 ]);

@@ -48,8 +48,7 @@ export const AppProvider = ({ children }) => {
     // Initialize app settings when authenticated
     if (isAuthenticated) {
       fetchSettings();
-    }
-  }, [isAuthenticated, fetchSettings]);
+    }  }, [isAuthenticated, fetchSettings]);
 
   const value = {
     // Add any global context values here

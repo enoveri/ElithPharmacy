@@ -18,6 +18,7 @@ import {
 import { useNotificationsStore } from "../../store";
 import NotificationPanel from "../NotificationPanel.jsx";
 import { useAuth } from "../../contexts/AuthContext"; // Import useAuth hook
+import { dbHelpers } from "../../lib/db"; // Import db helpers for cleanup function
 
 const Header = ({
   onToggleMobileMenu,
@@ -141,8 +142,11 @@ const Header = ({
       console.warn("⚠️ No action_url found for notification:", notification);
     }
   };
+
   // Notification action handlers are handled by the notification store
-  // markAsRead and deleteNotification are already available from useNotificationsStore  // Cleanup old notifications is handled by the notification store automatically
+  // markAsRead and deleteNotification are already available from useNotificationsStore
+
+  // Cleanup old notifications is handled by the notification store automatically
 
   // Handle logout
   const handleLogout = async () => {
