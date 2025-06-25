@@ -157,19 +157,9 @@ function CustomerSales() {
           }}
         >
           <FiArrowLeft size={16} />
-          Back to Customers
+          Back to Customers{" "}
         </button>
         <div>
-          <h1
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 4px 0",
-            }}
-          >
-            Customer Sales Management
-          </h1>
           <p
             style={{
               color: "var(--color-text-secondary)",

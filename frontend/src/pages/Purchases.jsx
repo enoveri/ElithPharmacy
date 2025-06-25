@@ -235,22 +235,6 @@ function Purchases() {
           marginBottom: "32px",
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Purchase Orders
-          </h1>
-          <p style={{ color: "var(--color-text-secondary)", margin: "0" }}>
-            Manage inventory purchases and supplier orders
-          </p>
-        </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() => navigate("/purchases/add")}

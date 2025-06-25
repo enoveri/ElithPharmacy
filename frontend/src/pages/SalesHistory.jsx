@@ -185,22 +185,12 @@ function SalesHistory() {
         minHeight: "100vh",
       }}
     >
+      {" "}
       <div style={{ marginBottom: "32px" }}>
-        <h1
-          style={{
-            fontSize: "28px",
-            fontWeight: "bold",
-            color: "var(--color-text-primary)",
-            marginBottom: "8px",
-          }}
-        >
-          Sales History
-        </h1>
         <p style={{ color: "var(--color-text-secondary)" }}>
           View and manage your sales transactions
         </p>
       </div>
-
       <div
         style={{
           backgroundColor: "white",

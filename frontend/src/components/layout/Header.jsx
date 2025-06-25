@@ -24,6 +24,8 @@ const Header = ({
   onToggleMobileMenu,
   isMobile = false,
   mobileMenuOpen = false,
+  title = "Elith Pharmacy",
+  subtitle = null,
 }) => {
   const { user, logout } = useAuth(); // Call useAuth at the beginning
 
@@ -141,51 +143,10 @@ const Header = ({
     }
   };
 
-  // Notification action handlers
-  const handleMarkAsRead = async (notificationId) => {
-    try {
-      await markNotificationAsRead(notificationId);
-      // Refresh notifications
-      const updatedNotifications = notifications.map((n) =>
-        n.id === notificationId ? { ...n, is_read: true } : n
-      );
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
-  };
+  // Notification action handlers are handled by the notification store
+  // markAsRead and deleteNotification are already available from useNotificationsStore
 
-  const handleMarkAllAsRead = async () => {
-    try {
-      await markAllNotificationsAsRead(user?.id);
-      // Refresh notifications
-      const updatedNotifications = notifications.map((n) => ({
-        ...n,
-        is_read: true,
-      }));
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error marking all notifications as read:", error);
-    }
-  };
-
-  const handleDeleteNotification = async (notificationId) => {
-    try {
-      await deleteNotification(notificationId);
-      // Remove from local state
-      const updatedNotifications = notifications.filter(
-        (n) => n.id !== notificationId
-      );
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }
-  };  // Cleanup old notifications on mount
-  useEffect(() => {
-    if (user?.id) {
-      dbHelpers.cleanupOldNotifications(user.id).catch(console.error);
-    }
-  }, [user?.id]);
+  // Cleanup old notifications is handled by the notification store automatically
 
   // Handle logout
   const handleLogout = async () => {
@@ -248,19 +209,33 @@ const Header = ({
               <FiMenu className="w-6 h-6" />
             )}
           </button>
-        )}
-
-        <h1
-          className={`${isMobile ? "text-lg" : "text-xl"} font-semibold text-gray-800 m-0`}
-          style={{
-            fontSize: isMobile ? "18px" : "20px",
-            fontWeight: "600",
-            color: "#1f2937",
-            margin: 0,
-          }}
-        >
-          Elith Pharmacy
-        </h1>
+        )}{" "}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <h1
+            className={`${isMobile ? "text-lg" : "text-xl"} font-semibold text-gray-800 m-0`}
+            style={{
+              fontSize: isMobile ? "18px" : "20px",
+              fontWeight: "600",
+              color: "#1f2937",
+              margin: 0,
+              lineHeight: "1.2",
+            }}
+          >
+            {title}
+          </h1>
+          {subtitle && (
+            <p
+              style={{
+                fontSize: "12px",
+                color: "#6b7280",
+                margin: "2px 0 0 0",
+                lineHeight: "1.2",
+              }}
+            >
+              {subtitle}
+            </p>
+          )}
+        </div>
       </div>{" "}
       {/* Right section */}
       <div
@@ -469,7 +444,6 @@ const Header = ({
                         >
                           <NotificationIcon size={16} color={iconColor} />
                         </div>
-
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div
                             style={{
@@ -508,12 +482,12 @@ const Header = ({
                               notification.created_at
                             ).toLocaleDateString()}
                           </div>
-                        </div>
-
+                        </div>{" "}
                         <button
-                          onClick={(e) =>
-                            handleDeleteNotification(notification.id, e)
-                          }
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification.id);
+                          }}
                           style={{
                             padding: "4px",
                             border: "none",

@@ -415,7 +415,8 @@ function Reports() {
             <div
               style={{ fontSize: "24px", fontWeight: "bold", color: "#1f2937" }}
             >
-              {currency} {(reportData.overview.totalSales || 0).toLocaleString()}
+              {currency}{" "}
+              {(reportData.overview.totalSales || 0).toLocaleString()}
             </div>
             <div style={{ fontSize: "12px", color: "#6b7280" }}>
               Total Sales
@@ -1172,7 +1173,8 @@ function Reports() {
           <div
             style={{ fontSize: "20px", fontWeight: "bold", color: "#10b981" }}
           >
-            {currency} {(sectionData.quickStats.todayRevenue || 0).toLocaleString()}
+            {currency}{" "}
+            {(sectionData.quickStats.todayRevenue || 0).toLocaleString()}
           </div>
           <div style={{ fontSize: "12px", color: "#6b7280", marginTop: "4px" }}>
             Today's Revenue
@@ -1480,7 +1482,8 @@ function Reports() {
                       color: activity.type === "return" ? "#ef4444" : "#10b981",
                     }}
                   >
-                    {activity.type === "return" ? "-" : "+"}{currency} {activity.amount}
+                    {activity.type === "return" ? "-" : "+"}
+                    {currency} {activity.amount}
                   </div>
                 )}
               </div>
@@ -1647,32 +1650,12 @@ function Reports() {
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
           marginBottom: "32px",
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Reports & Analytics
-          </h1>
-          <p
-            style={{
-              color: "var(--color-text-secondary)",
-              margin: 0,
-            }}
-          >
-            Business insights and performance analytics
-          </p>
-        </div>
-
+        {/* Action Buttons */}
         <div style={{ display: "flex", gap: "12px" }}>
           <button
             onClick={() => handleExportReport("csv")}

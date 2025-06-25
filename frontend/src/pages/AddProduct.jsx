@@ -1,7 +1,7 @@
 // Add Product page
 import { useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { FiArrowLeft, FiCheck, FiPackage } from "react-icons/fi";
+import { FiArrowLeft, FiArrowRight, FiCheck, FiPackage } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
 
@@ -9,7 +9,7 @@ function AddProduct() {
   // Settings store for currency
   const { settings } = useSettingsStore();
   const { currency } = settings;
-  
+
   const navigate = useNavigate();
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
@@ -110,28 +110,29 @@ function AddProduct() {
   }, []);
 
   const renderBasicInfoStep = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <h2
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#1f2937",
-          marginBottom: "8px",
-        }}
-      >
-        Basic Product Information
-      </h2>
-
+    <div
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        padding: "16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        border: "1px solid #f1f5f9",
+      }}
+    >
       <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+          gap: "16px",
+        }}
       >
         <div>
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             Product Name *
@@ -144,10 +145,10 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
+              padding: "10px 12px",
               border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
             }}
             placeholder="Enter product name"
             required
@@ -158,9 +159,9 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             Category *
@@ -175,10 +176,10 @@ function AddProduct() {
               }
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px 12px",
                 border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                fontSize: "14px",
+                borderRadius: "6px",
+                fontSize: "13px",
               }}
               placeholder="Select or type category"
               required
@@ -195,9 +196,9 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             Supplier *
@@ -221,10 +222,10 @@ function AddProduct() {
               }}
               style={{
                 width: "100%",
-                padding: "12px",
+                padding: "10px 12px",
                 border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                fontSize: "14px",
+                borderRadius: "6px",
+                fontSize: "13px",
               }}
               placeholder="Select or type supplier name"
               required
@@ -261,9 +262,9 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             Manufacturer
@@ -276,10 +277,10 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
+              padding: "10px 12px",
               border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
             }}
             placeholder="Enter manufacturer name (optional)"
           />
@@ -289,9 +290,9 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              marginBottom: "6px",
             }}
           >
             Batch Number
@@ -304,73 +305,74 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
+              padding: "10px 12px",
               border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
             }}
             placeholder="Enter batch number (optional)"
           />
         </div>
-      </div>
 
-      <div>
-        <label
-          style={{
-            display: "block",
-            fontSize: "14px",
-            fontWeight: "500",
-            marginBottom: "8px",
-          }}
-        >
-          Description
-        </label>
-        <textarea
-          value={productData.description}
-          onChange={(e) =>
-            setProductData({ ...productData, description: e.target.value })
-          }
-          rows="3"
-          style={{
-            width: "100%",
-            padding: "12px",
-            border: "1px solid #d1d5db",
-            borderRadius: "8px",
-            fontSize: "14px",
-            resize: "vertical",
-          }}
-          placeholder="Enter product description..."
-        />
+        <div style={{ gridColumn: "1 / -1" }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: "13px",
+              fontWeight: "500",
+              marginBottom: "6px",
+            }}
+          >
+            Description
+          </label>
+          <textarea
+            value={productData.description}
+            onChange={(e) =>
+              setProductData({ ...productData, description: e.target.value })
+            }
+            rows="3"
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              border: "1px solid #d1d5db",
+              borderRadius: "6px",
+              fontSize: "13px",
+              resize: "vertical",
+            }}
+            placeholder="Enter product description..."
+          />
+        </div>
       </div>
     </div>
   );
-
   const renderPricingStep = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <h2
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#1f2937",
-          marginBottom: "8px",
-        }}
-      >
-        Pricing & Stock Information
-      </h2>
-
+    <div
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        padding: "16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        border: "1px solid #f1f5f9",
+      }}
+    >
       <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+          gap: "16px",
+        }}
       >
         <div>
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
-            Cost Price *
+            Cost Price ({currency}) *
           </label>
           <input
             type="number"
@@ -385,11 +387,13 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
+            placeholder="0.00"
             required
           />
         </div>
@@ -398,12 +402,13 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
-            Selling Price *
+            Selling Price ({currency}) *
           </label>
           <input
             type="number"
@@ -418,11 +423,13 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
+            placeholder="0.00"
             required
           />
         </div>
@@ -431,12 +438,13 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
-            Initial Stock Quantity *
+            Initial Stock *
           </label>
           <input
             type="number"
@@ -450,11 +458,13 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
+            placeholder="0"
             required
           />
         </div>
@@ -463,12 +473,13 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
-            Minimum Stock Level *
+            Min Stock Level *
           </label>
           <input
             type="number"
@@ -482,53 +493,91 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
+            placeholder="0"
             required
           />
         </div>
       </div>
 
-      {productData.price > 0 && productData.costPrice > 0 && (
+      {/* Compact Profit Analysis */}
+      {productData.price && productData.costPrice && (
         <div
           style={{
-            padding: "16px",
+            marginTop: "16px",
+            padding: "12px",
+            borderRadius: "6px",
             backgroundColor: "#f0fdf4",
-            borderRadius: "8px",
-            border: "1px solid #bbf7d0",
+            border: "1px solid #d1fae5",
           }}
         >
-          <div
+          <h3
             style={{
               fontSize: "14px",
+              fontWeight: "600",
               color: "#166534",
-              fontWeight: "500",
+              marginBottom: "8px",
             }}
           >
-            Profit Margin:{" "}
-            {(
-              ((productData.price - productData.costPrice) /
-                productData.price) *
-              100
-            ).toFixed(1)}
-            %
-          </div>
+            Profit Analysis
+          </h3>
           <div
             style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+              gap: "12px",
               fontSize: "12px",
-              color: "#15803d",
-              marginTop: "4px",
             }}
           >
-            Profit per unit: ₦
-            {(
-              (parseFloat(productData.price) || 0) -
-              (parseFloat(productData.costPrice) || 0)
-            ).toFixed(2)}
-          </div>
+            <div>
+              <span style={{ color: "#16a34a" }}>Profit per unit:</span>
+              <span
+                style={{
+                  fontWeight: "600",
+                  marginLeft: "6px",
+                  color: "#166534",
+                }}
+              >
+                {currency}
+                {(productData.price - productData.costPrice).toFixed(2)}
+              </span>
+            </div>
+            <div>
+              <span style={{ color: "#16a34a" }}>Margin:</span>
+              <span
+                style={{
+                  fontWeight: "600",
+                  marginLeft: "6px",
+                  color: "#166534",
+                }}
+              >
+                {(
+                  ((productData.price - productData.costPrice) /
+                    productData.price) *
+                  100
+                ).toFixed(1)}
+                %
+              </span>
+            </div>
+            <div>
+              <span style={{ color: "#16a34a" }}>Total Value:</span>
+              <span
+                style={{
+                  fontWeight: "600",
+                  marginLeft: "6px",
+                  color: "#166534",
+                }}
+              >
+                {currency}
+                {(productData.price * productData.quantity).toFixed(2)}
+              </span>
+            </div>{" "}
+          </div>{" "}
         </div>
       )}
     </div>
@@ -737,30 +786,31 @@ function AddProduct() {
       </div>
     </div>
   );
-
   const renderAdditionalDetailsStep = () => (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <h2
-        style={{
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#1f2937",
-          marginBottom: "8px",
-        }}
-      >
-        Additional Details
-      </h2>
-
+    <div
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        padding: "16px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        border: "1px solid #f1f5f9",
+      }}
+    >
       <div
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" }}
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: "16px",
+        }}
       >
         <div>
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
             Expiry Date *
@@ -773,10 +823,11 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
             required
           />
@@ -786,9 +837,10 @@ function AddProduct() {
           <label
             style={{
               display: "block",
-              fontSize: "14px",
+              fontSize: "13px",
               fontWeight: "500",
-              marginBottom: "8px",
+              color: "#374151",
+              marginBottom: "6px",
             }}
           >
             Barcode
@@ -801,10 +853,11 @@ function AddProduct() {
             }
             style={{
               width: "100%",
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              padding: "10px 12px",
+              border: "1px solid #e5e7eb",
+              borderRadius: "6px",
+              fontSize: "13px",
+              backgroundColor: "#ffffff",
             }}
             placeholder="Enter barcode (optional)"
           />
@@ -1201,25 +1254,23 @@ function AddProduct() {
       setLoading(false);
     }
   };
-
   return (
-    <div
-      style={{
-        padding: "24px",
-        backgroundColor: "#f8fafc",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Header */}
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+      {/* Compact Page Header */}
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
           alignItems: "center",
-          marginBottom: "32px",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() =>
               navigate(isFromPurchaseOrder ? "/purchases" : "/inventory")
@@ -1227,56 +1278,49 @@ function AddProduct() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "#6b7280",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
+              gap: "6px",
+              padding: "6px 12px",
+              backgroundColor: "#f8fafc",
+              color: "#64748b",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              fontSize: "13px",
               fontWeight: "500",
               cursor: "pointer",
-              marginRight: "16px",
+              transition: "all 0.2s",
             }}
           >
-            <FiArrowLeft size={16} />
+            <FiArrowLeft size={14} />
             Back to {isFromPurchaseOrder ? "Purchases" : "Inventory"}
           </button>
           <div>
             <h1
               style={{
-                fontSize: "28px",
-                fontWeight: "bold",
+                fontSize: "18px",
+                fontWeight: "600",
                 color: "#1f2937",
-                margin: "0 0 8px 0",
+                margin: "0",
               }}
             >
               {isFromPurchaseOrder
                 ? "Add Product via Purchase Order"
                 : "Add New Product"}
             </h1>
-            <p style={{ color: "#6b7280" }}>
+            <p style={{ color: "#6b7280", fontSize: "12px", margin: "0" }}>
               Step {currentStep + 1} of {steps.length}: {steps[currentStep]}
             </p>
           </div>
         </div>
       </div>
 
-      {/* Progress Bar */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          marginBottom: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
+      {/* Compact Progress Bar */}
+      <div style={{ marginBottom: "12px" }}>
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
-            marginBottom: "16px",
+            justifyContent: "center",
+            marginBottom: "8px",
+            gap: "16px",
           }}
         >
           {steps.map((step, index) => (
@@ -1291,24 +1335,24 @@ function AddProduct() {
             >
               <div
                 style={{
-                  width: "32px",
-                  height: "32px",
+                  width: "28px",
+                  height: "28px",
                   borderRadius: "50%",
                   backgroundColor: index <= currentStep ? "#3b82f6" : "#e5e7eb",
                   color: index <= currentStep ? "white" : "#9ca3af",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: "14px",
+                  fontSize: "12px",
                   fontWeight: "600",
-                  marginBottom: "8px",
+                  marginBottom: "6px",
                 }}
               >
-                {index < currentStep ? <FiCheck size={16} /> : index + 1}
+                {index < currentStep ? <FiCheck size={14} /> : index + 1}
               </div>
               <span
                 style={{
-                  fontSize: "12px",
+                  fontSize: "10px",
                   color: index <= currentStep ? "#3b82f6" : "#9ca3af",
                   fontWeight: "500",
                   textAlign: "center",
@@ -1322,7 +1366,7 @@ function AddProduct() {
         <div
           style={{
             width: "100%",
-            height: "4px",
+            height: "3px",
             backgroundColor: "#e5e7eb",
             borderRadius: "2px",
             overflow: "hidden",
@@ -1340,40 +1384,39 @@ function AddProduct() {
       </div>
 
       {/* Step Content */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "32px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          marginBottom: "24px",
-        }}
-      >
-        {renderStepContent()}
-      </div>
+      <div style={{ marginBottom: "16px" }}>{renderStepContent()}</div>
 
-      {/* Navigation Buttons */}
+      {/* Compact Navigation Buttons */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
         }}
       >
         <button
           onClick={handlePrevious}
           disabled={currentStep === 0}
           style={{
-            padding: "12px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
             backgroundColor: currentStep === 0 ? "#f3f4f6" : "white",
             color: currentStep === 0 ? "#9ca3af" : "#374151",
             border: "1px solid #d1d5db",
-            borderRadius: "8px",
-            fontSize: "14px",
+            borderRadius: "6px",
+            fontSize: "13px",
             fontWeight: "500",
             cursor: currentStep === 0 ? "not-allowed" : "pointer",
           }}
         >
+          <FiArrowLeft size={14} />
           Previous
         </button>
 
@@ -1384,14 +1427,14 @@ function AddProduct() {
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "12px 20px",
+              gap: "6px",
+              padding: "8px 16px",
               backgroundColor:
                 loading || !validateStep(currentStep) ? "#9ca3af" : "#3b82f6",
               color: "white",
               border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
               fontWeight: "500",
               cursor:
                 loading || !validateStep(currentStep)
@@ -1403,10 +1446,10 @@ function AddProduct() {
               <>
                 <div
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    border: "2px solid white",
-                    borderTop: "2px solid transparent",
+                    width: "12px",
+                    height: "12px",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTop: "2px solid white",
                     borderRadius: "50%",
                     animation: "spin 1s linear infinite",
                   }}
@@ -1415,7 +1458,7 @@ function AddProduct() {
               </>
             ) : (
               <>
-                <FiPackage size={16} />
+                <FiPackage size={14} />
                 {isFromPurchaseOrder
                   ? "Create Product & Purchase Order"
                   : "Add Product"}
@@ -1427,19 +1470,23 @@ function AddProduct() {
             onClick={handleNext}
             disabled={!validateStep(currentStep)}
             style={{
-              padding: "12px 20px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
               backgroundColor: !validateStep(currentStep)
                 ? "#9ca3af"
                 : "#3b82f6",
               color: "white",
               border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
               fontWeight: "500",
               cursor: !validateStep(currentStep) ? "not-allowed" : "pointer",
             }}
           >
             Next
+            <FiArrowRight size={14} />
           </button>
         )}
       </div>
