@@ -33,13 +33,13 @@ const MobileDashboard = () => {
   const getGreeting = () => {
     const hour = new Date().getHours();
     const name = ""; // You can add user name here if available
-    
+
     if (hour < 12) {
-      return `Good morning${name ? `, ${name}` : ''}! 🌅`;
+      return `Good morning${name ? `, ${name}` : ""}! 🌅`;
     } else if (hour < 17) {
-      return `Good afternoon${name ? `, ${name}` : ''}! ☀️`;
+      return `Good afternoon${name ? `, ${name}` : ""}! ☀️`;
     } else {
-      return `Good evening${name ? `, ${name}` : ''}! 🌙`;
+      return `Good evening${name ? `, ${name}` : ""}! 🌙`;
     }
   };
 
@@ -128,7 +128,8 @@ const MobileDashboard = () => {
     },
   };
 
-  if (loading) {    return (
+  if (loading) {
+    return (
       <div className="mobile-container">
         <div className="loading-container">
           <motion.div
@@ -153,7 +154,9 @@ const MobileDashboard = () => {
       {/* Welcome Section */}
       <motion.section variants={itemVariants} className="welcome-section">
         <MobileCard className="welcome-card">
-          <div className="welcome-content">            <div className="welcome-text">
+          <div className="welcome-content">
+            {" "}
+            <div className="welcome-text">
               <h1>{getGreeting()}</h1>
               <p>Here's what's happening at your pharmacy today</p>
             </div>
@@ -175,7 +178,6 @@ const MobileDashboard = () => {
           </div>
         </MobileCard>
       </motion.section>
-
       {/* Quick Actions */}
       <motion.section variants={itemVariants} className="quick-actions-section">
         <h2>Quick Actions</h2>
@@ -197,7 +199,6 @@ const MobileDashboard = () => {
           ))}
         </div>
       </motion.section>
-
       {/* Stats Overview */}
       <motion.section variants={itemVariants} className="stats-section">
         <h2>Overview</h2>
@@ -233,7 +234,6 @@ const MobileDashboard = () => {
           />
         </div>
       </motion.section>
-
       {/* Recent Activity */}
       <motion.section variants={itemVariants} className="activity-section">
         <div className="section-header">
@@ -286,7 +286,6 @@ const MobileDashboard = () => {
           )}
         </div>
       </motion.section>
-
       {/* Low Stock Alert */}
       {lowStockProducts.length > 0 && (
         <motion.section variants={itemVariants} className="alerts-section">
@@ -310,11 +309,11 @@ const MobileDashboard = () => {
           </MobileCard>
         </motion.section>
       )}
-
       {/* Floating Action Button */}
       <MobileFAB onClick={() => navigate("/pos")}>
         <FiPlus size={24} />
-      </MobileFAB>      <style jsx>{`
+      </MobileFAB>{" "}
+      <style jsx>{`
         .loading-container {
           display: flex;
           flex-direction: column;
@@ -381,7 +380,7 @@ const MobileDashboard = () => {
           display: block;
           font-size: 12px;
           color: #6b7280;
-        }        /* Sections */
+        } /* Sections */
         section {
           margin-bottom: 32px;
         }
@@ -468,7 +467,7 @@ const MobileDashboard = () => {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 16px;
-        }        /* Activity List */
+        } /* Activity List */
         .activity-list {
           display: flex;
           flex-direction: column;
@@ -596,7 +595,7 @@ const MobileDashboard = () => {
           font-size: 14px;
           color: #a16207;
           margin: 0;
-        }        /* Responsive Design */
+        } /* Responsive Design */
         @media (min-width: 768px) {
           .quick-actions-grid {
             grid-template-columns: repeat(4, 1fr);

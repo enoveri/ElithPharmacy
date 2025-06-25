@@ -184,11 +184,11 @@ const MobilePOS = () => {
         <div className="px-4 py-4">
           {" "}
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-bold gradient-text">Point of Sale</h1>
+            <h1 className="text-2xl font-bold pos-title">Point of Sale</h1>
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setShowCart(true)}
-              className="mobile-action-button relative bg-white/20 backdrop-blur-sm border border-white/30"
+              className="mobile-action-button relative bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-200"
               style={{
                 color: "white",
                 padding: "12px",
@@ -200,7 +200,7 @@ const MobilePOS = () => {
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold"
+                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold shadow-lg"
                 >
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
                 </motion.div>
@@ -230,18 +230,18 @@ const MobilePOS = () => {
           </div>{" "}
           {/* Categories */}
           <div className="mb-4">
-            <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+            <div className="pos-categories-container overflow-x-auto overflow-y-hidden">
               <div
-                className="flex flex-nowrap space-x-3 pb-2"
+                className="flex flex-nowrap space-x-4 pb-2"
                 style={{ minWidth: "max-content" }}
               >
                 <motion.button
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedCategory("all")}
-                  className={`flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                  className={`flex items-center px-6 py-3 rounded-2xl font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                     selectedCategory === "all"
-                      ? "bg-blue-600 text-white shadow-lg"
-                      : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                      ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 transform scale-105"
+                      : "bg-white/90 backdrop-blur-sm text-gray-700 border border-white/50 hover:bg-white hover:shadow-md hover:scale-102"
                   }`}
                 >
                   All
@@ -253,10 +253,10 @@ const MobilePOS = () => {
                     onClick={() =>
                       setSelectedCategory(category.name || category)
                     }
-                    className={`flex items-center px-4 py-2 rounded-xl font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
+                    className={`flex items-center px-6 py-3 rounded-2xl font-medium transition-all duration-300 whitespace-nowrap flex-shrink-0 ${
                       selectedCategory === (category.name || category)
-                        ? "bg-blue-600 text-white shadow-lg"
-                        : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+                        ? "bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/25 transform scale-105"
+                        : "bg-white/90 backdrop-blur-sm text-gray-700 border border-white/50 hover:bg-white hover:shadow-md hover:scale-102"
                     }`}
                   >
                     {category.name || category}
@@ -277,7 +277,8 @@ const MobilePOS = () => {
               : "Select Customer (Optional)"}
           </motion.button>
         </div>
-      </div>{" "}      {/* Spacer for main header + POS fixed header */}
+      </div>{" "}
+      {/* Spacer for main header + POS fixed header */}
       <div style={{ height: "384px" }}></div>
       {/* Products Grid */}
       <div className="px-4 pb-20">
