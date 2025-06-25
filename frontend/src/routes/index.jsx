@@ -23,7 +23,7 @@ import Purchases from "../pages/Purchases";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Settings from "../pages/Settings";
 import Notifications from "../pages/Notifications";
-import AdminPanel from "../pages/AdminPanel";
+import AdminPanel from "../pages/EnhancedAdminPanel";
 
 export const router = createBrowserRouter([
   {

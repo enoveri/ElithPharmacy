@@ -170,18 +170,8 @@ const Notifications = () => {
               e.target.style.backgroundColor = "transparent";
             }}
           >
-            <FiChevronLeft size={20} color="#374151" />
+            <FiChevronLeft size={20} color="#374151" />{" "}
           </button>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: "28px",
-              fontWeight: "700",
-              color: "#1f2937",
-            }}
-          >
-            Notifications
-          </h1>
           <span
             style={{
               backgroundColor: unreadCount > 0 ? "#ef4444" : "#6b7280",

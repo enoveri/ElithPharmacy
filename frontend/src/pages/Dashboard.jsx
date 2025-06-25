@@ -118,19 +118,6 @@ const Dashboard = () => {
           marginBottom: "32px",
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Dashboard
-          </h1>
-        </div>
-
         <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
           <select
             value={selectedPeriod}

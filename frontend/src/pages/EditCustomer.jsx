@@ -223,46 +223,27 @@ function EditCustomer() {
           <div
             style={{
               backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "32px",
+              borderRadius: "8px",
+              padding: "16px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
             }}
           >
-            <h2
-              style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "8px",
-              }}
-            >
-              Basic Information
-            </h2>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "24px",
-              }}
-            >
-              Enter the customer's personal details
-            </p>
-
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "24px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "16px",
               }}
             >
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   First Name *
@@ -274,25 +255,28 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: `1px solid ${errors.firstName ? "#ef4444" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: errors.firstName
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Enter first name"
                 />
                 {errors.firstName && (
                   <p
                     style={{
+                      fontSize: "11px",
                       color: "#ef4444",
-                      fontSize: "12px",
-                      marginTop: "4px",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    <FiAlertCircle
-                      style={{ display: "inline", marginRight: "4px" }}
-                    />
+                    <FiAlertCircle size={12} />
                     {errors.firstName}
                   </p>
                 )}
@@ -302,10 +286,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Last Name *
@@ -317,25 +301,28 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: `1px solid ${errors.lastName ? "#ef4444" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: errors.lastName
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Enter last name"
                 />
                 {errors.lastName && (
                   <p
                     style={{
+                      fontSize: "11px",
                       color: "#ef4444",
-                      fontSize: "12px",
-                      marginTop: "4px",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    <FiAlertCircle
-                      style={{ display: "inline", marginRight: "4px" }}
-                    />
+                    <FiAlertCircle size={12} />
                     {errors.lastName}
                   </p>
                 )}
@@ -345,10 +332,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Email Address *
@@ -360,25 +347,28 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: `1px solid ${errors.email ? "#ef4444" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: errors.email
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Enter email address"
                 />
                 {errors.email && (
                   <p
                     style={{
+                      fontSize: "11px",
                       color: "#ef4444",
-                      fontSize: "12px",
-                      marginTop: "4px",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    <FiAlertCircle
-                      style={{ display: "inline", marginRight: "4px" }}
-                    />
+                    <FiAlertCircle size={12} />
                     {errors.email}
                   </p>
                 )}
@@ -388,10 +378,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Phone Number *
@@ -403,25 +393,28 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: `1px solid ${errors.phone ? "#ef4444" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: errors.phone
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Enter phone number"
                 />
                 {errors.phone && (
                   <p
                     style={{
+                      fontSize: "11px",
                       color: "#ef4444",
-                      fontSize: "12px",
-                      marginTop: "4px",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    <FiAlertCircle
-                      style={{ display: "inline", marginRight: "4px" }}
-                    />
+                    <FiAlertCircle size={12} />
                     {errors.phone}
                   </p>
                 )}
@@ -431,10 +424,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Date of Birth
@@ -446,11 +439,11 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                 />
               </div>
@@ -459,10 +452,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Gender
@@ -473,12 +466,11 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
-                    backgroundColor: "white",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                 >
                   <option value="">Select gender</option>
@@ -489,52 +481,32 @@ function EditCustomer() {
             </div>
           </div>
         );
-
       case 2:
         return (
           <div
             style={{
               backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "32px",
+              borderRadius: "8px",
+              padding: "16px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
             }}
           >
-            <h2
-              style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "8px",
-              }}
-            >
-              Address & Location
-            </h2>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "24px",
-              }}
-            >
-              Enter the customer's address details
-            </p>
-
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr",
-                gap: "24px",
+                gap: "16px",
               }}
             >
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Street Address *
@@ -546,25 +518,28 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: `1px solid ${errors.address ? "#ef4444" : "#d1d5db"}`,
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: errors.address
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Enter street address"
                 />
                 {errors.address && (
                   <p
                     style={{
+                      fontSize: "11px",
                       color: "#ef4444",
-                      fontSize: "12px",
-                      marginTop: "4px",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
                     }}
                   >
-                    <FiAlertCircle
-                      style={{ display: "inline", marginRight: "4px" }}
-                    />
+                    <FiAlertCircle size={12} />
                     {errors.address}
                   </p>
                 )}
@@ -581,10 +556,10 @@ function EditCustomer() {
                   <label
                     style={{
                       display: "block",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       fontWeight: "500",
                       color: "#374151",
-                      marginBottom: "8px",
+                      marginBottom: "6px",
                     }}
                   >
                     City *
@@ -596,25 +571,28 @@ function EditCustomer() {
                     onChange={handleInputChange}
                     style={{
                       width: "100%",
-                      padding: "12px",
-                      border: `1px solid ${errors.city ? "#ef4444" : "#d1d5db"}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      outline: "none",
+                      padding: "10px 12px",
+                      border: errors.city
+                        ? "1px solid #ef4444"
+                        : "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                     }}
                     placeholder="Enter city"
                   />
                   {errors.city && (
                     <p
                       style={{
+                        fontSize: "11px",
                         color: "#ef4444",
-                        fontSize: "12px",
-                        marginTop: "4px",
+                        marginTop: "3px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "3px",
                       }}
                     >
-                      <FiAlertCircle
-                        style={{ display: "inline", marginRight: "4px" }}
-                      />
+                      <FiAlertCircle size={12} />
                       {errors.city}
                     </p>
                   )}
@@ -624,10 +602,10 @@ function EditCustomer() {
                   <label
                     style={{
                       display: "block",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       fontWeight: "500",
                       color: "#374151",
-                      marginBottom: "8px",
+                      marginBottom: "6px",
                     }}
                   >
                     State *
@@ -639,25 +617,28 @@ function EditCustomer() {
                     onChange={handleInputChange}
                     style={{
                       width: "100%",
-                      padding: "12px",
-                      border: `1px solid ${errors.state ? "#ef4444" : "#d1d5db"}`,
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      outline: "none",
+                      padding: "10px 12px",
+                      border: errors.state
+                        ? "1px solid #ef4444"
+                        : "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                     }}
                     placeholder="Enter state"
                   />
                   {errors.state && (
                     <p
                       style={{
+                        fontSize: "11px",
                         color: "#ef4444",
-                        fontSize: "12px",
-                        marginTop: "4px",
+                        marginTop: "3px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "3px",
                       }}
                     >
-                      <FiAlertCircle
-                        style={{ display: "inline", marginRight: "4px" }}
-                      />
+                      <FiAlertCircle size={12} />
                       {errors.state}
                     </p>
                   )}
@@ -667,10 +648,10 @@ function EditCustomer() {
                   <label
                     style={{
                       display: "block",
-                      fontSize: "14px",
+                      fontSize: "13px",
                       fontWeight: "500",
                       color: "#374151",
-                      marginBottom: "8px",
+                      marginBottom: "6px",
                     }}
                   >
                     ZIP Code
@@ -682,11 +663,11 @@ function EditCustomer() {
                     onChange={handleInputChange}
                     style={{
                       width: "100%",
-                      padding: "12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      outline: "none",
+                      padding: "10px 12px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                     }}
                     placeholder="ZIP code"
                   />
@@ -695,52 +676,32 @@ function EditCustomer() {
             </div>
           </div>
         );
-
       case 3:
         return (
           <div
             style={{
               backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "32px",
+              borderRadius: "8px",
+              padding: "16px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
             }}
           >
-            <h2
-              style={{
-                fontSize: "20px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "8px",
-              }}
-            >
-              Medical Information
-            </h2>
-            <p
-              style={{
-                fontSize: "14px",
-                color: "#6b7280",
-                marginBottom: "24px",
-              }}
-            >
-              Health details and emergency contact information
-            </p>
-
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "24px",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "16px",
               }}
             >
               <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Emergency Contact Name
@@ -752,11 +713,11 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Emergency contact name"
                 />
@@ -766,10 +727,10 @@ function EditCustomer() {
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Emergency Contact Phone
@@ -781,24 +742,54 @@ function EditCustomer() {
                   onChange={handleInputChange}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                   }}
                   placeholder="Emergency contact phone"
                 />
               </div>
 
-              <div style={{ gridColumn: "span 2" }}>
+              <div>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                   }}
                 >
                   Known Allergies
@@ -810,25 +801,25 @@ function EditCustomer() {
                   rows={3}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                     resize: "vertical",
                   }}
                   placeholder="List any known allergies (comma separated)"
                 />
               </div>
 
-              <div style={{ gridColumn: "span 2" }}>
+              <div style={{ gridColumn: "1 / -1" }}>
                 <label
                   style={{
                     display: "block",
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: "500",
                     color: "#374151",
-                    marginBottom: "8px",
+                    marginBottom: "6px",
                   }}
                 >
                   Medical Conditions
@@ -840,264 +831,253 @@ function EditCustomer() {
                   rows={3}
                   style={{
                     width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                     resize: "vertical",
                   }}
                   placeholder="List any medical conditions"
                 />
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Status
-                </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    outline: "none",
-                    backgroundColor: "white",
-                  }}
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
               </div>
             </div>
           </div>
         );
     }
   };
-
   return (
-    <div
-      style={{
-        padding: "24px",
-        backgroundColor: "var(--color-bg-main)",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Header */}
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+      {/* Compact Page Header with Back Button */}
       <div
         style={{
           display: "flex",
           alignItems: "center",
-          marginBottom: "32px",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
         }}
       >
-        <button
-          onClick={() => navigate("/customers")}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "8px 16px",
-            backgroundColor: "white",
-            color: "var(--color-text-secondary)",
-            border: "1px solid var(--color-border-light)",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: "pointer",
-            marginRight: "16px",
-          }}
-        >
-          <FiArrowLeft size={16} />
-          Back to Customers
-        </button>{" "}
-        <div>
-          <h1
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={() => navigate("/customers")}
             style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 4px 0",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              backgroundColor: "#f8fafc",
+              color: "#64748b",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              fontSize: "13px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s",
             }}
           >
-            {id ? "Edit Customer" : "Add Customer"}
-          </h1>
-          <p
-            style={{
-              color: "var(--color-text-secondary)",
-              margin: 0,
-            }}
-          >
-            {id ? "Update" : "Add"} customer information in {steps.length} easy
-            steps
-          </p>
+            <FiArrowLeft size={14} />
+            Back
+          </button>
+          <div>
+            <h1
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#1f2937",
+                margin: "0",
+              }}
+            >
+              {id ? "Edit Customer" : "Add Customer"} - Step {currentStep} of{" "}
+              {steps.length}
+            </h1>
+            <p style={{ color: "#6b7280", fontSize: "12px", margin: "0" }}>
+              {steps[currentStep - 1]?.description}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Step Progress */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          marginBottom: "32px",
-        }}
-      >
-        {steps.map((step) => (
-          <div
-            key={step.id}
-            style={{ display: "flex", alignItems: "center", margin: "0 16px" }}
-          >
+      {/* Compact Step Progress */}
+      <div style={{ marginBottom: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "16px",
+            marginBottom: "8px",
+          }}
+        >
+          {steps.map((step) => (
             <div
+              key={step.id}
               style={{
-                width: "32px",
-                height: "32px",
-                borderRadius: "50%",
                 display: "flex",
+                flexDirection: "column",
                 alignItems: "center",
-                justifyContent: "center",
-                backgroundColor:
-                  currentStep >= step.id ? step.color : "#f3f4f6",
-                color: currentStep >= step.id ? "white" : "#6b7280",
-                marginRight: "8px",
               }}
             >
-              {currentStep > step.id ? (
-                <FiCheck size={16} />
-              ) : (
-                <step.icon size={16} />
-              )}
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.3s ease",
+                  backgroundColor:
+                    currentStep >= step.id ? "#3b82f6" : "#f3f4f6",
+                  color: currentStep >= step.id ? "white" : "#9ca3af",
+                  border: currentStep >= step.id ? "none" : "2px solid #e5e7eb",
+                }}
+              >
+                {currentStep > step.id ? (
+                  <FiCheck size={14} />
+                ) : (
+                  <step.icon size={14} />
+                )}
+              </div>
+              <h3
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "500",
+                  marginTop: "3px",
+                  textAlign: "center",
+                  color: currentStep >= step.id ? "#3b82f6" : "#6b7280",
+                }}
+              >
+                {step.title}
+              </h3>
             </div>
-            <span
-              style={{
-                fontSize: "14px",
-                fontWeight: "500",
-                color: currentStep >= step.id ? step.color : "#6b7280",
-              }}
-            >
-              {step.title}
-            </span>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
       {/* Step Content */}
-      {renderStepContent()}
+      <div style={{ marginBottom: "16px" }}>{renderStepContent()}</div>
 
-      {/* Navigation Buttons */}
+      {/* Compact Navigation Buttons */}
       <div
         style={{
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          marginTop: "32px",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
         }}
       >
         <button
+          type="button"
           onClick={prevStep}
           disabled={currentStep === 1}
           style={{
             display: "flex",
             alignItems: "center",
-            gap: "8px",
-            padding: "12px 20px",
+            gap: "6px",
+            padding: "8px 16px",
             backgroundColor: "white",
-            color:
-              currentStep === 1 ? "#9ca3af" : "var(--color-text-secondary)",
-            border: "1px solid var(--color-border-light)",
-            borderRadius: "8px",
-            fontSize: "14px",
+            color: "#6b7280",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+            fontSize: "13px",
             fontWeight: "500",
             cursor: currentStep === 1 ? "not-allowed" : "pointer",
+            opacity: currentStep === 1 ? 0.5 : 1,
           }}
         >
-          <FiArrowLeft size={16} />
+          <FiArrowLeft size={14} />
           Previous
         </button>
 
-        <div
-          style={{
-            fontSize: "14px",
-            color: "#6b7280",
-          }}
-        >
+        <div style={{ fontSize: "12px", color: "#6b7280" }}>
           Step {currentStep} of {steps.length}
         </div>
 
         {currentStep < steps.length ? (
           <button
+            type="button"
             onClick={nextStep}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "12px 20px",
-              backgroundColor: "var(--color-primary-600)",
+              gap: "6px",
+              padding: "8px 16px",
+              backgroundColor: "#3b82f6",
               color: "white",
               border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
               fontWeight: "500",
               cursor: "pointer",
             }}
           >
             Next
-            <FiArrowRight size={16} />
+            <FiArrowRight size={14} />
           </button>
         ) : (
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={loading}
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "12px 20px",
+              gap: "6px",
+              padding: "8px 16px",
               backgroundColor: "#10b981",
               color: "white",
               border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
+              borderRadius: "6px",
+              fontSize: "13px",
               fontWeight: "500",
               cursor: loading ? "not-allowed" : "pointer",
               opacity: loading ? 0.7 : 1,
             }}
           >
-            {" "}
             {loading ? (
               <>
                 <div
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    border: "2px solid white",
-                    borderTop: "2px solid transparent",
+                    width: "12px",
+                    height: "12px",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTop: "2px solid white",
                     borderRadius: "50%",
                     animation: "spin 1s linear infinite",
                   }}
-                />
+                ></div>
                 {id ? "Updating..." : "Adding..."}
               </>
             ) : (
               <>
-                <FiSave size={16} />
+                <FiSave size={14} />
                 {id ? "Update Customer" : "Add Customer"}
               </>
             )}
           </button>
         )}
       </div>
+
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }

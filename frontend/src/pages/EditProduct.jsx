@@ -44,26 +44,41 @@ function EditProduct() {
   const steps = [
     {
       id: 1,
-      title: "Basic Information",
+      title: "Basic Info",
       description: "Product name, category and description",
       icon: FiInfo,
-      color: "var(--color-secondary-600)",
+      color: "#3b82f6",
     },
     {
       id: 2,
-      title: "Pricing & Inventory",
+      title: "Pricing",
       description: "Prices, quantity and stock levels",
       icon: FiDollarSign,
-      color: "var(--color-success-600)",
+      color: "#10b981",
     },
     {
       id: 3,
-      title: "Additional Details",
+      title: "Details",
       description: "Barcode, manufacturer and other details",
       icon: FiPackage,
-      color: "var(--color-warning-600)",
+      color: "#f59e0b",
     },
-  ]; // Load existing product data and categories
+  ];
+
+  const [categories, setCategories] = useState([
+    "Pain Relief",
+    "Antibiotics",
+    "Vitamins & Supplements",
+    "Cold & Flu",
+    "Digestive Health",
+    "Heart & Blood Pressure",
+    "Diabetes Care",
+    "Skin Care",
+    "Eye Care",
+    "Other",
+  ]);
+
+  // Load existing product data and categories
   useEffect(() => {
     const loadData = async () => {
       if (id) {
@@ -187,9 +202,6 @@ function EditProduct() {
       case 3:
         // Additional validation for step 3 if needed
         break;
-      case 4:
-        // Image validation if needed
-        break;
     }
 
     setErrors(newErrors);
@@ -205,6 +217,7 @@ function EditProduct() {
   const prevStep = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -262,107 +275,152 @@ function EditProduct() {
       setLoading(false);
     }
   };
-  const [categories, setCategories] = useState([
-    "Pain Relief",
-    "Antibiotics",
-    "Vitamins & Supplements",
-    "Cold & Flu",
-    "Digestive Health",
-    "Heart & Blood Pressure",
-    "Diabetes Care",
-    "Skin Care",
-    "Eye Care",
-    "Other",
-  ]);
-
-  if (loading && !formData.name) {
-    return (
-      <div className="app-layout">
-        <div className="main-content">
-          <div className="flex items-center justify-center min-h-screen">
-            <div
-              className="animate-spin rounded-full h-12 w-12 border-b-2"
-              style={{ borderColor: "var(--color-primary-600)" }}
-            ></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="card animate-fade-in">
-            <div className="card-header">
-              <h2 className="card-title">Basic Information</h2>
-              <p className="card-subtitle">Enter the basic product details</p>
-            </div>
-            <div className="card-content">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="form-group">
-                  <label className="form-label">Product Name *</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.name ? "border-red-500" : ""
-                    }`}
-                    placeholder="Enter product name"
-                  />
-                  {errors.name && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.name}
-                    </p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Category *</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.category ? "border-red-500" : ""
-                    }`}
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "16px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Product Name *
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.name
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="Enter product name"
+                />
+                {errors.name && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
                   >
-                    <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.category && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.category}
-                    </p>
-                  )}
-                </div>
+                    <FiAlertCircle size={12} />
+                    {errors.name}
+                  </p>
+                )}
+              </div>
 
-                <div className="form-group md:col-span-2">
-                  <label className="form-label">Description</label>
-                  <textarea
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="form-input"
-                    placeholder="Enter product description"
-                  />
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Category *
+                </label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.category
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                >
+                  <option value="">Select category</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+                {errors.category && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FiAlertCircle size={12} />
+                    {errors.category}
+                  </p>
+                )}
+              </div>
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Description
+                </label>
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                    resize: "vertical",
+                  }}
+                  placeholder="Enter product description"
+                />
               </div>
             </div>
           </div>
@@ -370,258 +428,485 @@ function EditProduct() {
 
       case 2:
         return (
-          <div className="card animate-fade-in">
-            <div className="card-header">
-              <h2 className="card-title">Pricing & Inventory</h2>
-              <p className="card-subtitle">Set prices and stock information</p>
-            </div>
-            <div className="card-content">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="form-group">
-                  <label className="form-label">Selling Price (₦) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.price ? "border-red-500" : ""
-                    }`}
-                    placeholder="0.00"
-                  />
-                  {errors.price && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.price}
-                    </p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Cost Price (₦) *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    name="costPrice"
-                    value={formData.costPrice}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.costPrice ? "border-red-500" : ""
-                    }`}
-                    placeholder="0.00"
-                  />
-                  {errors.costPrice && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.costPrice}
-                    </p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Current Stock *</label>
-                  <input
-                    type="number"
-                    name="quantity"
-                    value={formData.quantity}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.quantity ? "border-red-500" : ""
-                    }`}
-                    placeholder="0"
-                  />
-                  {errors.quantity && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.quantity}
-                    </p>
-                  )}
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Min Stock Level *</label>
-                  <input
-                    type="number"
-                    name="minStockLevel"
-                    value={formData.minStockLevel}
-                    onChange={handleInputChange}
-                    className={`form-input ${
-                      errors.minStockLevel ? "border-red-500" : ""
-                    }`}
-                    placeholder="0"
-                  />
-                  {errors.minStockLevel && (
-                    <p
-                      className="text-sm mt-1 flex items-center gap-1"
-                      style={{ color: "var(--color-danger-500)" }}
-                    >
-                      <FiAlertCircle className="w-4 h-4" />
-                      {errors.minStockLevel}
-                    </p>
-                  )}
-                </div>
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "16px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Selling Price (₦) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.price
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="0.00"
+                />
+                {errors.price && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FiAlertCircle size={12} />
+                    {errors.price}
+                  </p>
+                )}
               </div>
 
-              {/* Profit Margin Display */}
-              {formData.price && formData.costPrice && (
-                <div
-                  className="mt-6 p-4 rounded-lg"
-                  style={{ backgroundColor: "var(--color-success-50)" }}
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
                 >
-                  <h3
-                    className="font-semibold mb-2"
-                    style={{ color: "var(--color-success-800)" }}
+                  Cost Price (₦) *
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="costPrice"
+                  value={formData.costPrice}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.costPrice
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="0.00"
+                />
+                {errors.costPrice && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
                   >
-                    Profit Analysis
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                    <div>
-                      <span style={{ color: "var(--color-success-700)" }}>
-                        Profit per unit:
-                      </span>
-                      <span
-                        className="font-semibold ml-2"
-                        style={{ color: "var(--color-success-800)" }}
-                      >
-                        ₦
-                        {(
-                          parseFloat(formData.price) -
-                          parseFloat(formData.costPrice)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: "var(--color-success-700)" }}>
-                        Margin:
-                      </span>
-                      <span
-                        className="font-semibold ml-2"
-                        style={{ color: "var(--color-success-800)" }}
-                      >
-                        {(
-                          ((parseFloat(formData.price) -
-                            parseFloat(formData.costPrice)) /
-                            parseFloat(formData.price)) *
-                          100
-                        ).toFixed(1)}
-                        %
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: "var(--color-success-700)" }}>
-                        Total Value:
-                      </span>
-                      <span
-                        className="font-semibold ml-2"
-                        style={{ color: "var(--color-success-800)" }}
-                      >
-                        ₦
-                        {(
-                          parseFloat(formData.price) *
-                          parseInt(formData.quantity || 0)
-                        ).toFixed(2)}
-                      </span>
-                    </div>
+                    <FiAlertCircle size={12} />
+                    {errors.costPrice}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Current Stock *
+                </label>
+                <input
+                  type="number"
+                  name="quantity"
+                  value={formData.quantity}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.quantity
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="0"
+                />
+                {errors.quantity && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FiAlertCircle size={12} />
+                    {errors.quantity}
+                  </p>
+                )}
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Min Stock Level *
+                </label>
+                <input
+                  type="number"
+                  name="minStockLevel"
+                  value={formData.minStockLevel}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.minStockLevel
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="0"
+                />
+                {errors.minStockLevel && (
+                  <p
+                    style={{
+                      fontSize: "11px",
+                      color: "#ef4444",
+                      marginTop: "3px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "3px",
+                    }}
+                  >
+                    <FiAlertCircle size={12} />
+                    {errors.minStockLevel}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Compact Profit Analysis */}
+            {formData.price && formData.costPrice && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "12px",
+                  borderRadius: "6px",
+                  backgroundColor: "#f0fdf4",
+                  border: "1px solid #d1fae5",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: "600",
+                    color: "#166534",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Profit Analysis
+                </h3>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+                    gap: "12px",
+                    fontSize: "12px",
+                  }}
+                >
+                  <div>
+                    <span style={{ color: "#16a34a" }}>Profit per unit:</span>
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        marginLeft: "6px",
+                        color: "#166534",
+                      }}
+                    >
+                      ₦
+                      {(
+                        parseFloat(formData.price) -
+                        parseFloat(formData.costPrice)
+                      ).toFixed(2)}
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#16a34a" }}>Margin:</span>
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        marginLeft: "6px",
+                        color: "#166534",
+                      }}
+                    >
+                      {(
+                        ((parseFloat(formData.price) -
+                          parseFloat(formData.costPrice)) /
+                          parseFloat(formData.price)) *
+                        100
+                      ).toFixed(1)}
+                      %
+                    </span>
+                  </div>
+                  <div>
+                    <span style={{ color: "#16a34a" }}>Total Value:</span>
+                    <span
+                      style={{
+                        fontWeight: "600",
+                        marginLeft: "6px",
+                        color: "#166534",
+                      }}
+                    >
+                      ₦
+                      {(
+                        parseFloat(formData.price) *
+                        parseInt(formData.quantity || 0)
+                      ).toFixed(2)}
+                    </span>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         );
 
       case 3:
         return (
-          <div className="card animate-fade-in">
-            <div className="card-header">
-              <h2 className="card-title">Additional Details</h2>
-              <p className="card-subtitle">
-                Product identification and tracking information
-              </p>
-            </div>
-            <div className="card-content">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="form-group">
-                  <label className="form-label">Barcode</label>
-                  <input
-                    type="text"
-                    name="barcode"
-                    value={formData.barcode}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter barcode"
-                  />
-                </div>
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "16px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
+            }}
+          >
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Barcode
+                </label>
+                <input
+                  type="text"
+                  name="barcode"
+                  value={formData.barcode}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="Enter barcode"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Manufacturer</label>
-                  <input
-                    type="text"
-                    name="manufacturer"
-                    value={formData.manufacturer}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter manufacturer"
-                  />
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Manufacturer
+                </label>
+                <input
+                  type="text"
+                  name="manufacturer"
+                  value={formData.manufacturer}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="Enter manufacturer"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Expiry Date</label>
-                  <input
-                    type="date"
-                    name="expiryDate"
-                    value={formData.expiryDate}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  />
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Expiry Date
+                </label>
+                <input
+                  type="date"
+                  name="expiryDate"
+                  value={formData.expiryDate}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Batch Number</label>
-                  <input
-                    type="text"
-                    name="batchNumber"
-                    value={formData.batchNumber}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="Enter batch number"
-                  />
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Batch Number
+                </label>
+                <input
+                  type="text"
+                  name="batchNumber"
+                  value={formData.batchNumber}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="Enter batch number"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Storage Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="form-input"
-                    placeholder="e.g., A-12-03"
-                  />
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Storage Location
+                </label>
+                <input
+                  type="text"
+                  name="location"
+                  value={formData.location}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                  placeholder="e.g., A-12-03"
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Status</label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleInputChange}
-                    className="form-input"
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                    <option value="discontinued">Discontinued</option>
-                  </select>
-                </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Status
+                </label>
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  style={{
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                  }}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="discontinued">Discontinued</option>
+                </select>
               </div>
             </div>
           </div>
@@ -629,153 +914,261 @@ function EditProduct() {
     }
   };
 
+  if (loading) {
+    return (
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "50vh",
+        }}
+      >
+        <div
+          style={{
+            width: "32px",
+            height: "32px",
+            border: "3px solid #f3f4f6",
+            borderTop: "3px solid #3b82f6",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        ></div>
+      </div>
+    );
+  }
+
   return (
-    <div
-      className="min-h-screen w-full"
-      style={{ backgroundColor: "var(--color-bg-main)" }}
-    >
-      <div className="w-full">
-        {/* Header */}
-        <div className="topbar">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/inventory")}
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+      {/* Compact Page Header with Back Button */}
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "16px",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
+            onClick={() => navigate("/inventory")}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "6px 12px",
+              backgroundColor: "#f8fafc",
+              color: "#64748b",
+              border: "1px solid #e2e8f0",
+              borderRadius: "6px",
+              fontSize: "13px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            <FiArrowLeft size={14} />
+            Back
+          </button>
+          <div>
+            <h1
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                backgroundColor: "white",
-                color: "var(--color-text-secondary)",
-                border: "1px solid var(--color-border-light)",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                marginRight: "16px",
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#1f2937",
+                margin: "0",
               }}
             >
-              <FiArrowLeft size={16} />
-              Back to Inventory
-            </button>
-
-            <div>
-              <h1
-                className="text-2xl font-bold"
-                style={{ color: "var(--color-text-primary)" }}
-              >
-                Edit Product
-              </h1>
-              <p style={{ color: "var(--color-text-secondary)" }}>
-                Update product information in {steps.length} easy steps
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Step Progress */}
-        <div className="mb-8 px-6">
-          <div className="flex items-center justify-center gap-8 mb-6">
-            {steps.map((step) => (
-              <div key={step.id} className="flex flex-col items-center">
-                <div
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 ${
-                    currentStep > step.id ? "scale-110" : ""
-                  }`}
-                  style={{
-                    backgroundColor:
-                      currentStep >= step.id
-                        ? step.color
-                        : "var(--color-bg-main)",
-                    color:
-                      currentStep >= step.id
-                        ? "white"
-                        : "var(--color-text-muted)",
-                    border:
-                      currentStep >= step.id
-                        ? "none"
-                        : "2px solid var(--color-border-light)",
-                  }}
-                >
-                  {currentStep > step.id ? (
-                    <FiCheck className="w-6 h-6" />
-                  ) : (
-                    <step.icon className="w-6 h-6" />
-                  )}
-                </div>
-                <h3
-                  className="font-semibold mt-2 text-center text-sm"
-                  style={{
-                    color:
-                      currentStep >= step.id
-                        ? step.color
-                        : "var(--color-text-secondary)",
-                  }}
-                >
-                  {step.title}
-                </h3>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Step Content */}
-        <div className="px-6">
-          <div>
-            {renderStepContent()}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between items-center mt-8 pb-8">
-              <button
-                type="button"
-                onClick={prevStep}
-                disabled={currentStep === 1}
-                className="btn btn-outline disabled:opacity-50"
-              >
-                <FiArrowLeft className="w-4 h-4" />
-                Previous
-              </button>
-
-              <div
-                className="text-sm"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                Step {currentStep} of {steps.length}
-              </div>
-
-              {currentStep < steps.length ? (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="btn btn-primary"
-                >
-                  Next
-                  <FiArrowRight className="w-4 h-4" />
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className="btn btn-success disabled:opacity-50"
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      Updating...
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="w-4 h-4" />
-                      Update Product
-                    </>
-                  )}
-                </button>
-              )}
-            </div>
+              Edit Product - Step {currentStep} of {steps.length}
+            </h1>
+            <p style={{ color: "#6b7280", fontSize: "12px", margin: "0" }}>
+              {steps[currentStep - 1]?.description}
+            </p>
           </div>
         </div>
       </div>
+
+      {/* Compact Step Progress */}
+      <div style={{ marginBottom: "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "16px",
+            marginBottom: "8px",
+          }}
+        >
+          {steps.map((step) => (
+            <div
+              key={step.id}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  borderRadius: "50%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.3s ease",
+                  backgroundColor:
+                    currentStep >= step.id ? step.color : "#f3f4f6",
+                  color: currentStep >= step.id ? "white" : "#9ca3af",
+                  border: currentStep >= step.id ? "none" : "2px solid #e5e7eb",
+                }}
+              >
+                {currentStep > step.id ? (
+                  <FiCheck size={14} />
+                ) : (
+                  <step.icon size={14} />
+                )}
+              </div>
+              <h3
+                style={{
+                  fontSize: "10px",
+                  fontWeight: "500",
+                  marginTop: "3px",
+                  textAlign: "center",
+                  color: currentStep >= step.id ? step.color : "#6b7280",
+                }}
+              >
+                {step.title}
+              </h3>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Step Content */}
+      <div style={{ marginBottom: "16px" }}>{renderStepContent()}</div>
+
+      {/* Compact Navigation Buttons */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 16px",
+          backgroundColor: "white",
+          borderRadius: "8px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
+        }}
+      >
+        <button
+          type="button"
+          onClick={prevStep}
+          disabled={currentStep === 1}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+            padding: "8px 16px",
+            backgroundColor: "white",
+            color: "#6b7280",
+            border: "1px solid #e5e7eb",
+            borderRadius: "6px",
+            fontSize: "13px",
+            fontWeight: "500",
+            cursor: currentStep === 1 ? "not-allowed" : "pointer",
+            opacity: currentStep === 1 ? 0.5 : 1,
+          }}
+        >
+          <FiArrowLeft size={14} />
+          Previous
+        </button>
+
+        <div style={{ fontSize: "12px", color: "#6b7280" }}>
+          Step {currentStep} of {steps.length}
+        </div>
+
+        {currentStep < steps.length ? (
+          <button
+            type="button"
+            onClick={nextStep}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "13px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Next
+            <FiArrowRight size={14} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "8px 16px",
+              backgroundColor: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "6px",
+              fontSize: "13px",
+              fontWeight: "500",
+              cursor: loading ? "not-allowed" : "pointer",
+              opacity: loading ? 0.7 : 1,
+            }}
+          >
+            {loading ? (
+              <>
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    border: "2px solid rgba(255,255,255,0.3)",
+                    borderTop: "2px solid white",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                ></div>
+                Updating...
+              </>
+            ) : (
+              <>
+                <FiSave size={14} />
+                Update Product
+              </>
+            )}
+          </button>
+        )}
+      </div>
+
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
     </div>
   );
 }

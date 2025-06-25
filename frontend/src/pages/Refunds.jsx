@@ -100,6 +100,7 @@ function Refunds() {
 
   return (
     <div className="p-6 max-w-[1600px] mx-auto">
+      {" "}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate("/sales")}
@@ -108,9 +109,6 @@ function Refunds() {
         >
           <FiArrowLeft />
         </button>
-        <h2 className="text-2xl font-bold text-[var(--color-text-primary)]">
-          Process Refund
-        </h2>
         <button
           onClick={() => navigate("/pos")}
           className="btn btn-outline btn-sm flex items-center gap-2"
@@ -119,7 +117,6 @@ function Refunds() {
           Back to POS
         </button>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Search Section */}
         <div className="bg-[var(--color-bg-card)] p-4 rounded-lg shadow-[var(--shadow-card)]">

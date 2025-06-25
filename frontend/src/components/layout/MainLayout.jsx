@@ -1,12 +1,162 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
 const MainLayout = () => {
+  const location = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Function to get page title based on current route
+  const getPageTitle = (pathname) => {
+    const routes = {
+      "/": "Dashboard",
+      "/dashboard": "Dashboard",
+      "/pos": "Point of Sale",
+      "/inventory": "Inventory Management",
+      "/inventory/add": "Add Product",
+      "/inventory/edit": "Edit Product",
+      "/inventory/view": "View Product",
+      "/purchases": "Purchase Orders",
+      "/purchases/add": "Add Purchase Order",
+      "/purchases/edit": "Edit Purchase Order",
+      "/purchases/view": "Purchase Details",
+      "/sales": "Sales History",
+      "/sales/view": "Sale Details",
+      "/refunds": "Refunds",
+      "/customers": "Customer Management",
+      "/customers/add": "Add Customer",
+      "/customers/edit": "Edit Customer",
+      "/customers/view": "Customer Details",
+      "/customers/sales": "Customer Sales",
+      "/customers/sales": "Customer Sales",
+      "/reports": "Reports & Analytics",
+      "/admin": "Admin Panel",
+      "/settings": "Settings",
+      "/setup": "Database Setup",
+      "/notifications": "Notifications",
+    };
+
+    // Handle dynamic routes (with IDs)
+    if (pathname.includes("/inventory/edit/")) return "Edit Product";
+    if (pathname.includes("/inventory/view/")) return "View Product";
+    if (pathname.includes("/purchases/")) return "Purchase Details";
+    if (pathname.includes("/sales/")) return "Sale Details";
+    if (pathname.includes("/customers/edit/")) return "Edit Customer";
+    if (pathname.includes("/customers/view/")) return "Customer Details";
+    if (pathname.includes("/customers/") && pathname.includes("/sales"))
+      return "Customer Sales";
+
+    return routes[pathname] || "Elith Pharmacy";
+  };
+
+  // Get current page title and subtitle
+  const getPageInfo = (pathname) => {
+    const titleMap = {
+      "/": {
+        title: "Dashboard",
+        subtitle: "Welcome to your pharmacy dashboard",
+      },
+      "/dashboard": {
+        title: "Dashboard",
+        subtitle: "Welcome to your pharmacy dashboard",
+      },
+      "/pos": {
+        title: "Point of Sale",
+        subtitle: "Process sales and manage transactions",
+      },
+      "/inventory": {
+        title: "Inventory Management",
+        subtitle: "Manage your product inventory and stock levels",
+      },
+      "/inventory/add": {
+        title: "Add Product",
+        subtitle: "Add new product to inventory",
+      },
+      "/purchases": {
+        title: "Purchase Orders",
+        subtitle: "Manage inventory purchases and supplier orders",
+      },
+      "/sales": {
+        title: "Sales History",
+        subtitle: "View and manage sales transactions",
+      },
+      "/refunds": {
+        title: "Refunds",
+        subtitle: "Process and manage refund requests",
+      },
+      "/customers": {
+        title: "Customer Management",
+        subtitle: "Manage customer information and relationships",
+      },
+      "/customers/add": {
+        title: "Add Customer",
+        subtitle: "Add new customer to the system",
+      },
+      "/customers/sales": {
+        title: "Customer Sales Management",
+        subtitle: "Manage customer sales and purchase history",
+      },
+      "/reports": {
+        title: "Reports & Analytics",
+        subtitle: "View business insights and analytics",
+      },
+      "/admin": {
+        title: "Admin Panel",
+        subtitle: "Manage users and system settings",
+      },
+      "/settings": {
+        title: "Settings",
+        subtitle: "Manage your pharmacy settings and preferences",
+      },
+      "/setup": {
+        title: "Database Setup",
+        subtitle:
+          "Configure your database and ensure all required tables exist",
+      },
+      "/notifications": {
+        title: "Notifications",
+        subtitle: "View and manage notifications",
+      },
+    };
+
+    // Handle dynamic routes
+    if (pathname.includes("/inventory/edit/"))
+      return { title: "Edit Product", subtitle: "Update product information" };
+    if (pathname.includes("/inventory/view/"))
+      return {
+        title: "Product Details",
+        subtitle: "View product information and analytics",
+      };
+    if (pathname.includes("/purchases/"))
+      return {
+        title: "Purchase Details",
+        subtitle: "View purchase order details",
+      };
+    if (pathname.includes("/sales/"))
+      return { title: "Sale Details", subtitle: "View transaction details" };
+    if (pathname.includes("/customers/edit/"))
+      return {
+        title: "Edit Customer",
+        subtitle: "Update customer information",
+      };
+    if (pathname.includes("/customers/view/"))
+      return {
+        title: "Customer Details",
+        subtitle: "View customer information and history",
+      };
+    if (pathname.includes("/customers/") && pathname.includes("/sales"))
+      return {
+        title: "Customer Sales",
+        subtitle: "View customer purchase history",
+      };
+
+    return titleMap[pathname] || { title: "Elith Pharmacy", subtitle: null };
+  };
+
+  const pageInfo = getPageInfo(location.pathname);
 
   // Check if device is mobile
   useEffect(() => {
@@ -73,15 +223,16 @@ const MainLayout = () => {
       </div>{" "}
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Enhanced Header with better spacing */}
+        {/* Enhanced Header with better spacing */}{" "}
         <div className="flex-shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm shadow-sm">
           <Header
             onToggleMobileMenu={handleToggleSidebar}
             isMobile={isMobile}
             mobileMenuOpen={mobileMenuOpen}
+            title={pageInfo.title}
+            subtitle={pageInfo.subtitle}
           />
         </div>
-
         {/* Enhanced Main Content with better padding and animations */}
         <main className="flex-1 overflow-y-auto bg-transparent">
           <div className="min-h-full">

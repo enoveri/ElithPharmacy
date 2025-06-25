@@ -314,26 +314,6 @@ function Customers() {
           marginBottom: "32px",
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "var(--color-text-primary)",
-              margin: "0 0 8px 0",
-            }}
-          >
-            Customers
-          </h1>
-          <p
-            style={{
-              color: "var(--color-text-secondary)",
-              margin: 0,
-            }}
-          >
-            Manage your customer database
-          </p>
-        </div>
         <div style={{ display: "flex", gap: "12px" }}>
           {/* Export Dropdown */}
           <div style={{ position: "relative", display: "inline-block" }}>

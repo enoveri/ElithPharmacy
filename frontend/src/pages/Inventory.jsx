@@ -603,31 +603,15 @@ function Inventory() {
         minHeight: "100vh",
       }}
     >
-      {/* Header */}
+      {/* Action Buttons */}
       <div
         style={{
           display: "flex",
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
           marginBottom: "32px",
         }}
       >
-        <div>
-          <h1
-            style={{
-              fontSize: "28px",
-              fontWeight: "bold",
-              color: "#1f2937",
-              marginBottom: "8px",
-            }}
-          >
-            Inventory Management
-          </h1>
-          <p style={{ color: "#6b7280" }}>
-            Manage your product inventory and stock levels
-          </p>
-        </div>
-
         <button
           onClick={() => navigate("/inventory/add")}
           style={{
