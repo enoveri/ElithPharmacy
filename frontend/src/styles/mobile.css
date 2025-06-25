@@ -789,3 +789,33 @@
   color: white;
   font-weight: 600;
 }
+
+/* Hide scrollbars for category sections */
+.overflow-x-auto {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Category button enhancements */
+.pos-categories-container {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.pos-categories-container::-webkit-scrollbar {
+  display: none;
+}
+
+/* Enhanced gradient text for POS title */
+.pos-title {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
