@@ -14,9 +14,12 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { dataService } from "../../services";
+import { useSettings } from "../../contexts/SettingsContext";
 
 const MobileInventory = () => {
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { currency = "UGX" } = settings;
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -329,7 +332,7 @@ const MobileInventory = () => {
                     <div className="flex items-center justify-between mb-3">
                       <div>
                         <span className="text-xl font-bold text-gray-900">
-                          ₦{product.price?.toFixed(2)}
+                          {currency} {product.price?.toFixed(2)}
                         </span>
                         <span className="ml-3 text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
                           Qty: {product.quantity}

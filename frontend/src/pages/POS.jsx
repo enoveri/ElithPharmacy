@@ -880,7 +880,7 @@ function POS() {
                           gap: "4px",
                         }}
                       >
-                        <span>₦</span>
+                        <span>{currency}</span>
                         <input
                           type="number"
                           step="0.01"

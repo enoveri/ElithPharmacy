@@ -16,10 +16,13 @@ import {
   FiTrendingUp,
   FiPackage,
 } from "react-icons/fi";
+import { useSettings } from "../contexts/SettingsContext";
 
 function ViewCustomer() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { currency = "UGX" } = settings;
   const [customer, setCustomer] = useState(null);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -338,7 +341,8 @@ function ViewCustomer() {
                   color: "#1f2937",
                 }}
               >
-                ₦{customer.totalSpent.toLocaleString()}
+                {currency}
+                {customer.totalSpent.toLocaleString()}
               </div>
             </div>
           </div>
@@ -686,7 +690,8 @@ function ViewCustomer() {
                     color: "#10b981",
                   }}
                 >
-                  ₦{(purchase.total || 0).toFixed(2)}
+                  {currency}
+                  {(purchase.total || 0).toFixed(2)}
                 </div>
               </div>
 
@@ -718,7 +723,8 @@ function ViewCustomer() {
                       </span>
                     </div>
                     <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                      {item.quantity} × ₦{(item.price || 0).toFixed(2)}
+                      {item.quantity} × {currency}
+                      {(item.price || 0).toFixed(2)}
                     </div>
                   </div>
                 ))}

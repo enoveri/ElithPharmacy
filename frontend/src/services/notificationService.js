@@ -434,7 +434,7 @@ export class NotificationService {
       await this.createNotification(
         this.notificationTypes.SALE_COMPLETED,
         "Sale Completed",
-        `Sale #${sale.transaction_number} for ${customerName} - ₦${amount.toFixed(2)}`,
+        `Sale #${sale.transaction_number} for ${customerName} - UGX ${amount.toFixed(2)}`,
         {
           priority: isHighValue ? this.priorities.HIGH : this.priorities.MEDIUM,
           data: {
@@ -453,7 +453,7 @@ export class NotificationService {
         await this.createNotification(
           this.notificationTypes.HIGH_VALUE_SALE,
           "High Value Sale",
-          `High value sale completed: ₦${amount.toFixed(2)} for ${customerName}`,
+          `High value sale completed: UGX ${amount.toFixed(2)} for ${customerName}`,
           {
             priority: this.priorities.HIGH,
             data: {
@@ -486,7 +486,7 @@ export class NotificationService {
       return await this.createNotification(
         this.notificationTypes.REFUND_PROCESSED,
         "Refund Processed",
-        `Refund of ₦${(refund.amount || 0).toFixed(2)} processed for sale #${refund.originalSaleNumber}`,
+        `Refund of UGX ${(refund.amount || 0).toFixed(2)} processed for sale #${refund.originalSaleNumber}`,
         {
           priority: this.priorities.MEDIUM,
           data: {

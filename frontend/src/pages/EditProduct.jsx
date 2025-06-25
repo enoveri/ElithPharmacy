@@ -15,10 +15,13 @@ import {
   FiCamera,
 } from "react-icons/fi";
 import { dataService } from "../services";
+import { useSettings } from "../contexts/SettingsContext";
 
 function EditProduct() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { settings } = useSettings();
+  const { currency = "UGX" } = settings;
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState({});
@@ -454,7 +457,7 @@ function EditProduct() {
                     marginBottom: "6px",
                   }}
                 >
-                  Selling Price (₦) *
+                  Selling Price ({currency}) *
                 </label>
                 <input
                   type="number"
@@ -501,7 +504,7 @@ function EditProduct() {
                     marginBottom: "6px",
                   }}
                 >
-                  Cost Price (₦) *
+                  Cost Price ({currency}) *
                 </label>
                 <input
                   type="number"
@@ -669,7 +672,7 @@ function EditProduct() {
                         color: "#166534",
                       }}
                     >
-                      ₦
+                      {currency}
                       {(
                         parseFloat(formData.price) -
                         parseFloat(formData.costPrice)
@@ -703,7 +706,7 @@ function EditProduct() {
                         color: "#166534",
                       }}
                     >
-                      ₦
+                      {currency}
                       {(
                         parseFloat(formData.price) *
                         parseInt(formData.quantity || 0)

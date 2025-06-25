@@ -85,10 +85,10 @@ const MobilePOS = () => {
         setCart(
           cart.map((item) =>
             item.id === product.id
-              ? { 
-                  ...item, 
+              ? {
+                  ...item,
                   quantity: item.quantity + 1,
-                  total: (item.quantity + 1) * (item.price || 0)
+                  total: (item.quantity + 1) * (item.price || 0),
                 }
               : item
           )
@@ -100,11 +100,14 @@ const MobilePOS = () => {
         }
       }
     } else {
-      setCart([...cart, { 
-        ...product, 
-        quantity: 1, 
-        total: product.price || 0
-      }]);
+      setCart([
+        ...cart,
+        {
+          ...product,
+          quantity: 1,
+          total: product.price || 0,
+        },
+      ]);
 
       // Haptic feedback
       if (navigator.vibrate) {
@@ -118,9 +121,9 @@ const MobilePOS = () => {
       removeFromCart(productId);
     } else {
       // Check stock limit
-      const product = products.find(p => p.id === productId);
+      const product = products.find((p) => p.id === productId);
       const maxQuantity = product ? product.quantity : 0;
-      
+
       if (newQuantity > maxQuantity) {
         alert(`Only ${maxQuantity} items available in stock`);
         return;
@@ -283,7 +286,10 @@ const MobilePOS = () => {
       const updatePromises = cart.map((item) => {
         const currentProduct = products.find((p) => p.id === item.id);
         if (currentProduct) {
-          const newQuantity = Math.max(0, currentProduct.quantity - item.quantity);
+          const newQuantity = Math.max(
+            0,
+            currentProduct.quantity - item.quantity
+          );
           return dataService.products.update(item.id, {
             quantity: newQuantity,
           });
@@ -319,7 +325,7 @@ const MobilePOS = () => {
       const customerInfo = selectedCustomer
         ? `\nCustomer: ${selectedCustomer.first_name || selectedCustomer.firstName || ""} ${selectedCustomer.last_name || selectedCustomer.lastName || ""}`.trim()
         : "";
-        
+
       alert(
         `Sale completed! Transaction: ${transactionNumber}\nTotal: ${currency} ${total.toFixed(2)}${customerInfo}\nPayment: ${paymentMethod.replace("_", " ").toUpperCase()}`
       );
@@ -530,7 +536,9 @@ const MobilePOS = () => {
                             <div className="text-xs text-gray-600 mb-2">
                               {editingPrice === item.id ? (
                                 <div className="flex items-center gap-1">
-                                  <span className="text-gray-500">{currency}</span>
+                                  <span className="text-gray-500">
+                                    {currency}
+                                  </span>
                                   <input
                                     type="number"
                                     step="0.01"
@@ -556,7 +564,8 @@ const MobilePOS = () => {
                                   className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-50 border border-transparent hover:bg-gray-100 hover:border-gray-200 cursor-pointer transition-all duration-200"
                                   title="Tap to edit price"
                                 >
-                                  {currency}{(item.price || 0).toFixed(2)} each
+                                  {currency}
+                                  {(item.price || 0).toFixed(2)} each
                                   <span className="text-gray-400">✏️</span>
                                 </span>
                               )}
@@ -564,14 +573,18 @@ const MobilePOS = () => {
 
                             <div className="text-xs font-medium text-gray-800">
                               Total: {currency}
-                              {(item.total || (item.price || 0) * item.quantity).toFixed(2)}
+                              {(
+                                item.total || (item.price || 0) * item.quantity
+                              ).toFixed(2)}
                             </div>
                           </div>
 
                           <div className="cart-quantity-controls">
                             <motion.button
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity - 1)
+                              }
                               className="cart-quantity-button minus"
                             >
                               <FiMinus className="w-4 h-4" />
@@ -583,8 +596,14 @@ const MobilePOS = () => {
 
                             <motion.button
                               whileTap={{ scale: 0.9 }}
-                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                              disabled={item.quantity >= (products.find(p => p.id === item.id)?.quantity || 0)}
+                              onClick={() =>
+                                updateQuantity(item.id, item.quantity + 1)
+                              }
+                              disabled={
+                                item.quantity >=
+                                (products.find((p) => p.id === item.id)
+                                  ?.quantity || 0)
+                              }
                               className="cart-quantity-button plus"
                             >
                               <FiPlus className="w-4 h-4" />
@@ -656,16 +675,23 @@ const MobilePOS = () => {
                     <div className="cart-total-row">
                       <span>Subtotal:</span>
                       <span className="font-semibold">
-                        {currency}{subtotal.toFixed(2)}
+                        {currency}
+                        {subtotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="cart-total-row">
                       <span>Tax ({taxRate}%):</span>
-                      <span className="font-semibold">{currency}{tax.toFixed(2)}</span>
+                      <span className="font-semibold">
+                        {currency}
+                        {tax.toFixed(2)}
+                      </span>
                     </div>
                     <div className="cart-total-row final">
                       <span>Total:</span>
-                      <span>{currency}{total.toFixed(2)}</span>
+                      <span>
+                        {currency}
+                        {total.toFixed(2)}
+                      </span>
                     </div>
                   </div>
 
@@ -730,7 +756,9 @@ const MobilePOS = () => {
               <div className="flex-1 overflow-y-auto p-4">
                 {/* Add new customer section */}
                 <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-semibold text-blue-900 mb-2">Add New Customer</h3>
+                  <h3 className="font-semibold text-blue-900 mb-2">
+                    Add New Customer
+                  </h3>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -773,7 +801,8 @@ const MobilePOS = () => {
                       className="w-full p-3 bg-gray-50 rounded-lg text-left"
                     >
                       <div className="font-semibold text-gray-900">
-                        {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
+                        {customer.first_name || customer.firstName}{" "}
+                        {customer.last_name || customer.lastName}
                       </div>
                       <div className="text-sm text-gray-500">
                         {customer.phone}
