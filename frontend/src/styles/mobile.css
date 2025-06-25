@@ -615,6 +615,351 @@
   transition: all 0.3s ease;
 }
 
+/* Enhanced Cart Modal Styling */
+.cart-modal-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(102, 126, 234, 0.4) 0%,
+    rgba(118, 75, 162, 0.4) 100%
+  );
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  width: 100vw;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  position: fixed;
+  z-index: 1000;
+}
+
+.cart-modal {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  border-radius: 24px;
+  max-height: 80vh; /* Maximum height to prevent overflow */
+  height: auto; /* Allow height to adjust to content */
+  width: 100%;
+  max-width: 400px; /* Maximum width for larger screens */
+  position: relative; /* Position relative to the flexbox container */
+  overflow: hidden; /* Prevent content overflow */
+  display: flex;
+  flex-direction: column; /* Stack header, content, footer vertically */
+}
+
+.cart-modal-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 12px 20px; /* Further reduced from 16px to 12px vertically */
+  border-radius: 24px 24px 0 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.cart-modal-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background:
+    radial-gradient(
+      circle at 20% 50%,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 255, 255, 0.05) 0%,
+      transparent 50%
+    );
+  z-index: -1;
+}
+
+.cart-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.cart-close-button {
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  color: white;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.cart-close-button:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+.cart-modal-content {
+  padding: 16px 20px; /* Content padding */
+  flex: 1; /* Take available space between header and footer */
+  overflow-y: auto; /* Allow scrolling if content overflows */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+  min-height: 0; /* Allows flex child to shrink below content size */
+}
+
+.cart-modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cart-modal-content::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.cart-modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border-radius: 3px;
+}
+
+.cart-empty-state {
+  text-align: center;
+  padding: 20px; /* Reduced from 40px 20px to 20px */
+  color: #6b7280;
+}
+
+.cart-empty-icon {
+  width: 60px; /* Reduced from 80px to 60px */
+  height: 60px; /* Reduced from 80px to 60px */
+  margin: 0 auto 12px; /* Reduced from 16px to 12px */
+  background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.cart-item {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px; /* Reduced from 16px to 12px */
+  padding: 12px; /* Reduced from 16px to 12px */
+  margin-bottom: 8px; /* Reduced from 12px to 8px */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.cart-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cart-item-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 4px 0;
+}
+
+.cart-item-info p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.cart-quantity-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cart-quantity-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cart-quantity-button.minus {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  color: #dc2626;
+}
+
+.cart-quantity-button.minus:hover {
+  background: linear-gradient(135deg, #fee2e2, #fecaca);
+  transform: scale(1.05);
+}
+
+.cart-quantity-button.plus {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  color: #16a34a;
+}
+
+.cart-quantity-button.plus:hover {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+  transform: scale(1.05);
+}
+
+.cart-quantity-display {
+  font-weight: 600;
+  color: #1f2937;
+  min-width: 32px;
+  text-align: center;
+  font-size: 16px;
+}
+
+.cart-modal-footer {
+  padding: 12px 20px; /* Further reduced from 16px to 12px vertically */
+  border-top: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.payment-method-section {
+  margin-bottom: 12px; /* Further reduced from 16px to 12px */
+}
+
+.payment-method-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px; /* Further reduced from 8px to 6px */
+  display: block;
+}
+
+.payment-method-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.payment-method-button {
+  padding: 10px; /* Further reduced from 12px to 10px */
+  border-radius: 16px;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.8);
+  color: #6b7280;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.payment-method-button.active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transform: translateY(-1px);
+}
+
+.payment-method-button:not(.active):hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.cart-totals {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 10px; /* Further reduced from 12px to 10px */
+  margin-bottom: 12px; /* Further reduced from 16px to 12px */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.cart-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  color: #374151;
+}
+
+.cart-total-row.final {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  margin-top: 8px;
+  padding-top: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.cart-action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.cart-clear-button {
+  flex: 1;
+  padding: 10px; /* Further reduced from 12px to 10px */
+  border: 2px solid #ef4444;
+  background: rgba(255, 255, 255, 0.8);
+  color: #ef4444;
+  border-radius: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.cart-clear-button:hover {
+  background: #ef4444;
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.cart-complete-button {
+  flex: 2;
+  padding: 10px; /* Further reduced from 12px to 10px */
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.cart-complete-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+}
+
+.cart-complete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Animation for cart modal - Removed to prevent positioning issues */
+
 /* Responsive adjustments */
 @media (max-width: 480px) {
   .mobile-container {

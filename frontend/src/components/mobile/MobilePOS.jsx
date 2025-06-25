@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useSpring, animated } from "@react-spring/web";
 import {
   FiSearch,
   FiShoppingCart,
@@ -27,12 +26,10 @@ const MobilePOS = () => {
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [loading, setLoading] = useState(false);
+  const [editingPrice, setEditingPrice] = useState(null);
+  const [tempPrice, setTempPrice] = useState("");
 
-  // Cart animation
-  const cartAnimation = useSpring({
-    transform: showCart ? "translateY(0%)" : "translateY(100%)",
-    config: { tension: 300, friction: 30 },
-  });
+  // Remove cart animation to prevent interfering with centering
 
   // Load data
   useEffect(() => {
@@ -120,9 +117,52 @@ const MobilePOS = () => {
     setCart([]);
   };
 
+  // Handle price editing
+  const startEditingPrice = (itemId, currentPrice) => {
+    setEditingPrice(itemId);
+    setTempPrice(currentPrice.toString());
+  };
+
+  const cancelEditingPrice = () => {
+    setEditingPrice(null);
+    setTempPrice("");
+  };
+
+  const saveEditedPrice = (itemId) => {
+    const newPrice = parseFloat(tempPrice);
+    if (isNaN(newPrice) || newPrice < 0) {
+      alert("Please enter a valid price");
+      return;
+    }
+
+    setCart(
+      cart.map((item) => {
+        if (item.id === itemId) {
+          return {
+            ...item,
+            price: newPrice,
+            total: item.quantity * newPrice,
+          };
+        }
+        return item;
+      })
+    );
+
+    setEditingPrice(null);
+    setTempPrice("");
+  };
+
+  const handlePriceKeyPress = (e, itemId) => {
+    if (e.key === "Enter") {
+      saveEditedPrice(itemId);
+    } else if (e.key === "Escape") {
+      cancelEditingPrice();
+    }
+  };
+
   // Calculate totals
   const subtotal = cart.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + (item.price || 0) * item.quantity,
     0
   );
   const tax = subtotal * 0.075; // 7.5% VAT
@@ -138,8 +178,8 @@ const MobilePOS = () => {
         items: cart.map((item) => ({
           product_id: item.id,
           quantity: item.quantity,
-          unit_price: item.price,
-          total: item.price * item.quantity,
+          unit_price: item.price || 0,
+          total: (item.price || 0) * item.quantity,
         })),
         customer_id: selectedCustomer?.id || null,
         subtotal,
@@ -325,78 +365,115 @@ const MobilePOS = () => {
       {/* Cart Overlay */}
       <AnimatePresence>
         {showCart && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCart(false)}
-              className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            />
-
-            <animated.div
-              style={cartAnimation}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[90vh] overflow-hidden"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCart(false)}
+            className="cart-modal-overlay"
+          >
+            <div
+              className="cart-modal"
+              onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside modal
             >
-              <div className="p-4 border-b">
+              <div className="cart-modal-header">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Shopping Cart
-                  </h2>{" "}
+                  <h2 className="cart-modal-title">Shopping Cart</h2>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setShowCart(false)}
-                    className="p-2 rounded-full bg-gray-100"
+                    className="cart-close-button"
                   >
                     <FiXCircle className="w-5 h-5" />
                   </motion.button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="cart-modal-content">
                 {cart.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FiShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <p className="text-gray-500">Your cart is empty</p>
+                  <div className="cart-empty-state">
+                    <div className="cart-empty-icon">
+                      <FiShoppingCart className="w-10 h-10" />
+                    </div>
+                    <p className="text-lg font-medium">Your cart is empty</p>
+                    <p className="text-sm mt-2">
+                      Add some products to get started
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {cart.map((item) => (
-                      <motion.div
-                        key={item.id}
-                        layout
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                      >
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-900">
-                            {item.name}
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            ₦{item.price?.toFixed(2)} each
-                          </p>
-                        </div>
+                      <motion.div key={item.id} layout className="cart-item">
+                        <div className="flex items-start justify-between">
+                          <div className="cart-item-info flex-1 pr-3">
+                            <h3 className="font-semibold text-gray-900 text-sm mb-1">
+                              {item.name}
+                            </h3>
 
-                        <div className="flex items-center gap-3">
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => removeFromCart(item.id)}
-                            className="p-1 rounded-full bg-red-100 text-red-600"
-                          >
-                            <FiMinus className="w-4 h-4" />
-                          </motion.button>
+                            {/* Editable Price */}
+                            <div className="text-xs text-gray-600 mb-2">
+                              {editingPrice === item.id ? (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-500">₦</span>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={tempPrice}
+                                    onChange={(e) =>
+                                      setTempPrice(e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                      handlePriceKeyPress(e, item.id)
+                                    }
+                                    onBlur={() => saveEditedPrice(item.id)}
+                                    autoFocus
+                                    className="w-16 px-1 py-0.5 text-xs border border-blue-400 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                  <span className="text-gray-500">each</span>
+                                </div>
+                              ) : (
+                                <span
+                                  onClick={() =>
+                                    startEditingPrice(item.id, item.price || 0)
+                                  }
+                                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs bg-gray-50 border border-transparent hover:bg-gray-100 hover:border-gray-200 cursor-pointer transition-all duration-200"
+                                  title="Tap to edit price"
+                                >
+                                  ₦{(item.price || 0).toFixed(2)} each
+                                  <span className="text-gray-400">✏️</span>
+                                </span>
+                              )}
+                            </div>
 
-                          <span className="font-semibold min-w-[2rem] text-center">
-                            {item.quantity}
-                          </span>
+                            <div className="text-xs font-medium text-gray-800">
+                              Total: ₦
+                              {((item.price || 0) * item.quantity).toFixed(2)}
+                            </div>
+                          </div>
 
-                          <motion.button
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => addToCart(item)}
-                            disabled={item.quantity >= item.quantity}
-                            className="p-1 rounded-full bg-green-100 text-green-600 disabled:opacity-50"
-                          >
-                            <FiPlus className="w-4 h-4" />
-                          </motion.button>
+                          <div className="cart-quantity-controls">
+                            <motion.button
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => removeFromCart(item.id)}
+                              className="cart-quantity-button minus"
+                            >
+                              <FiMinus className="w-4 h-4" />
+                            </motion.button>
+
+                            <span className="cart-quantity-display">
+                              {item.quantity}
+                            </span>
+
+                            <motion.button
+                              whileTap={{ scale: 0.9 }}
+                              onClick={() => addToCart(item)}
+                              disabled={item.quantity >= item.quantity}
+                              className="cart-quantity-button plus"
+                            >
+                              <FiPlus className="w-4 h-4" />
+                            </motion.button>
+                          </div>
                         </div>
                       </motion.div>
                     ))}
@@ -405,20 +482,18 @@ const MobilePOS = () => {
               </div>
 
               {cart.length > 0 && (
-                <div className="p-4 border-t bg-white">
+                <div className="cart-modal-footer">
                   {/* Payment Method */}
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <div className="payment-method-section">
+                    <label className="payment-method-label">
                       Payment Method
                     </label>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="payment-method-grid">
                       <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setPaymentMethod("cash")}
-                        className={`p-3 rounded-lg border flex items-center justify-center gap-2 ${
-                          paymentMethod === "cash"
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-300 text-gray-700"
+                        className={`payment-method-button ${
+                          paymentMethod === "cash" ? "active" : ""
                         }`}
                       >
                         <FiDollarSign className="w-5 h-5" />
@@ -428,10 +503,8 @@ const MobilePOS = () => {
                       <motion.button
                         whileTap={{ scale: 0.98 }}
                         onClick={() => setPaymentMethod("card")}
-                        className={`p-3 rounded-lg border flex items-center justify-center gap-2 ${
-                          paymentMethod === "card"
-                            ? "border-blue-500 bg-blue-50 text-blue-700"
-                            : "border-gray-300 text-gray-700"
+                        className={`payment-method-button ${
+                          paymentMethod === "card" ? "active" : ""
                         }`}
                       >
                         <FiCreditCard className="w-5 h-5" />
@@ -441,28 +514,28 @@ const MobilePOS = () => {
                   </div>
 
                   {/* Totals */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Subtotal:</span>
+                  <div className="cart-totals">
+                    <div className="cart-total-row">
+                      <span>Subtotal:</span>
                       <span className="font-semibold">
                         ₦{subtotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tax (7.5%):</span>
+                    <div className="cart-total-row">
+                      <span>Tax (7.5%):</span>
                       <span className="font-semibold">₦{tax.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-lg font-bold">
+                    <div className="cart-total-row final">
                       <span>Total:</span>
                       <span>₦{total.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
+                  <div className="cart-action-buttons">
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={clearCart}
-                      className="flex-1 py-3 border border-red-500 text-red-500 rounded-lg font-semibold"
+                      className="cart-clear-button"
                     >
                       Clear Cart
                     </motion.button>
@@ -471,7 +544,7 @@ const MobilePOS = () => {
                       whileTap={{ scale: 0.95 }}
                       onClick={completeSale}
                       disabled={loading}
-                      className="flex-2 py-3 bg-green-500 text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="cart-complete-button"
                     >
                       <FiCheck className="w-5 h-5" />
                       {loading ? "Processing..." : "Complete Sale"}
@@ -479,8 +552,8 @@ const MobilePOS = () => {
                   </div>
                 </div>
               )}
-            </animated.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
       {/* Customer Modal */}
