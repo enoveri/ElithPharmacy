@@ -1,27 +1,29 @@
 import { createBrowserRouter } from "react-router-dom";
 
 // Import layout components
-import { MainLayout } from "../components/layout";
+import { ResponsiveLayout } from "../components/layout";
 
-// Import page components
-import Dashboard from "../pages/Dashboard";
+// Import responsive page components
+import ResponsiveInventory from "../components/responsive/ResponsiveInventory";
+import ResponsiveCustomers from "../components/responsive/ResponsiveCustomers";
+import ResponsiveReports from "../components/responsive/ResponsiveReports";
+import ResponsiveSettings from "../components/responsive/ResponsiveSettings";
+import ResponsiveSalesHistory from "../components/responsive/ResponsiveSalesHistory";
+import ResponsivePurchases from "../components/responsive/ResponsivePurchases";
+import ResponsivePOS from "../components/responsive/ResponsivePOS";
+
+// Import page components that don't need mobile versions yet
+import ResponsiveDashboard from "../pages/ResponsiveDashboard";
 import Login from "../pages/Login";
-import Inventory from "../pages/Inventory";
 import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
-import POS from "../pages/POS";
-import SalesHistory from "../pages/SalesHistory";
 import SaleDetails from "../pages/SaleDetails";
-import Refunds from "../pages/Refunds";
-import Customers from "../pages/Customers";
+import ResponsiveRefunds from "../components/responsive/ResponsiveRefunds";
 import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
 import CustomerSales from "../pages/CustomerSales";
-import Reports from "../pages/Reports";
 import ViewProduct from "../pages/ViewProduct";
-import Purchases from "../pages/Purchases";
 import PurchaseDetails from "../pages/PurchaseDetails";
-import Settings from "../pages/Settings";
 import Notifications from "../pages/Notifications";
 
 import AdminSetup from "../pages/AdminSetup";
@@ -33,15 +35,15 @@ import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <MainLayout />,
+    element: <ResponsiveLayout />,
     children: [
       {
         index: true,
-        element: <Dashboard />,
+        element: <ResponsiveDashboard />,
       },
       {
         path: "/inventory",
-        element: <Inventory />,
+        element: <ResponsiveInventory />,
       },
       {
         path: "/inventory/view/:id",
@@ -57,11 +59,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "/pos",
-        element: <POS />,
+        element: <ResponsivePOS />,
       },
       {
         path: "/sales",
-        element: <SalesHistory />,
+        element: <ResponsiveSalesHistory />,
       },
       {
         path: "/sales/:id",
@@ -69,11 +71,11 @@ export const router = createBrowserRouter([
       },
       {
         path: "/refunds",
-        element: <Refunds />,
+        element: <ResponsiveRefunds />,
       },
       {
         path: "/customers",
-        element: <Customers />,
+        element: <ResponsiveCustomers />,
       },
       {
         path: "/customers/view/:id",
@@ -93,18 +95,19 @@ export const router = createBrowserRouter([
       },
       {
         path: "/reports",
-        element: <Reports />,
+        element: <ResponsiveReports />,
       },
       {
         path: "/purchases",
-        element: <Purchases />,
-      },      {
+        element: <ResponsivePurchases />,
+      },
+      {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
       },
       {
         path: "/settings",
-        element: <Settings />,
+        element: <ResponsiveSettings />,
       },
       {
         path: "/notifications",

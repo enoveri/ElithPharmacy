@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import { dataService } from "./services";
 import { supabase } from "./lib/supabase";
 import "./App.css";
+import "./styles/mobile.css";
 
 function App() {
   // Add debug helpers to window object for console testing

@@ -1,0 +1,9 @@
+export { default as ResponsiveInventory } from "./ResponsiveInventory";
+export { default as ResponsiveCustomers } from "./ResponsiveCustomers";
+export { default as ResponsiveReports } from "./ResponsiveReports";
+export { default as ResponsiveSettings } from "./ResponsiveSettings";
+export { default as ResponsiveSalesHistory } from "./ResponsiveSalesHistory";
+export { default as ResponsivePurchases } from "./ResponsivePurchases";
+export { default as ResponsivePOS } from "./ResponsivePOS";
+export { default as ResponsiveAddProduct } from "./ResponsiveAddProduct";
+export { default as ResponsiveRefunds } from "./ResponsiveRefunds";
