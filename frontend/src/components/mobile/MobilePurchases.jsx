@@ -46,30 +46,40 @@ function MobilePurchases() {
       id: "PUR-001",
       supplierName: "MedSupply Co.",
       supplierId: 1,
-      total: 2450.00,
+      total: 2450.0,
       items: 12,
       status: "delivered",
       orderDate: "2024-01-10T09:00:00Z",
       deliveryDate: "2024-01-12T14:30:00Z",
       products: [
-        { name: "Aspirin 100mg", quantity: 100, unitCost: 8.50, total: 850.00 },
-        { name: "Paracetamol 500mg", quantity: 200, unitCost: 4.25, total: 850.00 },
-        { name: "Vitamin D3", quantity: 50, unitCost: 15.00, total: 750.00 },
-      ]
+        { name: "Aspirin 100mg", quantity: 100, unitCost: 8.5, total: 850.0 },
+        {
+          name: "Paracetamol 500mg",
+          quantity: 200,
+          unitCost: 4.25,
+          total: 850.0,
+        },
+        { name: "Vitamin D3", quantity: 50, unitCost: 15.0, total: 750.0 },
+      ],
     },
     {
       id: "PUR-002",
       supplierName: "HealthCare Distributors",
       supplierId: 2,
-      total: 1890.50,
+      total: 1890.5,
       items: 8,
       status: "pending",
       orderDate: "2024-01-14T11:15:00Z",
       deliveryDate: null,
       products: [
-        { name: "Antibiotics Pack", quantity: 20, unitCost: 45.00, total: 900.00 },
-        { name: "Cough Syrup", quantity: 30, unitCost: 33.00, total: 990.50 },
-      ]
+        {
+          name: "Antibiotics Pack",
+          quantity: 20,
+          unitCost: 45.0,
+          total: 900.0,
+        },
+        { name: "Cough Syrup", quantity: 30, unitCost: 33.0, total: 990.5 },
+      ],
     },
     {
       id: "PUR-003",
@@ -81,23 +91,28 @@ function MobilePurchases() {
       orderDate: "2024-01-08T16:20:00Z",
       deliveryDate: "2024-01-16T10:00:00Z",
       products: [
-        { name: "Insulin Pens", quantity: 25, unitCost: 89.50, total: 2237.50 },
-        { name: "Blood Pressure Monitor", quantity: 5, unitCost: 200.65, total: 1003.25 },
-      ]
+        { name: "Insulin Pens", quantity: 25, unitCost: 89.5, total: 2237.5 },
+        {
+          name: "Blood Pressure Monitor",
+          quantity: 5,
+          unitCost: 200.65,
+          total: 1003.25,
+        },
+      ],
     },
     {
       id: "PUR-004",
       supplierName: "Medical Essentials",
       supplierId: 4,
-      total: 567.30,
+      total: 567.3,
       items: 6,
       status: "cancelled",
       orderDate: "2024-01-12T13:45:00Z",
       deliveryDate: null,
       products: [
-        { name: "Bandages", quantity: 50, unitCost: 5.50, total: 275.00 },
-        { name: "Thermometers", quantity: 10, unitCost: 29.23, total: 292.30 },
-      ]
+        { name: "Bandages", quantity: 50, unitCost: 5.5, total: 275.0 },
+        { name: "Thermometers", quantity: 10, unitCost: 29.23, total: 292.3 },
+      ],
     },
   ];
 
@@ -127,15 +142,18 @@ function MobilePurchases() {
 
     // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(purchase =>
-        purchase.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        purchase.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (purchase) =>
+          purchase.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          purchase.supplierName.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
     // Filter by status
     if (selectedStatus !== "all") {
-      filtered = filtered.filter(purchase => purchase.status === selectedStatus);
+      filtered = filtered.filter(
+        (purchase) => purchase.status === selectedStatus
+      );
     }
 
     // Filter by period
@@ -145,7 +163,7 @@ function MobilePurchases() {
     const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     if (selectedPeriod !== "all") {
-      filtered = filtered.filter(purchase => {
+      filtered = filtered.filter((purchase) => {
         const purchaseDate = new Date(purchase.orderDate);
         switch (selectedPeriod) {
           case "week":
@@ -166,7 +184,7 @@ function MobilePurchases() {
 
   const handlePullToRefresh = async () => {
     setRefreshing(true);
-    
+
     api.start({
       y: 50,
       config: { tension: 300, friction: 30 },
@@ -202,7 +220,8 @@ function MobilePurchases() {
   const getStatusIcon = (status) => {
     switch (status) {
       case "delivered":
-        return FiPackage;      case "shipped":
+        return FiPackage;
+      case "shipped":
         return FiTruck;
       case "pending":
         return FiClock;
@@ -217,7 +236,9 @@ function MobilePurchases() {
     const [showDetails, setShowDetails] = useState(false);
     const [showActions, setShowActions] = useState(false);
     const orderDate = new Date(purchase.orderDate);
-    const deliveryDate = purchase.deliveryDate ? new Date(purchase.deliveryDate) : null;
+    const deliveryDate = purchase.deliveryDate
+      ? new Date(purchase.deliveryDate)
+      : null;
     const StatusIcon = getStatusIcon(purchase.status);
 
     return (
@@ -233,7 +254,9 @@ function MobilePurchases() {
             <div className="flex-1">
               <div className="flex items-center space-x-2 mb-1">
                 <h3 className="font-semibold text-gray-900">{purchase.id}</h3>
-                <span className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(purchase.status)}`}>
+                <span
+                  className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(purchase.status)}`}
+                >
                   <StatusIcon className="w-3 h-3 mr-1" />
                   {purchase.status}
                 </span>
@@ -255,10 +278,11 @@ function MobilePurchases() {
             </div>
             <div className="text-right">
               <div className="text-xl font-bold text-blue-600">
-                {currency}{purchase.total.toFixed(2)}
+                {currency}
+                {purchase.total.toFixed(2)}
               </div>
               <div className="text-sm text-gray-500">
-                {purchase.items} item{purchase.items !== 1 ? 's' : ''}
+                {purchase.items} item{purchase.items !== 1 ? "s" : ""}
               </div>
             </div>
           </div>
@@ -295,20 +319,27 @@ function MobilePurchases() {
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-4 pt-4 border-t border-gray-100"
               >
-                <h4 className="font-medium text-gray-900 mb-3">Products Ordered</h4>
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Products Ordered
+                </h4>
                 <div className="space-y-2">
                   {purchase.products.map((product, index) => (
-                    <div key={index} className="flex justify-between items-start">
+                    <div
+                      key={index}
+                      className="flex justify-between items-start"
+                    >
                       <div className="flex-1">
                         <span className="text-sm font-medium text-gray-900 block">
                           {product.name}
                         </span>
                         <span className="text-xs text-gray-500">
-                          {product.quantity} × {currency}{product.unitCost.toFixed(2)}
+                          {product.quantity} × {currency}
+                          {product.unitCost.toFixed(2)}
                         </span>
                       </div>
                       <span className="text-sm font-medium text-gray-900">
-                        {currency}{product.total.toFixed(2)}
+                        {currency}
+                        {product.total.toFixed(2)}
                       </span>
                     </div>
                   ))}
@@ -344,7 +375,8 @@ function MobilePurchases() {
                       Edit
                     </motion.button>
                   )}
-                  {(purchase.status === "pending" || purchase.status === "cancelled") && (
+                  {(purchase.status === "pending" ||
+                    purchase.status === "cancelled") && (
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       className="flex-1 flex items-center justify-center px-3 py-2 bg-red-50 text-red-600 rounded-lg text-sm font-medium"
@@ -363,11 +395,17 @@ function MobilePurchases() {
   };
 
   // Calculate summary stats
-  const totalSpent = filteredPurchases.reduce((sum, purchase) => 
-    purchase.status !== "cancelled" ? sum + purchase.total : sum, 0
+  const totalSpent = filteredPurchases.reduce(
+    (sum, purchase) =>
+      purchase.status !== "cancelled" ? sum + purchase.total : sum,
+    0
   );
-  const pendingOrders = filteredPurchases.filter(p => p.status === "pending").length;
-  const deliveredOrders = filteredPurchases.filter(p => p.status === "delivered").length;
+  const pendingOrders = filteredPurchases.filter(
+    (p) => p.status === "pending"
+  ).length;
+  const deliveredOrders = filteredPurchases.filter(
+    (p) => p.status === "delivered"
+  ).length;
 
   if (loading) {
     return (
@@ -381,25 +419,34 @@ function MobilePurchases() {
       </div>
     );
   }
-
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="mobile-container">
       {/* Mobile Header */}
-      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
+      <div
+        className="bg-white/95 backdrop-blur-lg border-b border-gray-200/50 p-4 sticky top-0 z-10"
+        style={{
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+        }}
+      >
         {/* Summary Stats */}
         <div className="grid grid-cols-3 gap-4 mb-4">
           <div className="text-center">
             <div className="text-lg font-bold text-blue-600">
-              {currency}{totalSpent.toFixed(2)}
+              {currency}
+              {totalSpent.toFixed(2)}
             </div>
             <div className="text-xs text-gray-600">Total Spent</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-yellow-600">{pendingOrders}</div>
+            <div className="text-lg font-bold text-yellow-600">
+              {pendingOrders}
+            </div>
             <div className="text-xs text-gray-600">Pending</div>
           </div>
           <div className="text-center">
-            <div className="text-lg font-bold text-green-600">{deliveredOrders}</div>
+            <div className="text-lg font-bold text-green-600">
+              {deliveredOrders}
+            </div>
             <div className="text-xs text-gray-600">Delivered</div>
           </div>
         </div>
@@ -434,28 +481,34 @@ function MobilePurchases() {
             >
               {/* Status Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
                 <div className="flex space-x-2 flex-wrap">
-                  {["all", "pending", "shipped", "delivered", "cancelled"].map((status) => (
-                    <motion.button
-                      key={status}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium capitalize mb-2 ${
-                        selectedStatus === status
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {status}
-                    </motion.button>
-                  ))}
+                  {["all", "pending", "shipped", "delivered", "cancelled"].map(
+                    (status) => (
+                      <motion.button
+                        key={status}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setSelectedStatus(status)}
+                        className={`px-3 py-2 rounded-lg text-sm font-medium capitalize mb-2 ${
+                          selectedStatus === status
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {status}
+                      </motion.button>
+                    )
+                  )}
                 </div>
               </div>
 
               {/* Period Filter */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Period
+                </label>
                 <div className="flex space-x-2">
                   {["week", "month", "all"].map((period) => (
                     <motion.button
@@ -481,7 +534,7 @@ function MobilePurchases() {
       {/* Pull to Refresh Indicator */}
       <animated.div
         style={{
-          transform: y.to(y => `translateY(${y}px)`),
+          transform: y.to((y) => `translateY(${y}px)`),
         }}
         className="flex justify-center py-2"
       >
@@ -496,7 +549,7 @@ function MobilePurchases() {
       </animated.div>
 
       {/* Purchases List */}
-      <div 
+      <div
         className="flex-1 overflow-auto p-4"
         onTouchStart={() => {
           const startY = event.touches[0].clientY;
@@ -507,12 +560,12 @@ function MobilePurchases() {
               const pullDistance = currentY - startY;
               if (pullDistance > 100) {
                 handlePullToRefresh();
-                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener("touchmove", handleTouchMove);
               }
             };
-            document.addEventListener('touchmove', handleTouchMove);
-            document.addEventListener('touchend', () => {
-              document.removeEventListener('touchmove', handleTouchMove);
+            document.addEventListener("touchmove", handleTouchMove);
+            document.addEventListener("touchend", () => {
+              document.removeEventListener("touchmove", handleTouchMove);
             });
           }
         }}
@@ -526,8 +579,12 @@ function MobilePurchases() {
         {filteredPurchases.length === 0 && (
           <div className="text-center py-12">
             <FiPackage className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No purchases found</h3>
-            <p className="text-gray-500">Try adjusting your search or filters</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              No purchases found
+            </h3>
+            <p className="text-gray-500">
+              Try adjusting your search or filters
+            </p>
           </div>
         )}
       </div>

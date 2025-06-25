@@ -24,7 +24,8 @@ const MobileLayout = () => {
   // Update active tab based on current route
   useEffect(() => {
     const pathname = location.pathname;
-    if (pathname === "/" || pathname === "/dashboard") setActiveTab("dashboard");
+    if (pathname === "/" || pathname === "/dashboard")
+      setActiveTab("dashboard");
     else if (pathname.startsWith("/pos")) setActiveTab("pos");
     else if (pathname.startsWith("/inventory")) setActiveTab("inventory");
     else if (pathname.startsWith("/customers")) setActiveTab("customers");
@@ -35,26 +36,39 @@ const MobileLayout = () => {
   // Get page title and subtitle based on current route
   const getPageInfo = (pathname) => {
     const titleMap = {
-      '/': { title: 'Dashboard', subtitle: 'Welcome to your pharmacy' },
-      '/dashboard': { title: 'Dashboard', subtitle: 'Welcome to your pharmacy' },
-      '/pos': { title: 'Point of Sale', subtitle: 'Process sales quickly' },
-      '/inventory': { title: 'Inventory', subtitle: 'Manage your products' },
-      '/inventory/add': { title: 'Add Product', subtitle: 'Add new product' },
-      '/customers': { title: 'Customers', subtitle: 'Manage customer relationships' },
-      '/customers/add': { title: 'Add Customer', subtitle: 'Add new customer' },
-      '/reports': { title: 'Reports', subtitle: 'Business insights' },
-      '/settings': { title: 'Settings', subtitle: 'App preferences' },
-      '/purchases': { title: 'Purchases', subtitle: 'Manage orders' },
-      '/sales': { title: 'Sales', subtitle: 'Transaction history' },
+      "/": { title: "Dashboard", subtitle: "Welcome to your pharmacy" },
+      "/dashboard": {
+        title: "Dashboard",
+        subtitle: "Welcome to your pharmacy",
+      },
+      "/pos": { title: "Point of Sale", subtitle: "Process sales quickly" },
+      "/inventory": { title: "Inventory", subtitle: "Manage your products" },
+      "/inventory/add": { title: "Add Product", subtitle: "Add new product" },
+      "/customers": {
+        title: "Customers",
+        subtitle: "Manage customer relationships",
+      },
+      "/customers/add": { title: "Add Customer", subtitle: "Add new customer" },
+      "/reports": { title: "Reports", subtitle: "Business insights" },
+      "/settings": { title: "Settings", subtitle: "App preferences" },
+      "/purchases": { title: "Purchases", subtitle: "Manage orders" },
+      "/sales": { title: "Sales", subtitle: "Transaction history" },
     };
 
     // Handle dynamic routes
-    if (pathname.includes('/inventory/edit/')) return { title: 'Edit Product', subtitle: 'Update product details' };
-    if (pathname.includes('/inventory/view/')) return { title: 'Product Details', subtitle: 'View product information' };
-    if (pathname.includes('/customers/edit/')) return { title: 'Edit Customer', subtitle: 'Update customer details' };
-    if (pathname.includes('/customers/view/')) return { title: 'Customer Details', subtitle: 'View customer information' };
+    if (pathname.includes("/inventory/edit/"))
+      return { title: "Edit Product", subtitle: "Update product details" };
+    if (pathname.includes("/inventory/view/"))
+      return { title: "Product Details", subtitle: "View product information" };
+    if (pathname.includes("/customers/edit/"))
+      return { title: "Edit Customer", subtitle: "Update customer details" };
+    if (pathname.includes("/customers/view/"))
+      return {
+        title: "Customer Details",
+        subtitle: "View customer information",
+      };
 
-    return titleMap[pathname] || { title: 'Elith Pharmacy', subtitle: null };
+    return titleMap[pathname] || { title: "Elith Pharmacy", subtitle: null };
   };
 
   const pageInfo = getPageInfo(location.pathname);
@@ -75,13 +89,13 @@ const MobileLayout = () => {
   const pageVariants = {
     initial: { opacity: 0, x: 20 },
     in: { opacity: 1, x: 0 },
-    out: { opacity: 0, x: -20 }
+    out: { opacity: 0, x: -20 },
   };
 
   const pageTransition = {
     type: "tween",
     ease: "anticipate",
-    duration: 0.3
+    duration: 0.3,
   };
 
   return (
@@ -107,7 +121,7 @@ const MobileLayout = () => {
               onClick={() => setShowMobileMenu(false)}
               className="fixed inset-0 bg-black bg-opacity-50 z-40"
             />
-            
+
             {/* Side Menu */}
             <motion.div
               initial={{ x: -300 }}
@@ -139,12 +153,24 @@ const MobileLayout = () => {
                 <nav className="space-y-2">
                   {[
                     { icon: FiHome, label: "Dashboard", path: "/" },
-                    { icon: FiShoppingCart, label: "Point of Sale", path: "/pos" },
+                    {
+                      icon: FiShoppingCart,
+                      label: "Point of Sale",
+                      path: "/pos",
+                    },
                     { icon: FiPackage, label: "Inventory", path: "/inventory" },
                     { icon: FiUsers, label: "Customers", path: "/customers" },
                     { icon: FiBarChart, label: "Reports", path: "/reports" },
-                    { icon: FiShoppingCart, label: "Purchases", path: "/purchases" },
-                    { icon: FiBarChart, label: "Sales History", path: "/sales" },
+                    {
+                      icon: FiShoppingCart,
+                      label: "Purchases",
+                      path: "/purchases",
+                    },
+                    {
+                      icon: FiBarChart,
+                      label: "Sales History",
+                      path: "/sales",
+                    },
                     { icon: FiSettings, label: "Settings", path: "/settings" },
                   ].map((item) => (
                     <motion.button
@@ -205,18 +231,20 @@ const MobileLayout = () => {
               <motion.div
                 animate={{
                   scale: activeTab === item.id ? 1.2 : 1,
-                  color: activeTab === item.id ? "#3b82f6" : "#6b7280"
+                  color: activeTab === item.id ? "#3b82f6" : "#6b7280",
                 }}
                 transition={{ type: "spring", damping: 15, stiffness: 300 }}
               >
                 <item.icon size={20} />
               </motion.div>
-              <span className={`mobile-nav-label ${
-                activeTab === item.id ? "mobile-nav-label-active" : ""
-              }`}>
+              <span
+                className={`mobile-nav-label ${
+                  activeTab === item.id ? "mobile-nav-label-active" : ""
+                }`}
+              >
                 {item.label}
               </span>
-              
+
               {/* Active indicator */}
               {activeTab === item.id && (
                 <motion.div

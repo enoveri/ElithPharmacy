@@ -14,11 +14,11 @@ import {
   FiBell,
   FiClock,
 } from "react-icons/fi";
-import { 
-  MobileCard, 
-  MobileStatCard, 
-  MobileActionButton, 
-  MobileFAB 
+import {
+  MobileCard,
+  MobileStatCard,
+  MobileActionButton,
+  MobileFAB,
 } from "../components/ui/MobileComponents";
 import { dataService } from "../services";
 import { useNotificationsStore, useSettingsStore } from "../store";
@@ -28,6 +28,20 @@ const MobileDashboard = () => {
   const { settings } = useSettingsStore();
   const { notifications, unreadCount } = useNotificationsStore();
   const { currency } = settings;
+
+  // Dynamic greeting based on time of day
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    const name = ""; // You can add user name here if available
+    
+    if (hour < 12) {
+      return `Good morning${name ? `, ${name}` : ''}! 🌅`;
+    } else if (hour < 17) {
+      return `Good afternoon${name ? `, ${name}` : ''}! ☀️`;
+    } else {
+      return `Good evening${name ? `, ${name}` : ''}! 🌙`;
+    }
+  };
 
   const [dashboardStats, setDashboardStats] = useState({
     todaysSales: 0,
@@ -97,9 +111,9 @@ const MobileDashboard = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   };
 
   const itemVariants = {
@@ -109,14 +123,13 @@ const MobileDashboard = () => {
       opacity: 1,
       transition: {
         type: "spring",
-        stiffness: 100
-      }
-    }
+        stiffness: 100,
+      },
+    },
   };
 
-  if (loading) {
-    return (
-      <div className="mobile-dashboard loading">
+  if (loading) {    return (
+      <div className="mobile-container">
         <div className="loading-container">
           <motion.div
             animate={{ rotate: 360 }}
@@ -130,10 +143,9 @@ const MobileDashboard = () => {
       </div>
     );
   }
-
   return (
     <motion.div
-      className="mobile-dashboard"
+      className="mobile-container"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -141,19 +153,21 @@ const MobileDashboard = () => {
       {/* Welcome Section */}
       <motion.section variants={itemVariants} className="welcome-section">
         <MobileCard className="welcome-card">
-          <div className="welcome-content">
-            <div className="welcome-text">
-              <h1>Good morning! 👋</h1>
+          <div className="welcome-content">            <div className="welcome-text">
+              <h1>{getGreeting()}</h1>
               <p>Here's what's happening at your pharmacy today</p>
             </div>
             <div className="welcome-stats">
               <div className="mini-stat">
-                <span className="mini-stat-value">{dashboardStats.todaysTransactions}</span>
+                <span className="mini-stat-value">
+                  {dashboardStats.todaysTransactions}
+                </span>
                 <span className="mini-stat-label">Sales Today</span>
               </div>
               <div className="mini-stat">
                 <span className="mini-stat-value">
-                  {currency}{(dashboardStats.todaysSales || 0).toLocaleString()}
+                  {currency}
+                  {(dashboardStats.todaysSales || 0).toLocaleString()}
                 </span>
                 <span className="mini-stat-label">Revenue</span>
               </div>
@@ -173,10 +187,7 @@ const MobileDashboard = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <MobileCard 
-                onClick={action.action}
-                className="quick-action-card"
-              >
+              <MobileCard onClick={action.action} className="quick-action-card">
                 <div className={`quick-action-icon ${action.color}`}>
                   <action.icon size={24} />
                 </div>
@@ -235,15 +246,11 @@ const MobileDashboard = () => {
             View All
           </MobileActionButton>
         </div>
-        
+
         <div className="activity-list">
           {recentSales.length > 0 ? (
             recentSales.slice(0, 3).map((sale, index) => (
-              <motion.div
-                key={sale.id}
-                variants={itemVariants}
-                custom={index}
-              >
+              <motion.div key={sale.id} variants={itemVariants} custom={index}>
                 <MobileCard className="activity-item">
                   <div className="activity-icon">
                     <FiShoppingCart size={16} />
@@ -256,7 +263,8 @@ const MobileDashboard = () => {
                   </div>
                   <div className="activity-meta">
                     <div className="activity-amount">
-                      {currency}{(sale.total || 0).toLocaleString()}
+                      {currency}
+                      {(sale.total || 0).toLocaleString()}
                     </div>
                     <div className="activity-time">
                       <FiClock size={12} />
@@ -306,29 +314,15 @@ const MobileDashboard = () => {
       {/* Floating Action Button */}
       <MobileFAB onClick={() => navigate("/pos")}>
         <FiPlus size={24} />
-      </MobileFAB>
-
-      <style jsx>{`
-        .mobile-dashboard {
-          padding: 16px;
-          max-width: 100%;
-          background: #f8fafc;
-          min-height: 100vh;
-        }
-
-        .loading {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          min-height: 60vh;
-        }
-
+      </MobileFAB>      <style jsx>{`
         .loading-container {
           display: flex;
           flex-direction: column;
           align-items: center;
+          justify-content: center;
           gap: 16px;
           color: #6b7280;
+          min-height: 60vh;
         }
 
         .loading-spinner {
@@ -341,9 +335,10 @@ const MobileDashboard = () => {
         }
 
         .welcome-card {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
-          border: none;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .welcome-content {
@@ -356,11 +351,15 @@ const MobileDashboard = () => {
           font-size: 24px;
           font-weight: 700;
           margin: 0 0 8px 0;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
         }
 
         .welcome-text p {
           font-size: 14px;
-          opacity: 0.9;
+          color: #6b7280;
           margin: 0;
         }
 
@@ -375,15 +374,14 @@ const MobileDashboard = () => {
           display: block;
           font-size: 18px;
           font-weight: 700;
+          color: #1f2937;
         }
 
         .mini-stat-label {
           display: block;
           font-size: 12px;
-          opacity: 0.8;
-        }
-
-        /* Sections */
+          color: #6b7280;
+        }        /* Sections */
         section {
           margin-bottom: 32px;
         }
@@ -391,8 +389,9 @@ const MobileDashboard = () => {
         h2 {
           font-size: 20px;
           font-weight: 700;
-          color: #1f2937;
+          color: #ffffff;
           margin: 0 0 16px 0;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         .section-header {
@@ -416,6 +415,17 @@ const MobileDashboard = () => {
           gap: 12px;
           padding: 20px 16px;
           text-align: center;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+          transition: all 0.3s ease;
+        }
+
+        .quick-action-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
         }
 
         .quick-action-icon {
@@ -458,9 +468,7 @@ const MobileDashboard = () => {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           gap: 16px;
-        }
-
-        /* Activity List */
+        }        /* Activity List */
         .activity-list {
           display: flex;
           flex-direction: column;
@@ -472,6 +480,11 @@ const MobileDashboard = () => {
           align-items: center;
           gap: 16px;
           padding: 16px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .activity-icon {
@@ -527,6 +540,11 @@ const MobileDashboard = () => {
           text-align: center;
           padding: 40px 20px;
           color: #6b7280;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(20px);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .empty-state h3 {
@@ -542,8 +560,11 @@ const MobileDashboard = () => {
 
         /* Alert Card */
         .alert-card {
-          background: #fef3c7;
+          background: rgba(254, 243, 199, 0.95);
+          backdrop-filter: blur(20px);
           border: 1px solid #fcd34d;
+          border-radius: 16px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         }
 
         .alert-header {
@@ -575,14 +596,8 @@ const MobileDashboard = () => {
           font-size: 14px;
           color: #a16207;
           margin: 0;
-        }
-
-        /* Responsive Design */
+        }        /* Responsive Design */
         @media (min-width: 768px) {
-          .mobile-dashboard {
-            padding: 24px;
-          }
-
           .quick-actions-grid {
             grid-template-columns: repeat(4, 1fr);
           }

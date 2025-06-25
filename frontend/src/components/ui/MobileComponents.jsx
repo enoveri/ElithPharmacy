@@ -2,25 +2,25 @@ import { motion } from "framer-motion";
 import { useSpring, animated } from "@react-spring/web";
 
 // Modern Card Component with animations
-export const MobileCard = ({ 
-  children, 
-  className = "", 
-  onClick, 
+export const MobileCard = ({
+  children,
+  className = "",
+  onClick,
   hover = true,
   delay = 0,
-  ...props 
+  ...props
 }) => {
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       y: 0,
-      transition: { 
+      transition: {
         duration: 0.4,
         delay,
-        ease: "easeOut"
-      }
-    }
+        ease: "easeOut",
+      },
+    },
   };
 
   return (
@@ -35,7 +35,7 @@ export const MobileCard = ({
       {...props}
     >
       {children}
-      
+
       <style jsx>{`
         .mobile-card {
           background: white;
@@ -43,14 +43,14 @@ export const MobileCard = ({
           padding: 20px;
           box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
           border: 1px solid #f1f5f9;
-          cursor: ${onClick ? 'pointer' : 'default'};
+          cursor: ${onClick ? "pointer" : "default"};
           transition: all 0.3s ease;
           position: relative;
           overflow: hidden;
         }
 
         .mobile-card::before {
-          content: '';
+          content: "";
           position: absolute;
           top: 0;
           left: 0;
@@ -70,13 +70,13 @@ export const MobileCard = ({
 };
 
 // Stat Card for dashboard
-export const MobileStatCard = ({ 
-  title, 
-  value, 
-  change, 
-  icon: Icon, 
+export const MobileStatCard = ({
+  title,
+  value,
+  change,
+  icon: Icon,
   color = "blue",
-  delay = 0 
+  delay = 0,
 }) => {
   const colorMap = {
     blue: { bg: "#eff6ff", text: "#3b82f6", border: "#dbeafe" },
@@ -92,36 +92,38 @@ export const MobileStatCard = ({
     from: { number: 0 },
     to: { number: parseInt(value?.toString().replace(/,/g, "") || "0") },
     delay: delay * 200,
-    config: { duration: 1000 }
+    config: { duration: 1000 },
   });
 
   return (
     <MobileCard delay={delay * 0.1} className="stat-card">
       <div className="stat-content">
         <div className="stat-header">
-          <div 
+          <div
             className="stat-icon"
-            style={{ 
+            style={{
               backgroundColor: colors.bg,
-              borderColor: colors.border 
+              borderColor: colors.border,
             }}
           >
             <Icon size={24} style={{ color: colors.text }} />
           </div>
           {change && (
-            <span className={`stat-change ${change.startsWith('+') ? 'positive' : 'negative'}`}>
+            <span
+              className={`stat-change ${change.startsWith("+") ? "positive" : "negative"}`}
+            >
               {change}
             </span>
           )}
         </div>
-        
+
         <div className="stat-body">
           <animated.div className="stat-value">
-            {animatedValue.number.to(n => {
+            {animatedValue.number.to((n) => {
               const formatted = Math.floor(n).toLocaleString();
-              return value?.toString().includes('.') ? 
-                `${formatted}.${value.toString().split('.')[1]}` : 
-                formatted;
+              return value?.toString().includes(".")
+                ? `${formatted}.${value.toString().split(".")[1]}`
+                : formatted;
             })}
           </animated.div>
           <div className="stat-title">{title}</div>
@@ -192,27 +194,28 @@ export const MobileStatCard = ({
 };
 
 // Action Button Component
-export const MobileActionButton = ({ 
-  children, 
-  variant = "primary", 
+export const MobileActionButton = ({
+  children,
+  variant = "primary",
   size = "md",
   fullWidth = false,
   loading = false,
   icon: Icon,
-  ...props 
+  ...props
 }) => {
   const variants = {
     primary: "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300",
     success: "bg-green-600 text-white hover:bg-green-700 active:bg-green-800",
     danger: "bg-red-600 text-white hover:bg-red-700 active:bg-red-800",
-    outline: "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100"
+    outline:
+      "border-2 border-blue-600 text-blue-600 hover:bg-blue-50 active:bg-blue-100",
   };
 
   const sizes = {
     sm: "px-4 py-2 text-sm",
     md: "px-6 py-3 text-base",
-    lg: "px-8 py-4 text-lg"
+    lg: "px-8 py-4 text-lg",
   };
 
   return (
@@ -223,8 +226,8 @@ export const MobileActionButton = ({
         mobile-action-button
         ${variants[variant]}
         ${sizes[size]}
-        ${fullWidth ? 'w-full' : ''}
-        ${loading ? 'opacity-70 cursor-not-allowed' : ''}
+        ${fullWidth ? "w-full" : ""}
+        ${loading ? "opacity-70 cursor-not-allowed" : ""}
       `}
       disabled={loading}
       {...props}
@@ -260,20 +263,11 @@ export const MobileActionButton = ({
 };
 
 // Input Component
-export const MobileInput = ({ 
-  label, 
-  error, 
-  icon: Icon,
-  ...props 
-}) => {
+export const MobileInput = ({ label, error, icon: Icon, ...props }) => {
   return (
     <div className="mobile-input-group">
-      {label && (
-        <label className="mobile-input-label">
-          {label}
-        </label>
-      )}
-      
+      {label && <label className="mobile-input-label">{label}</label>}
+
       <div className="mobile-input-container">
         {Icon && (
           <div className="mobile-input-icon">
@@ -281,11 +275,11 @@ export const MobileInput = ({
           </div>
         )}
         <input
-          className={`mobile-input ${Icon ? 'has-icon' : ''} ${error ? 'error' : ''}`}
+          className={`mobile-input ${Icon ? "has-icon" : ""} ${error ? "error" : ""}`}
           {...props}
         />
       </div>
-      
+
       {error && (
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -356,15 +350,21 @@ export const MobileInput = ({
 };
 
 // Loading Skeleton
-export const MobileSkeleton = ({ width = "100%", height = "20px", className = "" }) => {
+export const MobileSkeleton = ({
+  width = "100%",
+  height = "20px",
+  className = "",
+}) => {
   return (
-    <div 
-      className={`mobile-skeleton ${className}`}
-      style={{ width, height }}
-    >
+    <div className={`mobile-skeleton ${className}`} style={{ width, height }}>
       <style jsx>{`
         .mobile-skeleton {
-          background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+          background: linear-gradient(
+            90deg,
+            #f1f5f9 25%,
+            #e2e8f0 50%,
+            #f1f5f9 75%
+          );
           background-size: 200% 100%;
           animation: loading 1.5s infinite;
           border-radius: 8px;
@@ -384,23 +384,23 @@ export const MobileSkeleton = ({ width = "100%", height = "20px", className = ""
 };
 
 // Floating Action Button
-export const MobileFAB = ({ 
-  children, 
-  onClick, 
+export const MobileFAB = ({
+  children,
+  onClick,
   color = "blue",
   position = "bottom-right",
-  ...props 
+  ...props
 }) => {
   const positions = {
     "bottom-right": "bottom-6 right-6",
     "bottom-left": "bottom-6 left-6",
-    "bottom-center": "bottom-6 left-1/2 transform -translate-x-1/2"
+    "bottom-center": "bottom-6 left-1/2 transform -translate-x-1/2",
   };
 
   const colors = {
     blue: "bg-blue-600 hover:bg-blue-700",
     green: "bg-green-600 hover:bg-green-700",
-    red: "bg-red-600 hover:bg-red-700"
+    red: "bg-red-600 hover:bg-red-700",
   };
 
   return (

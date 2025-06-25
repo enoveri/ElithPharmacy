@@ -15,10 +15,10 @@ const ResponsiveDashboard = () => {
     checkScreenSize();
 
     // Add event listener for window resize
-    window.addEventListener('resize', checkScreenSize);
+    window.addEventListener("resize", checkScreenSize);
 
     // Cleanup event listener on unmount
-    return () => window.removeEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   // Render mobile dashboard for mobile devices, desktop dashboard for larger screens

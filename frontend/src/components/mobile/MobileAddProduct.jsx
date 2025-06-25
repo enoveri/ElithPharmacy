@@ -46,13 +46,13 @@ function MobileAddProduct() {
     "Prescription",
     "OTC",
     "Medical Devices",
-    "Other"
+    "Other",
   ];
 
   const updateField = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: "" }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -62,14 +62,20 @@ function MobileAddProduct() {
     if (step === 1) {
       if (!formData.name.trim()) newErrors.name = "Product name is required";
       if (!formData.category) newErrors.category = "Category is required";
-      if (!formData.description.trim()) newErrors.description = "Description is required";
+      if (!formData.description.trim())
+        newErrors.description = "Description is required";
     } else if (step === 2) {
-      if (!formData.price || formData.price <= 0) newErrors.price = "Valid price is required";
-      if (!formData.cost || formData.cost <= 0) newErrors.cost = "Valid cost is required";
-      if (!formData.quantity || formData.quantity <= 0) newErrors.quantity = "Valid quantity is required";
-      if (!formData.minStock || formData.minStock < 0) newErrors.minStock = "Valid minimum stock is required";
+      if (!formData.price || formData.price <= 0)
+        newErrors.price = "Valid price is required";
+      if (!formData.cost || formData.cost <= 0)
+        newErrors.cost = "Valid cost is required";
+      if (!formData.quantity || formData.quantity <= 0)
+        newErrors.quantity = "Valid quantity is required";
+      if (!formData.minStock || formData.minStock < 0)
+        newErrors.minStock = "Valid minimum stock is required";
     } else if (step === 3) {
-      if (!formData.manufacturer.trim()) newErrors.manufacturer = "Manufacturer is required";
+      if (!formData.manufacturer.trim())
+        newErrors.manufacturer = "Manufacturer is required";
     }
 
     setErrors(newErrors);
@@ -78,12 +84,12 @@ function MobileAddProduct() {
 
   const nextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, totalSteps));
+      setCurrentStep((prev) => Math.min(prev + 1, totalSteps));
     }
   };
 
   const prevStep = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1));
+    setCurrentStep((prev) => Math.max(prev - 1, 1));
   };
 
   const handleSubmit = async () => {
@@ -93,12 +99,12 @@ function MobileAddProduct() {
       setSaving(true);
       // In a real app, this would save to the database
       console.log("Saving product:", formData);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      navigate("/inventory", { 
-        state: { message: "Product added successfully!" }
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      navigate("/inventory", {
+        state: { message: "Product added successfully!" },
       });
     } catch (error) {
       console.error("Error saving product:", error);
@@ -107,16 +113,16 @@ function MobileAddProduct() {
     }
   };
 
-  const InputField = ({ 
-    label, 
-    value, 
-    onChange, 
-    type = "text", 
-    placeholder, 
+  const InputField = ({
+    label,
+    value,
+    onChange,
+    type = "text",
+    placeholder,
     required = false,
     error,
     icon: Icon,
-    multiline = false 
+    multiline = false,
   }) => (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -132,8 +138,8 @@ function MobileAddProduct() {
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
             rows={3}
-            className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full ${Icon ? "pl-10" : "pl-3"} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              error ? "border-red-500" : "border-gray-300"
             }`}
           />
         ) : (
@@ -142,8 +148,8 @@ function MobileAddProduct() {
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-              error ? 'border-red-500' : 'border-gray-300'
+            className={`w-full ${Icon ? "pl-10" : "pl-3"} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              error ? "border-red-500" : "border-gray-300"
             }`}
           />
         )}
@@ -152,7 +158,15 @@ function MobileAddProduct() {
     </div>
   );
 
-  const SelectField = ({ label, value, onChange, options, required = false, error, icon: Icon }) => (
+  const SelectField = ({
+    label,
+    value,
+    onChange,
+    options,
+    required = false,
+    error,
+    icon: Icon,
+  }) => (
     <div className="mb-4">
       <label className="block text-sm font-medium text-gray-700 mb-2">
         {label} {required && <span className="text-red-500">*</span>}
@@ -164,13 +178,15 @@ function MobileAddProduct() {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none ${
-            error ? 'border-red-500' : 'border-gray-300'
+          className={`w-full ${Icon ? "pl-10" : "pl-3"} pr-3 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none ${
+            error ? "border-red-500" : "border-gray-300"
           }`}
         >
           <option value="">Select {label.toLowerCase()}</option>
-          {options.map(option => (
-            <option key={option} value={option}>{option}</option>
+          {options.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
           ))}
         </select>
       </div>
@@ -182,17 +198,21 @@ function MobileAddProduct() {
     <div className="flex items-center justify-center mb-6">
       {[1, 2, 3].map((step) => (
         <div key={step} className="flex items-center">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-            step <= currentStep 
-              ? "bg-blue-600 text-white" 
-              : "bg-gray-300 text-gray-600"
-          }`}>
+          <div
+            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+              step <= currentStep
+                ? "bg-blue-600 text-white"
+                : "bg-gray-300 text-gray-600"
+            }`}
+          >
             {step}
           </div>
           {step < 3 && (
-            <div className={`w-12 h-1 mx-2 ${
-              step < currentStep ? "bg-blue-600" : "bg-gray-300"
-            }`} />
+            <div
+              className={`w-12 h-1 mx-2 ${
+                step < currentStep ? "bg-blue-600" : "bg-gray-300"
+              }`}
+            />
           )}
         </div>
       ))}
@@ -202,31 +222,31 @@ function MobileAddProduct() {
   const stepTitles = {
     1: "Product Info",
     2: "Pricing & Stock",
-    3: "Details & Save"
+    3: "Details & Save",
   };
-
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="mobile-container">
       {/* Mobile Header */}
-      <div className="bg-white border-b border-gray-200 p-4 sticky top-0 z-10">
-        <div className="flex items-center justify-between">          <motion.button
+      <div className="search-filter-section">
+        <div className="flex items-center justify-between mb-4">
+          <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => navigate(-1)}
-            className="p-2 rounded-lg hover:bg-gray-100"
+            className="mobile-action-button secondary"
+            style={{ padding: "12px" }}
           >
-            <FiXCircle className="w-6 h-6 text-gray-600" />
+            <FiXCircle size={20} />
           </motion.button>
-          <div className="text-center">
-            <h1 className="text-lg font-semibold text-gray-900">Add Product</h1>
+          <div className="text-center flex-1">
+            <h1 className="text-lg font-semibold gradient-text">Add Product</h1>
             <p className="text-sm text-gray-500">{stepTitles[currentStep]}</p>
           </div>
-          <div className="w-10" /> {/* Spacer for centering */}
         </div>
         <StepIndicator />
       </div>
 
       {/* Form Content */}
-      <div className="flex-1 overflow-auto p-4">
+      <div className="flex-1">
         <AnimatePresence mode="wait">
           {currentStep === 1 && (
             <motion.div
@@ -245,8 +265,8 @@ function MobileAddProduct() {
                 error={errors.name}
                 icon={FiPackage}
               />
-
-              <SelectField                label="Category"
+              <SelectField
+                label="Category"
                 value={formData.category}
                 onChange={(value) => updateField("category", value)}
                 options={categories}
@@ -254,7 +274,6 @@ function MobileAddProduct() {
                 error={errors.category}
                 icon={FiTag}
               />
-
               <InputField
                 label="Description"
                 value={formData.description}
@@ -264,7 +283,8 @@ function MobileAddProduct() {
                 error={errors.description}
                 icon={FiFileText}
                 multiline
-              />              <InputField
+              />{" "}
+              <InputField
                 label="Barcode"
                 value={formData.barcode}
                 onChange={(value) => updateField("barcode", value)}
@@ -345,21 +365,20 @@ function MobileAddProduct() {
                 error={errors.manufacturer}
                 icon={FiPackage}
               />
-
               <InputField
                 label="Expiry Date"
                 value={formData.expiryDate}
                 onChange={(value) => updateField("expiryDate", value)}
                 type="date"
                 icon={FiCalendar}
-              />              <InputField
+              />{" "}
+              <InputField
                 label="Batch Number"
                 value={formData.batchNumber}
                 onChange={(value) => updateField("batchNumber", value)}
                 placeholder="Enter batch number"
                 icon={FiHash}
               />
-
               <InputField
                 label="Location/Shelf"
                 value={formData.location}
@@ -367,7 +386,6 @@ function MobileAddProduct() {
                 placeholder="e.g., A1-B2"
                 icon={FiMapPin}
               />
-
               {/* Photo Upload */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -400,7 +418,7 @@ function MobileAddProduct() {
               Previous
             </motion.button>
           )}
-          
+
           {currentStep < totalSteps ? (
             <motion.button
               whileTap={{ scale: 0.98 }}

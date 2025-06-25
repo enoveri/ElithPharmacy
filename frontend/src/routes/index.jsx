@@ -18,7 +18,7 @@ import Login from "../pages/Login";
 import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
 import SaleDetails from "../pages/SaleDetails";
-import Refunds from "../pages/Refunds";
+import ResponsiveRefunds from "../components/responsive/ResponsiveRefunds";
 import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
 import CustomerSales from "../pages/CustomerSales";
@@ -31,17 +31,20 @@ export const router = createBrowserRouter([
   {
     path: "/",
     element: <ResponsiveLayout />,
-    children: [      {
+    children: [
+      {
         index: true,
         element: <ResponsiveDashboard />,
-      },      {
+      },
+      {
         path: "/inventory",
         element: <ResponsiveInventory />,
       },
       {
         path: "/inventory/view/:id",
         element: <ViewProduct />,
-      },      {
+      },
+      {
         path: "/inventory/add",
         element: <AddProduct />,
       },
@@ -63,7 +66,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "/refunds",
-        element: <Refunds />,
+        element: <ResponsiveRefunds />,
       },
       {
         path: "/customers",
@@ -84,7 +87,8 @@ export const router = createBrowserRouter([
       {
         path: "/customers/sales/:id",
         element: <CustomerSales />,
-      },      {
+      },
+      {
         path: "/reports",
         element: <ResponsiveReports />,
       },
@@ -95,7 +99,8 @@ export const router = createBrowserRouter([
       {
         path: "/purchases/:id",
         element: <PurchaseDetails />,
-      },      {
+      },
+      {
         path: "/settings",
         element: <ResponsiveSettings />,
       },

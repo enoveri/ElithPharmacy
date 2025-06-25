@@ -1,19 +1,19 @@
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useSpring, animated } from '@react-spring/web';
-import { 
-  FiPlus, 
-  FiSearch, 
-  FiFilter, 
-  FiPackage, 
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useSpring, animated } from "@react-spring/web";
+import {
+  FiPlus,
+  FiSearch,
+  FiFilter,
+  FiPackage,
   FiAlertTriangle,
   FiCheck,
   FiEdit,
   FiEye,
-  FiRefreshCw
-} from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
-import { dataService } from '../../services';
+  FiRefreshCw,
+} from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { dataService } from "../../services";
 
 const MobileInventory = () => {
   const navigate = useNavigate();
@@ -21,8 +21,8 @@ const MobileInventory = () => {
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [pullDistance, setPullDistance] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -33,13 +33,13 @@ const MobileInventory = () => {
   // Animation for pull-to-refresh
   const pullAnimation = useSpring({
     transform: `translateY(${Math.min(pullDistance, 100)}px)`,
-    config: { tension: 300, friction: 30 }
+    config: { tension: 300, friction: 30 },
   });
 
   const refreshIconAnimation = useSpring({
     transform: `rotate(${pullDistance * 3.6}deg)`,
     opacity: Math.min(pullDistance / 50, 1),
-    config: { tension: 300, friction: 30 }
+    config: { tension: 300, friction: 30 },
   });
 
   // Load products
@@ -50,7 +50,7 @@ const MobileInventory = () => {
       setProducts(data || []);
       setFilteredProducts(data || []);
     } catch (error) {
-      console.error('Error loading products:', error);
+      console.error("Error loading products:", error);
     } finally {
       if (showLoader) setLoading(false);
     }
@@ -63,18 +63,21 @@ const MobileInventory = () => {
   // Filter products
   useEffect(() => {
     let filtered = products;
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (product) =>
+          product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          product.manufacturer.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(product => product.category === selectedCategory);
+
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (product) => product.category === selectedCategory
+      );
     }
-    
+
     setFilteredProducts(filtered);
   }, [products, searchTerm, selectedCategory]);
 
@@ -88,7 +91,7 @@ const MobileInventory = () => {
 
   const handleTouchMove = (e) => {
     if (!isPulling || window.scrollY > 0) return;
-    
+
     const currentY = e.touches[0].clientY;
     const distance = Math.max(0, currentY - startY);
     setPullDistance(distance);
@@ -98,12 +101,12 @@ const MobileInventory = () => {
     if (pullDistance > 80) {
       setRefreshing(true);
       await loadProducts(false);
-      
+
       // Add haptic feedback if available
       if (navigator.vibrate) {
         navigator.vibrate(50);
       }
-      
+
       setTimeout(() => {
         setRefreshing(false);
         setPullDistance(0);
@@ -118,92 +121,95 @@ const MobileInventory = () => {
   const getStockStatus = (product) => {
     const quantity = product.quantity || 0;
     const minStock = product.minStockLevel || 0;
-    
-    if (quantity === 0) return { status: 'out', color: '#ef4444', text: 'Out of Stock' };
-    if (quantity <= minStock) return { status: 'low', color: '#f59e0b', text: 'Low Stock' };
-    return { status: 'in', color: '#10b981', text: 'In Stock' };
+
+    if (quantity === 0)
+      return { status: "out", color: "#ef4444", text: "Out of Stock" };
+    if (quantity <= minStock)
+      return { status: "low", color: "#f59e0b", text: "Low Stock" };
+    return { status: "in", color: "#10b981", text: "In Stock" };
   };
 
-  const categories = [...new Set(products.map(p => p.category))];
-
+  const categories = [...new Set(products.map((p) => p.category))];
   if (loading) {
     return (
-      <div className="mobile-page">
-        <div className="flex items-center justify-center h-64">
+      <div className="mobile-container">
+        <div className="loading-container">
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full"
-          />
+            className="loading-spinner"
+          >
+            <FiRefreshCw size={32} />
+          </motion.div>
+          <p>Loading inventory...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div 
-      className="mobile-page"
+    <div
+      className="mobile-container"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
+      {" "}
       {/* Pull-to-refresh indicator */}
       {(isPulling || refreshing) && (
-        <animated.div 
-          style={pullAnimation}
-          className="fixed top-0 left-0 right-0 z-40 flex items-center justify-center py-4 bg-white shadow-sm"
-        >
+        <animated.div style={pullAnimation} className="pull-refresh-indicator">
           <animated.div style={refreshIconAnimation}>
-            <FiRefreshCw 
-              className={`w-6 h-6 ${refreshing ? 'animate-spin' : ''}`}
-              style={{ color: pullDistance > 80 ? '#10b981' : '#6b7280' }}
+            <FiRefreshCw
+              className={`w-6 h-6 ${refreshing ? "animate-spin" : ""}`}
+              style={{ color: pullDistance > 80 ? "#10b981" : "#6b7280" }}
             />
           </animated.div>
-          <span className="ml-2 text-sm text-gray-600">
-            {refreshing ? 'Refreshing...' : pullDistance > 80 ? 'Release to refresh' : 'Pull to refresh'}
-          </span>
         </animated.div>
       )}
+      {/* Search and Filter Section */}
+      <div className="search-filter-section">
+        <div className="search-container">
+          <FiSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="search-input"
+          />
+        </div>
 
-      {/* Search and Add Button */}
-      <div className="mobile-card p-4 mb-4">
-        <div className="flex gap-3 mb-4">
-          <div className="flex-1 relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="mobile-input pl-10"
-            />
-          </div>
+        <div className="filter-section">
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setShowFilters(!showFilters)}
-            className="mobile-button-secondary p-3"
+            className={`filter-button ${showFilters ? "active" : ""}`}
           >
-            <FiFilter className="w-5 h-5" />
+            <FiFilter size={16} />
+            Filters
           </motion.button>
         </div>
 
-        {/* Filters */}
+        {/* Category Filters */}
         <AnimatePresence>
           {showFilters && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mb-4"
+              className="mt-3"
             >
+              {" "}
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="mobile-input w-full"
+                className="filter-button w-full"
               >
                 <option value="all">All Categories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
                 ))}
               </select>
             </motion.div>
@@ -212,59 +218,96 @@ const MobileInventory = () => {
 
         <motion.button
           whileTap={{ scale: 0.95 }}
-          onClick={() => navigate('/inventory/add')}
-          className="mobile-button-primary w-full flex items-center justify-center gap-2"
+          onClick={() => navigate("/inventory/add")}
+          className="mobile-action-button w-full mt-3"
         >
-          <FiPlus className="w-5 h-5" />
+          <FiPlus size={20} />
           Add Product
         </motion.button>
       </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <motion.div 
+      {/* Stats Overview */}
+      <div className="stats-grid mb-6">
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mobile-card p-4 text-center"
+          className="stat-card"
         >
-          <FiPackage className="w-6 h-6 text-blue-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">{products.length}</div>
-          <div className="text-xs text-gray-500">Total</div>
+          <div className="stat-content">
+            <div className="stat-info">
+              <h3>Total Products</h3>
+              <div className="stat-value">{products.length}</div>
+            </div>
+            <div
+              className="stat-icon"
+              style={{
+                background: "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+              }}
+            >
+              <FiPackage size={20} style={{ color: "white" }} />
+            </div>
+          </div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="mobile-card p-4 text-center"
+          className="stat-card"
         >
-          <FiCheck className="w-6 h-6 text-green-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">
-            {products.filter(p => getStockStatus(p).status === 'in').length}
+          <div className="stat-content">
+            <div className="stat-info">
+              <h3>In Stock</h3>
+              <div className="stat-value">
+                {
+                  products.filter((p) => getStockStatus(p).status === "in")
+                    .length
+                }
+              </div>
+            </div>
+            <div
+              className="stat-icon"
+              style={{
+                background: "linear-gradient(135deg, #10b981, #059669)",
+              }}
+            >
+              <FiCheck size={20} style={{ color: "white" }} />
+            </div>
           </div>
-          <div className="text-xs text-gray-500">In Stock</div>
         </motion.div>
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="mobile-card p-4 text-center"
+          className="stat-card"
         >
-          <FiAlertTriangle className="w-6 h-6 text-orange-500 mx-auto mb-2" />
-          <div className="text-2xl font-bold text-gray-900">
-            {products.filter(p => getStockStatus(p).status === 'low').length}
+          <div className="stat-content">
+            <div className="stat-info">
+              <h3>Low Stock</h3>
+              <div className="stat-value">
+                {
+                  products.filter((p) => getStockStatus(p).status === "low")
+                    .length
+                }
+              </div>
+            </div>
+            <div
+              className="stat-icon"
+              style={{
+                background: "linear-gradient(135deg, #f59e0b, #d97706)",
+              }}
+            >
+              <FiAlertTriangle size={20} style={{ color: "white" }} />
+            </div>
           </div>
-          <div className="text-xs text-gray-500">Low Stock</div>
         </motion.div>
       </div>
-
       {/* Products List */}
       <div className="space-y-3">
         <AnimatePresence>
           {filteredProducts.map((product, index) => {
             const stockInfo = getStockStatus(product);
-            
+
             return (
               <motion.div
                 key={product.id}
@@ -272,53 +315,54 @@ const MobileInventory = () => {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ delay: index * 0.05 }}
-                className="mobile-card p-4"
+                className="mobile-list-item"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">{product.name}</h3>
-                    <p className="text-sm text-gray-500 mb-2">{product.manufacturer}</p>
-                    
-                    <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900 mb-1 text-lg">
+                      {product.name}
+                    </h3>
+                    <p className="text-sm text-gray-500 mb-3">
+                      {product.manufacturer}
+                    </p>
+
+                    <div className="flex items-center justify-between mb-3">
                       <div>
-                        <span className="text-lg font-bold text-gray-900">
+                        <span className="text-xl font-bold text-gray-900">
                           ₦{product.price?.toFixed(2)}
                         </span>
-                        <span className="ml-2 text-sm text-gray-500">
+                        <span className="ml-3 text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded-lg">
                           Qty: {product.quantity}
                         </span>
                       </div>
-                      
-                      <div className="flex items-center">
-                        <div
-                          className="w-3 h-3 rounded-full mr-2"
-                          style={{ backgroundColor: stockInfo.color }}
-                        />
-                        <span 
-                          className="text-xs font-medium"
-                          style={{ color: stockInfo.color }}
-                        >
-                          {stockInfo.text}
-                        </span>
-                      </div>
+                    </div>
+
+                    <div className="flex items-center">
+                      <span
+                        className={`status-badge ${stockInfo.status === "in" ? "active" : stockInfo.status === "low" ? "low-stock" : "out-of-stock"}`}
+                      >
+                        {stockInfo.text}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <div className="flex flex-col gap-2 ml-4">
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={() => navigate(`/inventory/view/${product.id}`)}
-                      className="p-2 rounded-lg bg-blue-50 text-blue-600"
+                      className="mobile-action-button secondary"
+                      style={{ padding: "8px" }}
                     >
-                      <FiEye className="w-4 h-4" />
+                      <FiEye size={16} />
                     </motion.button>
-                    
+
                     <motion.button
                       whileTap={{ scale: 0.9 }}
                       onClick={() => navigate(`/inventory/edit/${product.id}`)}
-                      className="p-2 rounded-lg bg-gray-50 text-gray-600"
+                      className="mobile-action-button secondary"
+                      style={{ padding: "8px" }}
                     >
-                      <FiEdit className="w-4 h-4" />
+                      <FiEdit size={16} />
                     </motion.button>
                   </div>
                 </div>
@@ -327,34 +371,45 @@ const MobileInventory = () => {
           })}
         </AnimatePresence>
       </div>
-
       {/* Empty State */}
       {filteredProducts.length === 0 && !loading && (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12"
+          className="mobile-card text-center py-12"
         >
-          <FiPackage className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+          <FiPackage
+            size={64}
+            style={{ color: "#e5e7eb", margin: "0 auto 16px" }}
+          />
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No products found
+          </h3>
           <p className="text-gray-500 mb-6">
-            {searchTerm || selectedCategory !== 'all' 
-              ? 'Try adjusting your filters' 
-              : 'Add your first product to get started'
-            }
+            {searchTerm || selectedCategory !== "all"
+              ? "Try adjusting your filters"
+              : "Add your first product to get started"}
           </p>
-          {!searchTerm && selectedCategory === 'all' && (
+          {!searchTerm && selectedCategory === "all" && (
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/inventory/add')}
-              className="mobile-button-primary inline-flex items-center gap-2"
+              onClick={() => navigate("/inventory/add")}
+              className="mobile-action-button"
             >
-              <FiPlus className="w-5 h-5" />
+              <FiPlus size={20} />
               Add Product
             </motion.button>
           )}
         </motion.div>
       )}
+      {/* Floating Action Button */}
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => navigate("/inventory/add")}
+        className="mobile-fab"
+      >
+        <FiPlus size={24} />
+      </motion.button>
     </div>
   );
 };

@@ -15,7 +15,8 @@ import {
   FiPackage,
   FiMail,
   FiPhone,
-  FiMapPin,  FiChevronRight,
+  FiMapPin,
+  FiChevronRight,
   FiCheck,
   FiXCircle,
   FiDownload,
@@ -68,7 +69,7 @@ function MobileSettings() {
       sessionTimeout: 30,
       passwordRequirements: "strong",
       loginHistory: true,
-    }
+    },
   });
 
   useEffect(() => {
@@ -78,7 +79,9 @@ function MobileSettings() {
 
   const getCurrentUser = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
     } catch (error) {
       console.error("Error getting user:", error);
@@ -100,7 +103,7 @@ function MobileSettings() {
 
   const handlePullToRefresh = async () => {
     setRefreshing(true);
-    
+
     api.start({
       y: 50,
       config: { tension: 300, friction: 30 },
@@ -134,35 +137,46 @@ function MobileSettings() {
   };
 
   const updateSetting = (section, key, value) => {
-    setFormSettings(prev => ({
+    setFormSettings((prev) => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [key]: value
-      }
+        [key]: value,
+      },
     }));
   };
-
   const SettingsSection = ({ section, title, icon: Icon, children }) => {
     const isOpen = activeSection === section;
 
     return (
       <motion.div
         layout
-        className="bg-white rounded-xl shadow-sm border border-gray-100 mb-4 overflow-hidden"
+        className="bg-white rounded-2xl shadow-lg border-0 mb-6 overflow-hidden"
+        style={{
+          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
+        }}
       >
+        {" "}
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => setActiveSection(isOpen ? null : section)}
-          className="w-full flex items-center justify-between p-4 text-left"
+          className="w-full flex items-center justify-between p-6 text-left"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-              <Icon className="w-5 h-5 text-blue-600" />
+          <div className="flex items-center space-x-4">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg"
+              style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              }}
+            >
+              <Icon className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">{title}</h3>
-              <p className="text-sm text-gray-500">Configure {title.toLowerCase()}</p>
+              <h3 className="font-bold text-gray-900 text-lg">{title}</h3>
+              <p className="text-sm text-gray-500 font-medium">
+                Configure {title.toLowerCase()}
+              </p>
             </div>
           </div>
           <motion.div
@@ -172,7 +186,6 @@ function MobileSettings() {
             <FiChevronRight className="w-5 h-5 text-gray-400" />
           </motion.div>
         </motion.button>
-
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -182,9 +195,7 @@ function MobileSettings() {
               transition={{ duration: 0.3 }}
               className="border-t border-gray-100"
             >
-              <div className="p-4">
-                {children}
-              </div>
+              <div className="p-4">{children}</div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -214,9 +225,17 @@ function MobileSettings() {
     </div>
   );
 
-  const InputField = ({ label, value, onChange, type = "text", placeholder }) => (
+  const InputField = ({
+    label,
+    value,
+    onChange,
+    type = "text",
+    placeholder,
+  }) => (
     <div className="py-2">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
       <input
         type={type}
         value={value}
@@ -229,13 +248,15 @@ function MobileSettings() {
 
   const SelectField = ({ label, value, onChange, options }) => (
     <div className="py-2">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       >
-        {options.map(option => (
+        {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
           </option>
@@ -256,9 +277,8 @@ function MobileSettings() {
       </div>
     );
   }
-
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="mobile-container">
       {/* Message Toast */}
       <AnimatePresence>
         {message.text && (
@@ -270,7 +290,9 @@ function MobileSettings() {
               message.type === "success" ? "bg-green-600" : "bg-red-600"
             } text-white`}
           >
-            <div className="flex items-center space-x-2">              {message.type === "success" ? (
+            <div className="flex items-center space-x-2">
+              {" "}
+              {message.type === "success" ? (
                 <FiCheck className="w-5 h-5" />
               ) : (
                 <FiXCircle className="w-5 h-5" />
@@ -279,34 +301,42 @@ function MobileSettings() {
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-
+      </AnimatePresence>{" "}
       {/* User Profile Header */}
-      <div className="bg-white border-b border-gray-200 p-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <FiUser className="w-6 h-6 text-blue-600" />
+      <div
+        className="bg-white/95 backdrop-blur-lg border-b border-gray-200/50 p-6"
+        style={{
+          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
+        }}
+      >
+        <div className="flex items-center space-x-4">
+          <div
+            className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg"
+            style={{
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            }}
+          >
+            <FiUser className="w-8 h-8 text-white" />
           </div>
           <div className="flex-1">
-            <h3 className="font-medium text-gray-900">
+            <h3 className="font-bold text-gray-900 text-lg">
               {user?.email || "User"}
             </h3>
-            <p className="text-sm text-gray-500">Administrator</p>
+            <p className="text-sm text-gray-500 font-medium">Administrator</p>
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => supabase.auth.signOut()}
-            className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+            className="p-3 text-red-600 hover:bg-red-50 rounded-2xl shadow-lg bg-white/80 backdrop-blur-sm"
           >
             <FiLogOut className="w-5 h-5" />
           </motion.button>
         </div>
       </div>
-
       {/* Pull to Refresh Indicator */}
       <animated.div
         style={{
-          transform: y.to(y => `translateY(${y}px)`),
+          transform: y.to((y) => `translateY(${y}px)`),
         }}
         className="flex justify-center py-2"
       >
@@ -318,11 +348,10 @@ function MobileSettings() {
             <FiRefreshCw className="w-6 h-6 text-blue-600" />
           </motion.div>
         )}
-      </animated.div>
-
+      </animated.div>{" "}
       {/* Settings Content */}
-      <div 
-        className="flex-1 overflow-auto p-4"
+      <div
+        className="flex-1 overflow-auto p-6"
         onTouchStart={() => {
           const startY = event.touches[0].clientY;
           const scrollTop = event.currentTarget.scrollTop;
@@ -332,17 +361,21 @@ function MobileSettings() {
               const pullDistance = currentY - startY;
               if (pullDistance > 100) {
                 handlePullToRefresh();
-                document.removeEventListener('touchmove', handleTouchMove);
+                document.removeEventListener("touchmove", handleTouchMove);
               }
             };
-            document.addEventListener('touchmove', handleTouchMove);
-            document.addEventListener('touchend', () => {
-              document.removeEventListener('touchmove', handleTouchMove);
+            document.addEventListener("touchmove", handleTouchMove);
+            document.addEventListener("touchend", () => {
+              document.removeEventListener("touchmove", handleTouchMove);
             });
           }
         }}
       >
-        <SettingsSection section="general" title="General" icon={FiSettingsIcon}>
+        <SettingsSection
+          section="general"
+          title="General"
+          icon={FiSettingsIcon}
+        >
           <InputField
             label="Store Name"
             value={formSettings.general?.storeName || ""}
@@ -370,34 +403,50 @@ function MobileSettings() {
           />
         </SettingsSection>
 
-        <SettingsSection section="notifications" title="Notifications" icon={FiBell}>
+        <SettingsSection
+          section="notifications"
+          title="Notifications"
+          icon={FiBell}
+        >
           <ToggleSwitch
             enabled={formSettings.notifications?.lowStock || false}
-            onChange={(value) => updateSetting("notifications", "lowStock", value)}
+            onChange={(value) =>
+              updateSetting("notifications", "lowStock", value)
+            }
             label="Low Stock Alerts"
             description="Get notified when products are running low"
           />
           <ToggleSwitch
             enabled={formSettings.notifications?.newOrders || false}
-            onChange={(value) => updateSetting("notifications", "newOrders", value)}
+            onChange={(value) =>
+              updateSetting("notifications", "newOrders", value)
+            }
             label="New Orders"
             description="Receive notifications for new orders"
           />
           <ToggleSwitch
             enabled={formSettings.notifications?.emailNotifications || false}
-            onChange={(value) => updateSetting("notifications", "emailNotifications", value)}
+            onChange={(value) =>
+              updateSetting("notifications", "emailNotifications", value)
+            }
             label="Email Notifications"
             description="Send notifications via email"
           />
           <ToggleSwitch
             enabled={formSettings.notifications?.pushNotifications || false}
-            onChange={(value) => updateSetting("notifications", "pushNotifications", value)}
+            onChange={(value) =>
+              updateSetting("notifications", "pushNotifications", value)
+            }
             label="Push Notifications"
             description="Browser push notifications"
           />
         </SettingsSection>
 
-        <SettingsSection section="business" title="Business Info" icon={FiPackage}>
+        <SettingsSection
+          section="business"
+          title="Business Info"
+          icon={FiPackage}
+        >
           <InputField
             label="Business Address"
             value={formSettings.business?.address || ""}
@@ -424,7 +473,9 @@ function MobileSettings() {
           <InputField
             label="Tax Rate (%)"
             value={formSettings.business?.taxRate || ""}
-            onChange={(value) => updateSetting("business", "taxRate", parseFloat(value) || 0)}
+            onChange={(value) =>
+              updateSetting("business", "taxRate", parseFloat(value) || 0)
+            }
             type="number"
           />
         </SettingsSection>
@@ -432,14 +483,18 @@ function MobileSettings() {
         <SettingsSection section="security" title="Security" icon={FiShield}>
           <ToggleSwitch
             enabled={formSettings.security?.twoFactorAuth || false}
-            onChange={(value) => updateSetting("security", "twoFactorAuth", value)}
+            onChange={(value) =>
+              updateSetting("security", "twoFactorAuth", value)
+            }
             label="Two-Factor Authentication"
             description="Add an extra layer of security"
           />
           <SelectField
             label="Session Timeout (minutes)"
             value={formSettings.security?.sessionTimeout || 30}
-            onChange={(value) => updateSetting("security", "sessionTimeout", parseInt(value))}
+            onChange={(value) =>
+              updateSetting("security", "sessionTimeout", parseInt(value))
+            }
             options={[
               { value: 15, label: "15 minutes" },
               { value: 30, label: "30 minutes" },
@@ -449,7 +504,9 @@ function MobileSettings() {
           />
           <ToggleSwitch
             enabled={formSettings.security?.loginHistory || false}
-            onChange={(value) => updateSetting("security", "loginHistory", value)}
+            onChange={(value) =>
+              updateSetting("security", "loginHistory", value)
+            }
             label="Login History"
             description="Keep track of login attempts"
           />
@@ -488,7 +545,6 @@ function MobileSettings() {
           </div>
         </motion.div>
       </div>
-
       {/* Save Button */}
       <div className="p-4 bg-white border-t border-gray-200">
         <motion.button
