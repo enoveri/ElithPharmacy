@@ -19,7 +19,7 @@ import "../styles/mobile.css";
 function AddCustomer() {
   // Mobile detection hook
   const isMobile = useIsMobile();
-  
+
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -123,7 +123,7 @@ function AddCustomer() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateStep(currentStep)) {
       return;
     }
@@ -133,11 +133,11 @@ function AddCustomer() {
     try {
       // Create customer using dbHelpers
       const newCustomer = await dbHelpers.customers.create(formData);
-      
+
       if (newCustomer) {
         // Show success message (you might want to add a toast notification here)
         console.log("Customer created successfully:", newCustomer);
-        
+
         // Navigate back to customers list
         navigate("/customers");
       } else {
@@ -157,31 +157,41 @@ function AddCustomer() {
         return (
           <div
             className={isMobile ? "mobile-card" : ""}
-            style={isMobile ? {} : {
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "16px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #f1f5f9",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    border: "1px solid #f1f5f9",
+                  }
+            }
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile
+                  ? "1fr"
+                  : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   First Name *
                 </label>
@@ -191,16 +201,20 @@ function AddCustomer() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.firstName
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.firstName
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter first name"
                 />
                 {errors.firstName && (
@@ -211,13 +225,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Last Name *
                 </label>
@@ -227,16 +245,20 @@ function AddCustomer() {
                   value={formData.lastName}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.lastName
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.lastName
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter last name"
                 />
                 {errors.lastName && (
@@ -247,13 +269,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Email
                 </label>
@@ -263,14 +289,18 @@ function AddCustomer() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter email address"
                 />
               </div>
@@ -278,13 +308,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Phone Number *
                 </label>
@@ -294,33 +328,39 @@ function AddCustomer() {
                   value={formData.phone}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.phone
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.phone
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter phone number"
                 />
-                {errors.phone && (
-                  <p className="error-text">{errors.phone}</p>
-                )}
+                {errors.phone && <p className="error-text">{errors.phone}</p>}
               </div>
 
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Date of Birth
                 </label>
@@ -330,27 +370,35 @@ function AddCustomer() {
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                 />
               </div>
 
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Gender
                 </label>
@@ -359,14 +407,18 @@ function AddCustomer() {
                   value={formData.gender}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-select" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                 >
                   <option value="">Select Gender</option>
                   <option value="male">Male</option>
@@ -382,31 +434,44 @@ function AddCustomer() {
         return (
           <div
             className={isMobile ? "mobile-card" : ""}
-            style={isMobile ? {} : {
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "16px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #f1f5f9",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    border: "1px solid #f1f5f9",
+                  }
+            }
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile
+                  ? "1fr"
+                  : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
-              <div className={isMobile ? "mobile-form-group" : ""} style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
+              <div
+                className={isMobile ? "mobile-form-group" : ""}
+                style={{ gridColumn: isMobile ? "1" : "1 / -1" }}
+              >
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Address *
                 </label>
@@ -415,18 +480,22 @@ function AddCustomer() {
                   value={formData.address}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.address
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                    resize: "vertical",
-                    minHeight: "80px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.address
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                          resize: "vertical",
+                          minHeight: "80px",
+                        }
+                  }
                   placeholder="Enter full address"
                 />
                 {errors.address && (
@@ -437,13 +506,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   City *
                 </label>
@@ -453,33 +526,39 @@ function AddCustomer() {
                   value={formData.city}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.city
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.city
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter city"
                 />
-                {errors.city && (
-                  <p className="error-text">{errors.city}</p>
-                )}
+                {errors.city && <p className="error-text">{errors.city}</p>}
               </div>
 
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   State
                 </label>
@@ -489,14 +568,18 @@ function AddCustomer() {
                   value={formData.state}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter state"
                 />
               </div>
@@ -504,13 +587,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   ZIP Code
                 </label>
@@ -520,14 +607,18 @@ function AddCustomer() {
                   value={formData.zipCode}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter ZIP code"
                 />
               </div>
@@ -539,31 +630,41 @@ function AddCustomer() {
         return (
           <div
             className={isMobile ? "mobile-card" : ""}
-            style={isMobile ? {} : {
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "16px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #f1f5f9",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    border: "1px solid #f1f5f9",
+                  }
+            }
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile
+                  ? "1fr"
+                  : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Emergency Contact
                 </label>
@@ -573,14 +674,18 @@ function AddCustomer() {
                   value={formData.emergencyContact}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter emergency contact name"
                 />
               </div>
@@ -588,13 +693,17 @@ function AddCustomer() {
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Emergency Phone
                 </label>
@@ -604,28 +713,39 @@ function AddCustomer() {
                   value={formData.emergencyPhone}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter emergency phone number"
                 />
               </div>
 
-              <div className={isMobile ? "mobile-form-group" : ""} style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
+              <div
+                className={isMobile ? "mobile-form-group" : ""}
+                style={{ gridColumn: isMobile ? "1" : "1 / -1" }}
+              >
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Allergies
                 </label>
@@ -634,30 +754,41 @@ function AddCustomer() {
                   value={formData.allergies}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                    resize: "vertical",
-                    minHeight: "60px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                          resize: "vertical",
+                          minHeight: "60px",
+                        }
+                  }
                   placeholder="List any known allergies (optional)"
                 />
               </div>
 
-              <div className={isMobile ? "mobile-form-group" : ""} style={{ gridColumn: isMobile ? "1" : "1 / -1" }}>
+              <div
+                className={isMobile ? "mobile-form-group" : ""}
+                style={{ gridColumn: isMobile ? "1" : "1 / -1" }}
+              >
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Medical Conditions
                 </label>
@@ -666,16 +797,20 @@ function AddCustomer() {
                   value={formData.medicalConditions}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                    resize: "vertical",
-                    minHeight: "60px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                          resize: "vertical",
+                          minHeight: "60px",
+                        }
+                  }
                   placeholder="List any medical conditions (optional)"
                 />
               </div>
@@ -692,19 +827,23 @@ function AddCustomer() {
     return (
       <div
         className={isMobile ? "mobile-container" : ""}
-        style={isMobile ? { 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          minHeight: "50vh"
-        } : {
-          padding: "24px",
-          backgroundColor: "var(--color-bg-main)",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        style={
+          isMobile
+            ? {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                minHeight: "50vh",
+              }
+            : {
+                padding: "24px",
+                backgroundColor: "var(--color-bg-main)",
+                minHeight: "100vh",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }
+        }
       >
         <div
           style={{
@@ -721,40 +860,55 @@ function AddCustomer() {
   }
 
   return (
-    <div className={isMobile ? "mobile-container" : ""} style={isMobile ? {} : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+    <div
+      className={isMobile ? "mobile-container" : ""}
+      style={
+        isMobile
+          ? {}
+          : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }
+      }
+    >
       {/* Header */}
       <div
         className={isMobile ? "mobile-card" : ""}
-        style={isMobile ? {} : {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "16px",
-          padding: "12px 16px",
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          border: "1px solid #f1f5f9",
-        }}
+        style={
+          isMobile
+            ? {}
+            : {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+                padding: "12px 16px",
+                backgroundColor: "white",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                border: "1px solid #f1f5f9",
+              }
+        }
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() => navigate("/customers")}
             className={isMobile ? "mobile-action-button secondary" : ""}
-            style={isMobile ? {} : {
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              backgroundColor: "#f8fafc",
-              color: "#64748b",
-              border: "1px solid #e2e8f0",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    backgroundColor: "#f8fafc",
+                    color: "#64748b",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }
+            }
           >
             <div className={isMobile ? "mobile-nav-icon" : ""}>
               <FiArrowLeft size={14} />
@@ -773,11 +927,13 @@ function AddCustomer() {
             >
               Add New Customer - Step {currentStep} of {steps.length}
             </h1>
-            <p style={{ 
-              color: isMobile ? "rgba(255, 255, 255, 0.8)" : "#6b7280", 
-              fontSize: "12px", 
-              margin: "0" 
-            }}>
+            <p
+              style={{
+                color: isMobile ? "rgba(255, 255, 255, 0.8)" : "#6b7280",
+                fontSize: "12px",
+                margin: "0",
+              }}
+            >
               {steps[currentStep - 1]?.description}
             </p>
           </div>
@@ -809,7 +965,8 @@ function AddCustomer() {
                   width: "24px",
                   height: "24px",
                   borderRadius: "50%",
-                  backgroundColor: currentStep >= step.id ? "#3b82f6" : "#e5e7eb",
+                  backgroundColor:
+                    currentStep >= step.id ? "#3b82f6" : "#e5e7eb",
                   color: "white",
                   display: "flex",
                   alignItems: "center",
@@ -856,19 +1013,23 @@ function AddCustomer() {
         {errors.submit && (
           <div
             className={isMobile ? "mobile-card" : ""}
-            style={isMobile ? { 
-              marginTop: "16px",
-              background: "rgba(239, 68, 68, 0.1)",
-              borderColor: "rgba(239, 68, 68, 0.3)"
-            } : {
-              marginTop: "16px",
-              padding: "12px",
-              backgroundColor: "#fef2f2",
-              color: "#dc2626",
-              border: "1px solid #fecaca",
-              borderRadius: "6px",
-              fontSize: "14px",
-            }}
+            style={
+              isMobile
+                ? {
+                    marginTop: "16px",
+                    background: "rgba(239, 68, 68, 0.1)",
+                    borderColor: "rgba(239, 68, 68, 0.3)",
+                  }
+                : {
+                    marginTop: "16px",
+                    padding: "12px",
+                    backgroundColor: "#fef2f2",
+                    color: "#dc2626",
+                    border: "1px solid #fecaca",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                  }
+            }
           >
             {errors.submit}
           </div>
@@ -889,23 +1050,27 @@ function AddCustomer() {
             onClick={handleBack}
             disabled={currentStep === 1}
             className={isMobile ? "mobile-action-button secondary" : ""}
-            style={isMobile ? { 
-              opacity: currentStep === 1 ? 0.5 : 1,
-              cursor: currentStep === 1 ? "not-allowed" : "pointer"
-            } : {
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "8px 16px",
-              backgroundColor: currentStep === 1 ? "#f9fafb" : "#ffffff",
-              color: currentStep === 1 ? "#9ca3af" : "#374151",
-              border: "1px solid #d1d5db",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: currentStep === 1 ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
-            }}
+            style={
+              isMobile
+                ? {
+                    opacity: currentStep === 1 ? 0.5 : 1,
+                    cursor: currentStep === 1 ? "not-allowed" : "pointer",
+                  }
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "8px 16px",
+                    backgroundColor: currentStep === 1 ? "#f9fafb" : "#ffffff",
+                    color: currentStep === 1 ? "#9ca3af" : "#374151",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: currentStep === 1 ? "not-allowed" : "pointer",
+                    transition: "all 0.2s",
+                  }
+            }
           >
             <FiArrowLeft size={16} />
             Back
@@ -916,20 +1081,24 @@ function AddCustomer() {
               type="button"
               onClick={handleNext}
               className={isMobile ? "mobile-action-button" : ""}
-              style={isMobile ? {} : {
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 16px",
-                backgroundColor: "#3b82f6",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
+              style={
+                isMobile
+                  ? {}
+                  : {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      backgroundColor: "#3b82f6",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }
+              }
             >
               Next
               <FiArrowRight size={16} />
@@ -939,23 +1108,27 @@ function AddCustomer() {
               type="submit"
               disabled={loading}
               className={isMobile ? "mobile-action-button" : ""}
-              style={isMobile ? { 
-                opacity: loading ? 0.5 : 1,
-                cursor: loading ? "not-allowed" : "pointer"
-              } : {
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 16px",
-                backgroundColor: loading ? "#9ca3af" : "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: loading ? "not-allowed" : "pointer",
-                transition: "all 0.2s",
-              }}
+              style={
+                isMobile
+                  ? {
+                      opacity: loading ? 0.5 : 1,
+                      cursor: loading ? "not-allowed" : "pointer",
+                    }
+                  : {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      padding: "8px 16px",
+                      backgroundColor: loading ? "#9ca3af" : "#10b981",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: loading ? "not-allowed" : "pointer",
+                      transition: "all 0.2s",
+                    }
+              }
             >
               {loading ? (
                 <>
@@ -984,10 +1157,14 @@ function AddCustomer() {
 
       <style jsx>{`
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
-        
+
         .error-text {
           color: #ef4444;
           font-size: 12px;

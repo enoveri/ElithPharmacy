@@ -171,40 +171,52 @@ function ViewCustomer() {
   return (
     <div
       className={isMobile ? "mobile-container" : ""}
-      style={isMobile ? {} : {
-        padding: "24px",
-        backgroundColor: "var(--color-bg-main)",
-        minHeight: "100vh",
-      }}
+      style={
+        isMobile
+          ? {}
+          : {
+              padding: "24px",
+              backgroundColor: "var(--color-bg-main)",
+              minHeight: "100vh",
+            }
+      }
     >
       {/* Header */}
       <div
         className={isMobile ? "mobile-card" : ""}
-        style={isMobile ? { marginBottom: "16px" } : {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-        }}
+        style={
+          isMobile
+            ? { marginBottom: "16px" }
+            : {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "32px",
+              }
+        }
       >
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={() => navigate("/customers")}
             className={isMobile ? "mobile-action-button secondary" : ""}
-            style={isMobile ? {} : {
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "var(--color-text-secondary)",
-              border: "1px solid var(--color-border-light)",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 16px",
+                    backgroundColor: "white",
+                    color: "var(--color-text-secondary)",
+                    border: "1px solid var(--color-border-light)",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    marginRight: "16px",
+                  }
+            }
           >
             <FiArrowLeft size={16} />
             Back to Customers

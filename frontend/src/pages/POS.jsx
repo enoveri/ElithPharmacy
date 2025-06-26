@@ -34,29 +34,29 @@ const ErrorModal = ({ isOpen, onClose, title, message, type = "error" }) => {
       border: "#ef4444",
       icon: "#dc2626",
       text: "#991b1b",
-      button: "#ef4444"
+      button: "#ef4444",
     },
     success: {
       bg: "#f0fdf4",
       border: "#10b981",
       icon: "#059669",
       text: "#065f46",
-      button: "#10b981"
+      button: "#10b981",
     },
     warning: {
       bg: "#fffbeb",
       border: "#f59e0b",
       icon: "#d97706",
       text: "#92400e",
-      button: "#f59e0b"
+      button: "#f59e0b",
     },
     info: {
       bg: "#eff6ff",
       border: "#3b82f6",
       icon: "#2563eb",
       text: "#1e40af",
-      button: "#3b82f6"
-    }
+      button: "#3b82f6",
+    },
   };
 
   const IconComponent = icons[type];
@@ -197,7 +197,11 @@ const ErrorModal = ({ isOpen, onClose, title, message, type = "error" }) => {
             e.target.style.boxShadow = `0 4px 14px ${colorScheme.button}30`;
           }}
         >
-          {type === "success" ? "Great!" : type === "warning" ? "Got It" : "Understood"}
+          {type === "success"
+            ? "Great!"
+            : type === "warning"
+              ? "Got It"
+              : "Understood"}
         </button>
       </div>
     </div>
@@ -221,30 +225,30 @@ const Toast = ({ isVisible, message, type = "success", onClose }) => {
     success: {
       bg: "#10b981",
       icon: "#ffffff",
-      text: "#ffffff"
+      text: "#ffffff",
     },
     error: {
       bg: "#ef4444",
-      icon: "#ffffff", 
-      text: "#ffffff"
+      icon: "#ffffff",
+      text: "#ffffff",
     },
     warning: {
       bg: "#f59e0b",
       icon: "#ffffff",
-      text: "#ffffff"
+      text: "#ffffff",
     },
     info: {
       bg: "#3b82f6",
       icon: "#ffffff",
-      text: "#ffffff"
-    }
+      text: "#ffffff",
+    },
   };
 
   const icons = {
     success: FiCheckCircle,
     error: FiAlertCircle,
     warning: FiAlertTriangle,
-    info: FiInfo
+    info: FiInfo,
   };
 
   const colorScheme = colors[type];
@@ -271,12 +275,14 @@ const Toast = ({ isVisible, message, type = "success", onClose }) => {
       }}
     >
       <IconComponent size={20} color={colorScheme.icon} />
-      <span style={{ 
-        fontSize: "14px", 
-        fontWeight: "500",
-        flex: 1,
-        lineHeight: "1.4"
-      }}>
+      <span
+        style={{
+          fontSize: "14px",
+          fontWeight: "500",
+          flex: 1,
+          lineHeight: "1.4",
+        }}
+      >
         {message}
       </span>
       <button
@@ -349,22 +355,22 @@ function POS() {
   const [tempPrice, setTempPrice] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
   const [processing, setProcessing] = useState(false);
-  
+
   // Error modal states
   const [errorModal, setErrorModal] = useState({
     isOpen: false,
     title: "",
     message: "",
-    type: "error"
+    type: "error",
   });
-  
+
   // Toast notification states
   const [toast, setToast] = useState({
     isVisible: false,
     message: "",
-    type: "success"
+    type: "success",
   });
-  
+
   // Customer search states
   const [customers, setCustomers] = useState([]);
   const [customerSearchTerm, setCustomerSearchTerm] = useState("");
@@ -378,7 +384,7 @@ function POS() {
       isOpen: true,
       title,
       message,
-      type
+      type,
     });
   };
 
@@ -388,7 +394,7 @@ function POS() {
       isOpen: true,
       title,
       message,
-      type: "success"
+      type: "success",
     });
   };
 
@@ -397,7 +403,7 @@ function POS() {
     setToast({
       isVisible: true,
       message,
-      type
+      type,
     });
   };
 
@@ -407,7 +413,7 @@ function POS() {
       isOpen: false,
       title: "",
       message: "",
-      type: "error"
+      type: "error",
     });
   };
 
@@ -416,7 +422,7 @@ function POS() {
     setToast({
       isVisible: false,
       message: "",
-      type: "success"
+      type: "success",
     });
   };
 
@@ -473,17 +479,17 @@ function POS() {
     }
 
     const existingItem = cart.find((item) => item.id === product.id);
-    
+
     if (existingItem) {
       // Check if adding one more would exceed available stock
       if (existingItem.quantity >= product.quantity) {
         showError(
-          "Insufficient Stock", 
+          "Insufficient Stock",
           `Cannot add more ${product.name}. Only ${product.quantity} items available in stock.`
         );
         return;
       }
-      
+
       setCart(
         cart.map((item) =>
           item.id === product.id
@@ -507,9 +513,9 @@ function POS() {
       removeFromCart(productId);
       return;
     }
-    
+
     // Find the product to check available stock
-    const product = products.find(p => p.id === productId);
+    const product = products.find((p) => p.id === productId);
     if (product && newQuantity > product.quantity) {
       showError(
         "Insufficient Stock",
@@ -517,7 +523,7 @@ function POS() {
       );
       return;
     }
-    
+
     setCart(
       cart.map((item) =>
         item.id === productId
@@ -532,9 +538,9 @@ function POS() {
   };
 
   const removeFromCart = (productId) => {
-    const removedItem = cart.find(item => item.id === productId);
+    const removedItem = cart.find((item) => item.id === productId);
     setCart(cart.filter((item) => item.id !== productId));
-    
+
     if (removedItem) {
       showToast(`${removedItem.name} removed from cart`, "info");
     }
@@ -546,36 +552,44 @@ function POS() {
   const completeSale = async () => {
     // Basic validation
     if (cart.length === 0) {
-      showError("Cart Empty", "Please add some items to the cart before completing the sale.");
+      showError(
+        "Cart Empty",
+        "Please add some items to the cart before completing the sale."
+      );
       return;
     }
 
     // Stock validation
     const stockErrors = [];
     for (const cartItem of cart) {
-      const product = products.find(p => p.id === cartItem.id);
+      const product = products.find((p) => p.id === cartItem.id);
       if (!product) {
         stockErrors.push(`Product "${cartItem.name}" not found in inventory.`);
         continue;
       }
-      
+
       const availableStock = product.quantity || 0;
       if (cartItem.quantity > availableStock) {
-        stockErrors.push(`Insufficient stock for "${cartItem.name}". Available: ${availableStock}, Requested: ${cartItem.quantity}`);
+        stockErrors.push(
+          `Insufficient stock for "${cartItem.name}". Available: ${availableStock}, Requested: ${cartItem.quantity}`
+        );
       }
     }
 
     if (stockErrors.length > 0) {
       showError(
-        "Insufficient Stock", 
-        `The following items have insufficient stock:\n\n${stockErrors.join('\n')}\n\nPlease adjust quantities or remove items from cart.`
+        "Insufficient Stock",
+        `The following items have insufficient stock:\n\n${stockErrors.join("\n")}\n\nPlease adjust quantities or remove items from cart.`
       );
       return;
     }
 
     // Payment method validation
     if (!paymentMethod) {
-      showError("Payment Method Required", "Please select a payment method before completing the sale.");
+      showError(
+        "Payment Method Required",
+        "Please select a payment method before completing the sale."
+      );
       return;
     }
 
@@ -623,35 +637,67 @@ function POS() {
       } catch (error) {
         console.error("❌ [POS] Error saving sale:", error);
         console.error("❌ [POS] Sale data that failed:", newSale);
-        
+
         // Provide user-friendly error messages based on error type
         let errorTitle = "Sale Failed";
-        let errorMessage = "An unexpected error occurred while saving the sale.";
-        
-        if (error.message.includes("customer_name") || error.message.includes("customer_id")) {
+        let errorMessage =
+          "An unexpected error occurred while saving the sale.";
+
+        if (
+          error.message.includes("customer_name") ||
+          error.message.includes("customer_id")
+        ) {
           errorTitle = "Customer Information Error";
-          errorMessage = "There was an issue with customer information. Please try selecting the customer again or proceed without a customer.";
-        } else if (error.message.includes("product") || error.message.includes("item")) {
+          errorMessage =
+            "There was an issue with customer information. Please try selecting the customer again or proceed without a customer.";
+        } else if (
+          error.message.includes("product") ||
+          error.message.includes("item")
+        ) {
           errorTitle = "Product Information Error";
-          errorMessage = "There was an issue with product information. Please refresh the page and try again.";
-        } else if (error.message.includes("network") || error.message.includes("fetch") || error.message.includes("NetworkError")) {
+          errorMessage =
+            "There was an issue with product information. Please refresh the page and try again.";
+        } else if (
+          error.message.includes("network") ||
+          error.message.includes("fetch") ||
+          error.message.includes("NetworkError")
+        ) {
           errorTitle = "Network Connection Error";
-          errorMessage = "Unable to connect to the server. Please check your internet connection and try again.";
-        } else if (error.message.includes("permission") || error.message.includes("auth") || error.message.includes("401") || error.message.includes("403")) {
+          errorMessage =
+            "Unable to connect to the server. Please check your internet connection and try again.";
+        } else if (
+          error.message.includes("permission") ||
+          error.message.includes("auth") ||
+          error.message.includes("401") ||
+          error.message.includes("403")
+        ) {
           errorTitle = "Permission Error";
-          errorMessage = "You don't have permission to complete this sale. Please contact your administrator.";
-        } else if (error.message.includes("duplicate") || error.message.includes("conflict")) {
+          errorMessage =
+            "You don't have permission to complete this sale. Please contact your administrator.";
+        } else if (
+          error.message.includes("duplicate") ||
+          error.message.includes("conflict")
+        ) {
           errorTitle = "Transaction Conflict";
-          errorMessage = "This transaction may have already been processed. Please check recent sales history.";
-        } else if (error.message.includes("validation") || error.message.includes("invalid")) {
+          errorMessage =
+            "This transaction may have already been processed. Please check recent sales history.";
+        } else if (
+          error.message.includes("validation") ||
+          error.message.includes("invalid")
+        ) {
           errorTitle = "Data Validation Error";
-          errorMessage = "Some sale information is invalid. Please check all fields and try again.";
+          errorMessage =
+            "Some sale information is invalid. Please check all fields and try again.";
         } else if (error.message.includes("timeout")) {
           errorTitle = "Request Timeout";
-          errorMessage = "The request took too long to process. Please try again.";
+          errorMessage =
+            "The request took too long to process. Please try again.";
         }
-        
-        showError(errorTitle, `${errorMessage}\n\nTechnical details: ${error.message}`);
+
+        showError(
+          errorTitle,
+          `${errorMessage}\n\nTechnical details: ${error.message}`
+        );
         return;
       }
 
@@ -660,10 +706,17 @@ function POS() {
         const updatePromises = cart.map(async (item) => {
           const currentProduct = products.find((p) => p.id === item.id);
           if (currentProduct) {
-            const newQuantity = Math.max(0, (currentProduct.quantity || 0) - item.quantity);
-            console.log(`📦 [POS] Updating product ${item.name}: ${currentProduct.quantity} → ${newQuantity}`);
-            
-            return dataService.products.update(item.id, { quantity: newQuantity });
+            const newQuantity = Math.max(
+              0,
+              (currentProduct.quantity || 0) - item.quantity
+            );
+            console.log(
+              `📦 [POS] Updating product ${item.name}: ${currentProduct.quantity} → ${newQuantity}`
+            );
+
+            return dataService.products.update(item.id, {
+              quantity: newQuantity,
+            });
           }
         });
 
@@ -673,7 +726,7 @@ function POS() {
         console.error("❌ [POS] Error updating product quantities:", error);
         // Show warning but don't fail the sale since it's already saved
         showError(
-          "Inventory Update Warning", 
+          "Inventory Update Warning",
           `The sale was completed successfully, but there was an issue updating inventory quantities. Please manually check and update stock levels.\n\nError: ${error.message}`,
           "warning"
         );
@@ -686,7 +739,10 @@ function POS() {
           if (cartItem) {
             return {
               ...product,
-              quantity: Math.max(0, (product.quantity || 0) - cartItem.quantity),
+              quantity: Math.max(
+                0,
+                (product.quantity || 0) - cartItem.quantity
+              ),
             };
           }
           return product;
@@ -699,34 +755,34 @@ function POS() {
       setCustomerSearchTerm("");
 
       // Show success toast notification
-      const customerInfo = customer 
-        ? `${customer.firstName || customer.first_name || ''} ${customer.lastName || customer.last_name || ''}`.trim()
-        : 'Walk-in Customer';
-      
+      const customerInfo = customer
+        ? `${customer.firstName || customer.first_name || ""} ${customer.lastName || customer.last_name || ""}`.trim()
+        : "Walk-in Customer";
+
       showToast(
         `🎉 Sale completed! ${transactionNumber} • ${currency} ${totalAmount.toFixed(2)} • ${customerInfo}`,
         "success"
       );
 
       console.log("🎉 [POS] Sale completed successfully!");
-
     } catch (error) {
       console.error("❌ [POS] Unexpected error in completeSale:", error);
-      
+
       // Handle different types of unexpected errors
       let errorTitle = "Unexpected Error";
       let errorMessage = `An unexpected error occurred: ${error.message}`;
-      
+
       if (error.name === "TypeError") {
         errorTitle = "System Error";
-        errorMessage = "A system error occurred. Please refresh the page and try again.";
+        errorMessage =
+          "A system error occurred. Please refresh the page and try again.";
       } else if (error.name === "ReferenceError") {
         errorTitle = "System Configuration Error";
         errorMessage = "There's a configuration issue. Please contact support.";
       }
-      
+
       showError(
-        errorTitle, 
+        errorTitle,
         `${errorMessage}\n\nPlease try again or contact support if the problem persists.`
       );
     } finally {
@@ -1307,30 +1363,34 @@ function POS() {
                 >
                   {currency} {(product.price || 0).toFixed(2)}
                 </span>
-                <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-                  <FiPackage 
-                    size={14} 
+                <div
+                  style={{ display: "flex", alignItems: "center", gap: "4px" }}
+                >
+                  <FiPackage
+                    size={14}
                     color={
-                      product.quantity <= 0 
-                        ? "#ef4444" 
-                        : product.quantity <= 5 
-                          ? "#f59e0b" 
+                      product.quantity <= 0
+                        ? "#ef4444"
+                        : product.quantity <= 5
+                          ? "#f59e0b"
                           : "#10b981"
-                    } 
+                    }
                   />
                   <span
                     style={{
                       fontSize: "12px",
                       fontWeight: "500",
-                      color: 
-                        product.quantity <= 0 
-                          ? "#ef4444" 
-                          : product.quantity <= 5 
-                            ? "#f59e0b" 
+                      color:
+                        product.quantity <= 0
+                          ? "#ef4444"
+                          : product.quantity <= 5
+                            ? "#f59e0b"
                             : "#10b981",
                     }}
                   >
-                    {product.quantity <= 0 ? "Out of Stock" : `${product.quantity} left`}
+                    {product.quantity <= 0
+                      ? "Out of Stock"
+                      : `${product.quantity} left`}
                   </span>
                 </div>
               </div>
@@ -1673,17 +1733,18 @@ function POS() {
               style={{
                 width: "100%",
                 padding: "12px",
-                backgroundColor: processing 
-                  ? "#9ca3af" 
-                  : cart.length === 0 
-                    ? "#d1d5db" 
+                backgroundColor: processing
+                  ? "#9ca3af"
+                  : cart.length === 0
+                    ? "#d1d5db"
                     : "#10b981",
                 color: "white",
                 border: "none",
                 borderRadius: "8px",
                 fontSize: "16px",
                 fontWeight: "600",
-                cursor: processing || cart.length === 0 ? "not-allowed" : "pointer",
+                cursor:
+                  processing || cart.length === 0 ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1704,7 +1765,11 @@ function POS() {
                   }}
                 />
               )}
-              {processing ? "Processing..." : cart.length === 0 ? "Add Items to Cart" : "Complete Sale"}
+              {processing
+                ? "Processing..."
+                : cart.length === 0
+                  ? "Add Items to Cart"
+                  : "Complete Sale"}
             </button>
           </div>
         )}

@@ -144,7 +144,9 @@ const MobileLayout = () => {
                       <div className="mobile-sidebar-icon">E</div>
                       <div>
                         <h2 className="mobile-sidebar-title">Elith Pharmacy</h2>
-                        <p className="mobile-sidebar-subtitle">Management System</p>
+                        <p className="mobile-sidebar-subtitle">
+                          Management System
+                        </p>
                       </div>
                     </div>
                     <motion.button
@@ -162,71 +164,71 @@ const MobileLayout = () => {
                 <nav className="mobile-sidebar-nav">
                   <div className="mobile-nav-items">
                     {[
-                      { 
-                        icon: FiHome, 
-                        label: "Dashboard", 
-                        path: "/", 
-                        description: "Overview & Analytics" 
+                      {
+                        icon: FiHome,
+                        label: "Dashboard",
+                        path: "/",
+                        description: "Overview & Analytics",
                       },
-                      { 
-                        icon: FiShoppingCart, 
-                        label: "Point of Sale", 
-                        path: "/pos", 
-                        description: "Process Sales" 
+                      {
+                        icon: FiShoppingCart,
+                        label: "Point of Sale",
+                        path: "/pos",
+                        description: "Process Sales",
                       },
-                      { 
-                        icon: FiPackage, 
-                        label: "Inventory", 
-                        path: "/inventory", 
-                        description: "Manage Products" 
+                      {
+                        icon: FiPackage,
+                        label: "Inventory",
+                        path: "/inventory",
+                        description: "Manage Products",
                       },
-                      { 
-                        icon: FiUsers, 
-                        label: "Customers", 
-                        path: "/customers", 
-                        description: "Customer Management" 
+                      {
+                        icon: FiUsers,
+                        label: "Customers",
+                        path: "/customers",
+                        description: "Customer Management",
                       },
-                      { 
-                        icon: FiShoppingCart, 
-                        label: "Purchases", 
-                        path: "/purchases", 
-                        description: "Purchase Orders" 
+                      {
+                        icon: FiShoppingCart,
+                        label: "Purchases",
+                        path: "/purchases",
+                        description: "Purchase Orders",
                       },
-                      { 
-                        icon: FiBarChart, 
-                        label: "Sales History", 
-                        path: "/sales", 
-                        description: "Transaction History" 
+                      {
+                        icon: FiBarChart,
+                        label: "Sales History",
+                        path: "/sales",
+                        description: "Transaction History",
                       },
-                      { 
-                        icon: FiRotateCcw, 
-                        label: "Refunds", 
-                        path: "/refunds", 
-                        description: "Process Refunds" 
+                      {
+                        icon: FiRotateCcw,
+                        label: "Refunds",
+                        path: "/refunds",
+                        description: "Process Refunds",
                       },
-                      { 
-                        icon: FiBarChart, 
-                        label: "Reports", 
-                        path: "/reports", 
-                        description: "Business Insights" 
+                      {
+                        icon: FiBarChart,
+                        label: "Reports",
+                        path: "/reports",
+                        description: "Business Insights",
                       },
-                      { 
-                        icon: FiBell, 
-                        label: "Notifications", 
-                        path: "/notifications", 
-                        description: "System Alerts" 
+                      {
+                        icon: FiBell,
+                        label: "Notifications",
+                        path: "/notifications",
+                        description: "System Alerts",
                       },
-                      { 
-                        icon: FiShield, 
-                        label: "Admin Panel", 
-                        path: "/admin", 
-                        description: "System Administration" 
+                      {
+                        icon: FiShield,
+                        label: "Admin Panel",
+                        path: "/admin",
+                        description: "System Administration",
                       },
-                      { 
-                        icon: FiSettings, 
-                        label: "Settings", 
-                        path: "/settings", 
-                        description: "App Preferences" 
+                      {
+                        icon: FiSettings,
+                        label: "Settings",
+                        path: "/settings",
+                        description: "App Preferences",
                       },
                     ].map((item, index) => (
                       <motion.button
@@ -249,13 +251,19 @@ const MobileLayout = () => {
                         </div>
                         <div className="mobile-nav-content">
                           <div className="mobile-nav-label">{item.label}</div>
-                          <div className="mobile-nav-description">{item.description}</div>
+                          <div className="mobile-nav-description">
+                            {item.description}
+                          </div>
                         </div>
                         {location.pathname === item.path && (
                           <motion.div
                             layoutId="activeMobileNav"
                             className="mobile-nav-indicator"
-                            transition={{ type: "spring", damping: 15, stiffness: 300 }}
+                            transition={{
+                              type: "spring",
+                              damping: 15,
+                              stiffness: 300,
+                            }}
                           />
                         )}
                       </motion.button>

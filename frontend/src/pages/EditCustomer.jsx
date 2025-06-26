@@ -226,31 +226,41 @@ function EditCustomer() {
         return (
           <div
             className={isMobile ? "mobile-card" : ""}
-            style={isMobile ? {} : {
-              backgroundColor: "white",
-              borderRadius: "8px",
-              padding: "16px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-              border: "1px solid #f1f5f9",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    backgroundColor: "white",
+                    borderRadius: "8px",
+                    padding: "16px",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                    border: "1px solid #f1f5f9",
+                  }
+            }
           >
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile
+                  ? "1fr"
+                  : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
               <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
                   className={isMobile ? "mobile-form-label" : ""}
-                  style={isMobile ? {} : {
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   First Name *
                 </label>
@@ -260,16 +270,20 @@ function EditCustomer() {
                   value={formData.firstName}
                   onChange={handleInputChange}
                   className={isMobile ? "mobile-form-input" : ""}
-                  style={isMobile ? {} : {
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.firstName
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.firstName
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter first name"
                 />
                 {errors.firstName && (
@@ -854,40 +868,55 @@ function EditCustomer() {
     }
   };
   return (
-    <div className={isMobile ? "mobile-container" : ""} style={isMobile ? {} : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+    <div
+      className={isMobile ? "mobile-container" : ""}
+      style={
+        isMobile
+          ? {}
+          : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }
+      }
+    >
       {/* Compact Page Header with Back Button */}
       <div
         className={isMobile ? "mobile-card" : ""}
-        style={isMobile ? {} : {
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "16px",
-          padding: "12px 16px",
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          border: "1px solid #f1f5f9",
-        }}
+        style={
+          isMobile
+            ? {}
+            : {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+                padding: "12px 16px",
+                backgroundColor: "white",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                border: "1px solid #f1f5f9",
+              }
+        }
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() => navigate("/customers")}
             className={isMobile ? "mobile-action-button secondary" : ""}
-            style={isMobile ? {} : {
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              backgroundColor: "#f8fafc",
-              color: "#64748b",
-              border: "1px solid #e2e8f0",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    backgroundColor: "#f8fafc",
+                    color: "#64748b",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }
+            }
           >
             <div className={isMobile ? "mobile-nav-icon" : ""}>
               <FiArrowLeft size={14} />

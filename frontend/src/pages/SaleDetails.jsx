@@ -26,7 +26,7 @@ import "../styles/mobile.css";
 function SaleDetails() {
   // Mobile detection hook
   const isMobile = useIsMobile();
-  
+
   // Settings store for currency
   const { settings } = useSettingsStore();
   const { currency } = settings;
@@ -539,40 +539,52 @@ Email: info@elithpharmacy.com`;
   return (
     <div
       className={isMobile ? "mobile-container" : ""}
-      style={isMobile ? {} : {
-        padding: "24px",
-        backgroundColor: "#f8fafc",
-        minHeight: "100vh",
-      }}
+      style={
+        isMobile
+          ? {}
+          : {
+              padding: "24px",
+              backgroundColor: "#f8fafc",
+              minHeight: "100vh",
+            }
+      }
     >
       {/* Header */}
       <div
         className={isMobile ? "mobile-card" : ""}
-        style={isMobile ? { marginBottom: "16px" } : {
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-        }}
+        style={
+          isMobile
+            ? { marginBottom: "16px" }
+            : {
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "32px",
+              }
+        }
       >
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={() => navigate("/sales")}
             className={isMobile ? "mobile-action-button secondary" : ""}
-            style={isMobile ? {} : {
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "#6b7280",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-              marginRight: "16px",
-            }}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 16px",
+                    backgroundColor: "white",
+                    color: "#6b7280",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    marginRight: "16px",
+                  }
+            }
           >
             <div className={isMobile ? "mobile-nav-icon" : ""}>
               <FiArrowLeft size={16} />

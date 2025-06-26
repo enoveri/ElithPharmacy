@@ -968,7 +968,11 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.6) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   z-index: 9998 !important;
@@ -1256,15 +1260,15 @@
     width: calc(100vw - 40px);
     max-width: 300px;
   }
-  
+
   .mobile-sidebar-header {
     padding: 20px;
   }
-  
+
   .mobile-sidebar-nav {
     padding: 0 20px 20px;
   }
-  
+
   .mobile-sidebar-footer {
     padding: 20px;
   }
@@ -1282,7 +1286,7 @@
   .mobile-nav-item {
     border: 2px solid rgba(255, 255, 255, 0.3);
   }
-  
+
   .mobile-nav-item.active {
     border-color: white;
   }

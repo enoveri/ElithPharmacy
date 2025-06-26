@@ -30,7 +30,7 @@ import "../styles/mobile.css";
 const Settings = () => {
   // Mobile detection hook
   const isMobile = useIsMobile();
-  
+
   // Get current user from Supabase auth
   const [user, setUser] = useState(null);
 
@@ -85,7 +85,7 @@ const Settings = () => {
         const defaultSettings = {
           user_id: user?.id,
           store_name: "My Pharmacy",
-          pharmacy_name: "My Pharmacy", 
+          pharmacy_name: "My Pharmacy",
           address: "",
           phone: "",
           email: user?.email || "",
@@ -108,14 +108,17 @@ const Settings = () => {
 
         setSettings(defaultSettings);
         setFormSettings(defaultSettings);
-        
+
         // Create default settings in database
         const { error: createError } = await supabase
           .from("settings")
           .insert(defaultSettings);
-          
+
         if (createError) {
-          console.error("❌ [Settings] Error creating default settings:", createError);
+          console.error(
+            "❌ [Settings] Error creating default settings:",
+            createError
+          );
         }
       } else {
         setSettings(data);
@@ -148,7 +151,7 @@ const Settings = () => {
 
       setSettings(formSettings);
       setMessage({ type: "success", text: "Settings saved successfully!" });
-      
+
       // Clear message after 3 seconds
       setTimeout(() => setMessage({ type: "", text: "" }), 3000);
     } catch (err) {
@@ -186,26 +189,38 @@ const Settings = () => {
   }
 
   return (
-    <div className={`${isMobile ? 'mobile-container' : 'min-h-screen bg-gray-50'} ${isMobile ? 'p-4' : 'p-6'}`}>
+    <div
+      className={`${isMobile ? "mobile-container" : "min-h-screen bg-gray-50"} ${isMobile ? "p-4" : "p-6"}`}
+    >
       {/* Header Section */}
-      <div className={`${isMobile ? 'mb-6' : 'mb-8'}`}>
-        <div className={`flex items-center ${isMobile ? 'flex-col space-y-4' : 'justify-between'}`}>
+      <div className={`${isMobile ? "mb-6" : "mb-8"}`}>
+        <div
+          className={`flex items-center ${isMobile ? "flex-col space-y-4" : "justify-between"}`}
+        >
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
               <FiSettingsIcon className="h-6 w-6 text-white" />
             </div>
-            <div className={isMobile ? 'text-center' : ''}>
-              <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-gray-900`}>Settings</h1>
-              <p className="text-sm text-gray-600">Configure your pharmacy system preferences</p>
+            <div className={isMobile ? "text-center" : ""}>
+              <h1
+                className={`${isMobile ? "text-xl" : "text-2xl"} font-bold text-gray-900`}
+              >
+                Settings
+              </h1>
+              <p className="text-sm text-gray-600">
+                Configure your pharmacy system preferences
+              </p>
             </div>
           </div>
-          
+
           {/* Action Buttons */}
-          <div className={`flex items-center ${isMobile ? 'w-full justify-center space-x-3' : 'space-x-3'}`}>
+          <div
+            className={`flex items-center ${isMobile ? "w-full justify-center space-x-3" : "space-x-3"}`}
+          >
             <button
               onClick={handleResetSettings}
               disabled={isLoading}
-              className={`flex items-center gap-2 ${isMobile ? 'px-4 py-3 text-sm flex-1' : 'px-5 py-2.5'} bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-xl transition-all duration-200 font-medium disabled:opacity-50`}
+              className={`flex items-center gap-2 ${isMobile ? "px-4 py-3 text-sm flex-1" : "px-5 py-2.5"} bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-xl transition-all duration-200 font-medium disabled:opacity-50`}
             >
               <FiRefreshCw className="h-4 w-4" />
               <span>Reset</span>
@@ -213,22 +228,24 @@ const Settings = () => {
             <button
               onClick={handleSaveSettings}
               disabled={saving || isLoading}
-              className={`flex items-center gap-2 ${isMobile ? 'px-4 py-3 text-sm flex-1' : 'px-5 py-2.5'} bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50`}
+              className={`flex items-center gap-2 ${isMobile ? "px-4 py-3 text-sm flex-1" : "px-5 py-2.5"} bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50`}
             >
               <FiSave className="h-4 w-4" />
-              <span>{saving ? 'Saving...' : 'Save'}</span>
+              <span>{saving ? "Saving..." : "Save"}</span>
             </button>
           </div>
         </div>
       </div>
-      
+
       {/* Message Display */}
       {message.text && (
-        <div className={`${isMobile ? 'mb-4' : 'mb-6'} p-4 rounded-xl border ${
-          message.type === "success" 
-            ? 'bg-green-50/80 border-green-200 text-green-800' 
-            : 'bg-red-50/80 border-red-200 text-red-800'
-        } backdrop-blur-sm`}>
+        <div
+          className={`${isMobile ? "mb-4" : "mb-6"} p-4 rounded-xl border ${
+            message.type === "success"
+              ? "bg-green-50/80 border-green-200 text-green-800"
+              : "bg-red-50/80 border-red-200 text-red-800"
+          } backdrop-blur-sm`}
+        >
           <div className="flex items-center space-x-2">
             {message.type === "success" ? (
               <FiCheck className="h-4 w-4" />
@@ -241,21 +258,52 @@ const Settings = () => {
       )}
 
       {/* Main Content */}
-      <div className={`${isMobile ? 'space-y-6' : 'flex gap-6'}`}>
+      <div className={`${isMobile ? "space-y-6" : "flex gap-6"}`}>
         {/* Sidebar Navigation */}
-        <div className={`${isMobile ? 'w-full' : 'w-80 flex-shrink-0'}`}>
-          <div className={`${isMobile ? 'glass-card p-4' : 'bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl'}`}>
-            <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 ${isMobile ? 'mb-3' : 'mb-4'}`}>
+        <div className={`${isMobile ? "w-full" : "w-80 flex-shrink-0"}`}>
+          <div
+            className={`${isMobile ? "glass-card p-4" : "bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl"}`}
+          >
+            <h3
+              className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 ${isMobile ? "mb-3" : "mb-4"}`}
+            >
               Settings Categories
             </h3>
 
-            <div className={`${isMobile ? 'grid grid-cols-2 gap-2' : 'flex flex-col space-y-2'}`}>
+            <div
+              className={`${isMobile ? "grid grid-cols-2 gap-2" : "flex flex-col space-y-2"}`}
+            >
               {[
-                { id: "general", label: "General", icon: FiSettingsIcon, description: "Basic settings" },
-                { id: "business", label: "Business", icon: FiUser, description: "Store info" },
-                { id: "notifications", label: "Alerts", icon: FiBell, description: "Notifications" },
-                { id: "appearance", label: "Display", icon: FiMoon, description: "Theme & UI" },
-                { id: "system", label: "System", icon: FiDatabase, description: "Advanced" },
+                {
+                  id: "general",
+                  label: "General",
+                  icon: FiSettingsIcon,
+                  description: "Basic settings",
+                },
+                {
+                  id: "business",
+                  label: "Business",
+                  icon: FiUser,
+                  description: "Store info",
+                },
+                {
+                  id: "notifications",
+                  label: "Alerts",
+                  icon: FiBell,
+                  description: "Notifications",
+                },
+                {
+                  id: "appearance",
+                  label: "Display",
+                  icon: FiMoon,
+                  description: "Theme & UI",
+                },
+                {
+                  id: "system",
+                  label: "System",
+                  icon: FiDatabase,
+                  description: "Advanced",
+                },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -265,18 +313,28 @@ const Settings = () => {
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
                     className={`${
-                      isMobile ? 'p-3 flex-col' : 'p-4 flex-row'
+                      isMobile ? "p-3 flex-col" : "p-4 flex-row"
                     } flex items-center gap-3 rounded-xl transition-all duration-200 font-medium ${
                       isActive
-                        ? 'bg-blue-50/80 text-blue-700 border border-blue-200/50'
-                        : 'text-gray-600 hover:bg-gray-50/70 hover:text-gray-800'
+                        ? "bg-blue-50/80 text-blue-700 border border-blue-200/50"
+                        : "text-gray-600 hover:bg-gray-50/70 hover:text-gray-800"
                     }`}
                   >
-                    <Icon className={`${isMobile ? 'h-5 w-5' : 'h-4 w-4'} ${isActive ? 'text-blue-600' : ''}`} />
-                    <div className={`${isMobile ? 'text-center' : 'text-left'}`}>
-                      <div className={`${isMobile ? 'text-xs' : 'text-sm'} font-semibold`}>{tab.label}</div>
+                    <Icon
+                      className={`${isMobile ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "text-blue-600" : ""}`}
+                    />
+                    <div
+                      className={`${isMobile ? "text-center" : "text-left"}`}
+                    >
+                      <div
+                        className={`${isMobile ? "text-xs" : "text-sm"} font-semibold`}
+                      >
+                        {tab.label}
+                      </div>
                       {!isMobile && (
-                        <div className="text-xs text-gray-500">{tab.description}</div>
+                        <div className="text-xs text-gray-500">
+                          {tab.description}
+                        </div>
                       )}
                     </div>
                   </button>
@@ -287,28 +345,38 @@ const Settings = () => {
         </div>
 
         {/* Main Content */}
-        <div className={`${isMobile ? 'w-full' : 'flex-1'}`}>
-          <div className={`${isMobile ? 'glass-card p-4' : 'bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl'}`}>
+        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
+          <div
+            className={`${isMobile ? "glass-card p-4" : "bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl"}`}
+          >
             {/* Content Area */}
             {activeTab === "general" && (
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <FiSettingsIcon className="h-6 w-6 text-blue-600" />
-                  <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900`}>
+                  <h2
+                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
+                  >
                     General Settings
                   </h2>
                 </div>
 
-                <div className={`${isMobile ? 'space-y-6' : 'grid grid-cols-1 lg:grid-cols-2 gap-8'}`}>
+                <div
+                  className={`${isMobile ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-2 gap-8"}`}
+                >
                   {/* Business Information */}
                   <div className="space-y-6">
-                    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}>
+                    <h3
+                      className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}
+                    >
                       Business Information
                     </h3>
 
-                    <div className={`space-y-${isMobile ? '5' : '5'}`}>
+                    <div className={`space-y-${isMobile ? "5" : "5"}`}>
                       <div>
-                        <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                        <label
+                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                        >
                           Business Name
                         </label>
                         <input
@@ -317,13 +385,15 @@ const Settings = () => {
                           onChange={(e) =>
                             updateFormSetting("pharmacy_name", e.target.value)
                           }
-                          className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                           placeholder="Enter your pharmacy name"
                         />
                       </div>
 
                       <div>
-                        <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                        <label
+                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                        >
                           Address
                         </label>
                         <textarea
@@ -332,14 +402,18 @@ const Settings = () => {
                             updateFormSetting("address", e.target.value)
                           }
                           rows={isMobile ? 4 : 3}
-                          className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 resize-none`}
+                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 resize-none`}
                           placeholder="Enter your pharmacy address"
                         />
                       </div>
 
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-2 gap-4'}`}>
+                      <div
+                        className={`grid ${isMobile ? "grid-cols-1 gap-5" : "grid-cols-2 gap-4"}`}
+                      >
                         <div>
-                          <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                          <label
+                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                          >
                             Phone Number
                           </label>
                           <input
@@ -348,13 +422,15 @@ const Settings = () => {
                             onChange={(e) =>
                               updateFormSetting("phone", e.target.value)
                             }
-                            className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                             placeholder="Enter phone number"
                           />
                         </div>
 
                         <div>
-                          <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                          <label
+                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                          >
                             Email Address
                           </label>
                           <input
@@ -363,23 +439,28 @@ const Settings = () => {
                             onChange={(e) =>
                               updateFormSetting("email", e.target.value)
                             }
-                            className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                             placeholder="Enter email address"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                        <label
+                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                        >
                           Pharmacy License Number
                         </label>
                         <input
                           type="text"
                           value={formSettings.pharmacy_license || ""}
                           onChange={(e) =>
-                            updateFormSetting("pharmacy_license", e.target.value)
+                            updateFormSetting(
+                              "pharmacy_license",
+                              e.target.value
+                            )
                           }
-                          className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                           placeholder="Enter pharmacy license number"
                         />
                       </div>
@@ -388,14 +469,20 @@ const Settings = () => {
 
                   {/* Operational Settings */}
                   <div className="space-y-6">
-                    <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}>
+                    <h3
+                      className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}
+                    >
                       Operational Settings
                     </h3>
 
-                    <div className={`space-y-${isMobile ? '5' : '5'}`}>
-                      <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-2 gap-4'}`}>
+                    <div className={`space-y-${isMobile ? "5" : "5"}`}>
+                      <div
+                        className={`grid ${isMobile ? "grid-cols-1 gap-5" : "grid-cols-2 gap-4"}`}
+                      >
                         <div>
-                          <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                          <label
+                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                          >
                             Currency
                           </label>
                           <select
@@ -403,7 +490,7 @@ const Settings = () => {
                             onChange={(e) =>
                               updateFormSetting("currency", e.target.value)
                             }
-                            className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
+                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
                           >
                             <option value="UGX">UGX - Ugandan Shilling</option>
                             <option value="USD">USD - US Dollar</option>
@@ -413,7 +500,9 @@ const Settings = () => {
                         </div>
 
                         <div>
-                          <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                          <label
+                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                          >
                             Tax Rate (%)
                           </label>
                           <input
@@ -423,16 +512,21 @@ const Settings = () => {
                             step="0.01"
                             value={formSettings.tax_rate || ""}
                             onChange={(e) =>
-                              updateFormSetting("tax_rate", parseFloat(e.target.value) || 0)
+                              updateFormSetting(
+                                "tax_rate",
+                                parseFloat(e.target.value) || 0
+                              )
                             }
-                            className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                             placeholder="18"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className={`block text-sm font-semibold text-gray-700 ${isMobile ? 'mb-3' : 'mb-2'}`}>
+                        <label
+                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
+                        >
                           Low Stock Threshold
                         </label>
                         <input
@@ -440,29 +534,43 @@ const Settings = () => {
                           min="1"
                           value={formSettings.low_stock_threshold || ""}
                           onChange={(e) =>
-                            updateFormSetting("low_stock_threshold", parseInt(e.target.value) || 10)
+                            updateFormSetting(
+                              "low_stock_threshold",
+                              parseInt(e.target.value) || 10
+                            )
                           }
-                          className={`w-full ${isMobile ? 'px-4 py-4 text-base' : 'px-4 py-3'} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
+                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
                           placeholder="10"
                         />
-                        <p className="text-xs text-gray-500 mt-2">Alert when product quantity falls below this number</p>
+                        <p className="text-xs text-gray-500 mt-2">
+                          Alert when product quantity falls below this number
+                        </p>
                       </div>
 
                       {/* Alert Settings */}
                       <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-gray-800">Alert Settings</h4>
-                        
+                        <h4 className="text-sm font-semibold text-gray-800">
+                          Alert Settings
+                        </h4>
+
                         <div className="space-y-3">
                           <div className="flex items-center justify-between p-3 bg-gray-50/70 rounded-xl border border-gray-100">
                             <div>
-                              <div className="text-sm font-semibold text-gray-700">Low Stock Alerts</div>
-                              <div className="text-xs text-gray-500">Get notified when products are running low</div>
+                              <div className="text-sm font-semibold text-gray-700">
+                                Low Stock Alerts
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Get notified when products are running low
+                              </div>
                             </div>
                             <input
                               type="checkbox"
                               checked={formSettings.low_stock_alerts || false}
                               onChange={(e) =>
-                                updateFormSetting("low_stock_alerts", e.target.checked)
+                                updateFormSetting(
+                                  "low_stock_alerts",
+                                  e.target.checked
+                                )
                               }
                               className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
                             />
@@ -470,14 +578,21 @@ const Settings = () => {
 
                           <div className="flex items-center justify-between p-3 bg-gray-50/70 rounded-xl border border-gray-100">
                             <div>
-                              <div className="text-sm font-semibold text-gray-700">Expiry Alerts</div>
-                              <div className="text-xs text-gray-500">Get notified about expiring products</div>
+                              <div className="text-sm font-semibold text-gray-700">
+                                Expiry Alerts
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Get notified about expiring products
+                              </div>
                             </div>
                             <input
                               type="checkbox"
                               checked={formSettings.expiry_alerts || false}
                               onChange={(e) =>
-                                updateFormSetting("expiry_alerts", e.target.checked)
+                                updateFormSetting(
+                                  "expiry_alerts",
+                                  e.target.checked
+                                )
                               }
                               className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
                             />
@@ -495,13 +610,17 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <FiUser className="h-6 w-6 text-blue-600" />
-                  <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900`}>
+                  <h2
+                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
+                  >
                     Business Information
                   </h2>
                 </div>
                 <div className="text-center py-12">
                   <FiUser className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Business settings will be available here.</p>
+                  <p className="text-gray-500">
+                    Business settings will be available here.
+                  </p>
                 </div>
               </div>
             )}
@@ -510,13 +629,17 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <FiBell className="h-6 w-6 text-blue-600" />
-                  <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900`}>
+                  <h2
+                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
+                  >
                     Notification Settings
                   </h2>
                 </div>
                 <div className="text-center py-12">
                   <FiBell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Notification settings will be available here.</p>
+                  <p className="text-gray-500">
+                    Notification settings will be available here.
+                  </p>
                 </div>
               </div>
             )}
@@ -525,13 +648,17 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <FiMoon className="h-6 w-6 text-blue-600" />
-                  <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900`}>
+                  <h2
+                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
+                  >
                     Appearance Settings
                   </h2>
                 </div>
                 <div className="text-center py-12">
                   <FiMoon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">Appearance settings will be available here.</p>
+                  <p className="text-gray-500">
+                    Appearance settings will be available here.
+                  </p>
                 </div>
               </div>
             )}
@@ -540,13 +667,17 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="flex items-center space-x-3">
                   <FiDatabase className="h-6 w-6 text-blue-600" />
-                  <h2 className={`${isMobile ? 'text-lg' : 'text-2xl'} font-bold text-gray-900`}>
+                  <h2
+                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
+                  >
                     System Settings
                   </h2>
                 </div>
                 <div className="text-center py-12">
                   <FiDatabase className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">System settings will be available here.</p>
+                  <p className="text-gray-500">
+                    System settings will be available here.
+                  </p>
                 </div>
               </div>
             )}
