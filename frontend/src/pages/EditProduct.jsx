@@ -16,8 +16,12 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useSettings } from "../contexts/SettingsContext";
+import { useIsMobile } from "../hooks/useIsMobile";
+import "../styles/mobile.css";
 
 function EditProduct() {
+  // Mobile detection hook
+  const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
   const { settings } = useSettings();

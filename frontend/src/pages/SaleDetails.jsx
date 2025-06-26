@@ -20,8 +20,13 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useSalesStore, useSettingsStore } from "../store";
+import { useIsMobile } from "../hooks/useIsMobile";
+import "../styles/mobile.css";
 
 function SaleDetails() {
+  // Mobile detection hook
+  const isMobile = useIsMobile();
+  
   // Settings store for currency
   const { settings } = useSettingsStore();
   const { currency } = settings;
@@ -533,7 +538,8 @@ Email: info@elithpharmacy.com`;
 
   return (
     <div
-      style={{
+      className={isMobile ? "mobile-container" : ""}
+      style={isMobile ? {} : {
         padding: "24px",
         backgroundColor: "#f8fafc",
         minHeight: "100vh",
@@ -541,7 +547,8 @@ Email: info@elithpharmacy.com`;
     >
       {/* Header */}
       <div
-        style={{
+        className={isMobile ? "mobile-card" : ""}
+        style={isMobile ? { marginBottom: "16px" } : {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -551,7 +558,8 @@ Email: info@elithpharmacy.com`;
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={() => navigate("/sales")}
-            style={{
+            className={isMobile ? "mobile-action-button secondary" : ""}
+            style={isMobile ? {} : {
               display: "flex",
               alignItems: "center",
               gap: "8px",
@@ -566,13 +574,15 @@ Email: info@elithpharmacy.com`;
               marginRight: "16px",
             }}
           >
-            <FiArrowLeft size={16} />
-            Back to Sales
+            <div className={isMobile ? "mobile-nav-icon" : ""}>
+              <FiArrowLeft size={16} />
+            </div>
+            {isMobile ? "Back" : "Back to Sales"}
           </button>
           <div>
             <h1
               style={{
-                fontSize: "28px",
+                fontSize: isMobile ? "20px" : "28px",
                 fontWeight: "bold",
                 color: "#1f2937",
                 margin: "0 0 4px 0",

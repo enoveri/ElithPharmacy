@@ -13,8 +13,12 @@ import {
   FiAlertCircle,
 } from "react-icons/fi";
 import { dbHelpers } from "../lib/db";
+import { useIsMobile } from "../hooks/useIsMobile";
+import "../styles/mobile.css";
 
 function EditCustomer() {
+  // Mobile detection hook
+  const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -221,7 +225,8 @@ function EditCustomer() {
       case 1:
         return (
           <div
-            style={{
+            className={isMobile ? "mobile-card" : ""}
+            style={isMobile ? {} : {
               backgroundColor: "white",
               borderRadius: "8px",
               padding: "16px",
@@ -232,13 +237,14 @@ function EditCustomer() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={isMobile ? {} : {
                     display: "block",
                     fontSize: "13px",
                     fontWeight: "500",
@@ -253,7 +259,8 @@ function EditCustomer() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleInputChange}
-                  style={{
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={isMobile ? {} : {
                     width: "100%",
                     padding: "10px 12px",
                     border: errors.firstName
@@ -847,10 +854,11 @@ function EditCustomer() {
     }
   };
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+    <div className={isMobile ? "mobile-container" : ""} style={isMobile ? {} : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
       {/* Compact Page Header with Back Button */}
       <div
-        style={{
+        className={isMobile ? "mobile-card" : ""}
+        style={isMobile ? {} : {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -865,7 +873,8 @@ function EditCustomer() {
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() => navigate("/customers")}
-            style={{
+            className={isMobile ? "mobile-action-button secondary" : ""}
+            style={isMobile ? {} : {
               display: "flex",
               alignItems: "center",
               gap: "6px",
@@ -880,16 +889,19 @@ function EditCustomer() {
               transition: "all 0.2s",
             }}
           >
-            <FiArrowLeft size={14} />
+            <div className={isMobile ? "mobile-nav-icon" : ""}>
+              <FiArrowLeft size={14} />
+            </div>
             Back
           </button>
           <div>
             <h1
               style={{
-                fontSize: "18px",
+                fontSize: isMobile ? "20px" : "18px",
                 fontWeight: "600",
-                color: "#1f2937",
+                color: isMobile ? "white" : "#1f2937",
                 margin: "0",
+                textShadow: isMobile ? "0 2px 4px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
               {id ? "Edit Customer" : "Add Customer"} - Step {currentStep} of{" "}

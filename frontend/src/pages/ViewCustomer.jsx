@@ -17,8 +17,12 @@ import {
   FiPackage,
 } from "react-icons/fi";
 import { useSettings } from "../contexts/SettingsContext";
+import { useIsMobile } from "../hooks/useIsMobile";
+import "../styles/mobile.css";
 
 function ViewCustomer() {
+  // Mobile detection hook
+  const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
   const { settings } = useSettings();
@@ -166,7 +170,8 @@ function ViewCustomer() {
 
   return (
     <div
-      style={{
+      className={isMobile ? "mobile-container" : ""}
+      style={isMobile ? {} : {
         padding: "24px",
         backgroundColor: "var(--color-bg-main)",
         minHeight: "100vh",
@@ -174,7 +179,8 @@ function ViewCustomer() {
     >
       {/* Header */}
       <div
-        style={{
+        className={isMobile ? "mobile-card" : ""}
+        style={isMobile ? { marginBottom: "16px" } : {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -184,7 +190,8 @@ function ViewCustomer() {
         <div style={{ display: "flex", alignItems: "center" }}>
           <button
             onClick={() => navigate("/customers")}
-            style={{
+            className={isMobile ? "mobile-action-button secondary" : ""}
+            style={isMobile ? {} : {
               display: "flex",
               alignItems: "center",
               gap: "8px",
