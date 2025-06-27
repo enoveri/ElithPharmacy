@@ -17,6 +17,7 @@ import {
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
 import { useAuth } from "../../contexts/AuthContext";
+import { useUserRole } from "../../hooks/useUserRole";
 
 const Sidebar = ({
   collapsed = false,
@@ -28,6 +29,7 @@ const Sidebar = ({
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { userRole, isAdmin, loading: roleLoading } = useUserRole();
   const isActive = (path) => location.pathname === path;
 
   // Handle navigation click on mobile
@@ -56,7 +58,8 @@ const Sidebar = ({
     { path: "/sales", label: "Sales", icon: FiList },
     { path: "/customers", label: "Customers", icon: FiUser },
     { path: "/reports", label: "Reports", icon: FiBarChart },
-    { path: "/admin", label: "Admin Panel", icon: FiShield },
+    // Admin Panel - only show for admin users
+    ...(isAdmin ? [{ path: "/admin", label: "Admin Panel", icon: FiShield }] : []),
     { path: "/settings", label: "Settings", icon: FiRotateCcw },
   ];
   return (
