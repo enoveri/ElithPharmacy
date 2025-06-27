@@ -4,8 +4,13 @@ import { useState, useEffect } from "react";
 import { FiArrowLeft, FiArrowRight, FiCheck, FiPackage } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
+import { useIsMobile } from "../hooks/useIsMobile";
+import "../styles/mobile.css";
 
 function AddProduct() {
+  // Mobile detection hook
+  const isMobile = useIsMobile();
+
   // Settings store for currency
   const { settings } = useSettingsStore();
   const { currency } = settings;
@@ -111,13 +116,18 @@ function AddProduct() {
 
   const renderBasicInfoStep = () => (
     <div
-      style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        padding: "16px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        border: "1px solid #f1f5f9",
-      }}
+      className={isMobile ? "mobile-card" : ""}
+      style={
+        isMobile
+          ? {}
+          : {
+              backgroundColor: "white",
+              borderRadius: "8px",
+              padding: "16px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: "1px solid #f1f5f9",
+            }
+      }
     >
       <div
         style={{
@@ -126,14 +136,19 @@ function AddProduct() {
           gap: "16px",
         }}
       >
-        <div>
+        <div className={isMobile ? "mobile-form-group" : ""}>
           <label
-            style={{
-              display: "block",
-              fontSize: "13px",
-              fontWeight: "500",
-              marginBottom: "6px",
-            }}
+            className={isMobile ? "mobile-form-label" : ""}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                  }
+            }
           >
             Product Name *
           </label>
@@ -143,26 +158,36 @@ function AddProduct() {
             onChange={(e) =>
               setProductData({ ...productData, name: e.target.value })
             }
-            style={{
-              width: "100%",
-              padding: "10px 12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "6px",
-              fontSize: "13px",
-            }}
+            className={isMobile ? "mobile-form-input" : ""}
+            style={
+              isMobile
+                ? {}
+                : {
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                  }
+            }
             placeholder="Enter product name"
             required
           />
         </div>
 
-        <div>
+        <div className={isMobile ? "mobile-form-group" : ""}>
           <label
-            style={{
-              display: "block",
-              fontSize: "13px",
-              fontWeight: "500",
-              marginBottom: "6px",
-            }}
+            className={isMobile ? "mobile-form-label" : ""}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    marginBottom: "6px",
+                  }
+            }
           >
             Category *
           </label>
@@ -174,13 +199,18 @@ function AddProduct() {
               onChange={(e) =>
                 setProductData({ ...productData, category: e.target.value })
               }
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "13px",
-              }}
+              className={isMobile ? "mobile-form-input" : ""}
+              style={
+                isMobile
+                  ? {}
+                  : {
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                    }
+              }
               placeholder="Select or type category"
               required
             />
@@ -1186,17 +1216,15 @@ function AddProduct() {
 
       console.log("💾 Prepared product for database:", productForDb);
 
-      // Create product in database
-      const newProduct = await dataService.products.create(productForDb);
+      // Create product using store function (this will call dataService internally)
+      const result = await addProduct(productForDb);
 
-      if (!newProduct) {
-        throw new Error("Failed to create product - no data returned");
+      if (!result.success) {
+        throw new Error(result.error || "Failed to create product");
       }
 
+      const newProduct = result.product;
       console.log("✅ Product created successfully:", newProduct);
-
-      // Update the store with new product
-      addProduct(newProduct);
 
       if (isFromPurchaseOrder && purchaseOrderData) {
         // Handle purchase order creation
@@ -1258,58 +1286,86 @@ function AddProduct() {
     }
   };
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "16px" }}>
+    <div
+      className={isMobile ? "mobile-container" : ""}
+      style={
+        isMobile
+          ? {}
+          : { maxWidth: "1200px", margin: "0 auto", padding: "16px" }
+      }
+    >
       {/* Compact Page Header */}
       <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "16px",
-          padding: "12px 16px",
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          border: "1px solid #f1f5f9",
-        }}
+        className={isMobile ? "mobile-card" : ""}
+        style={
+          isMobile
+            ? {}
+            : {
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "16px",
+                padding: "12px 16px",
+                backgroundColor: "white",
+                borderRadius: "8px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                border: "1px solid #f1f5f9",
+              }
+        }
       >
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           <button
             onClick={() =>
               navigate(isFromPurchaseOrder ? "/purchases" : "/inventory")
             }
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              padding: "6px 12px",
-              backgroundColor: "#f8fafc",
-              color: "#64748b",
-              border: "1px solid #e2e8f0",
-              borderRadius: "6px",
-              fontSize: "13px",
-              fontWeight: "500",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
+            className={isMobile ? "mobile-action-button secondary" : ""}
+            style={
+              isMobile
+                ? {}
+                : {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    padding: "6px 12px",
+                    backgroundColor: "#f8fafc",
+                    color: "#64748b",
+                    border: "1px solid #e2e8f0",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                  }
+            }
           >
-            <FiArrowLeft size={14} />
-            Back to {isFromPurchaseOrder ? "Purchases" : "Inventory"}
+            <div className={isMobile ? "mobile-nav-icon" : ""}>
+              <FiArrowLeft size={14} />
+            </div>
+            {isMobile
+              ? "Back"
+              : `Back to ${isFromPurchaseOrder ? "Purchases" : "Inventory"}`}
           </button>
           <div>
             <h1
               style={{
-                fontSize: "18px",
+                fontSize: isMobile ? "20px" : "18px",
                 fontWeight: "600",
-                color: "#1f2937",
+                color: isMobile ? "white" : "#1f2937",
                 margin: "0",
+                textShadow: isMobile ? "0 2px 4px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
               {isFromPurchaseOrder
                 ? "Add Product via Purchase Order"
                 : "Add New Product"}
             </h1>
-            <p style={{ color: "#6b7280", fontSize: "12px", margin: "0" }}>
+            <p
+              style={{
+                color: isMobile ? "rgba(255, 255, 255, 0.8)" : "#6b7280",
+                fontSize: "12px",
+                margin: "0",
+              }}
+            >
               Step {currentStep + 1} of {steps.length}: {steps[currentStep]}
             </p>
           </div>
@@ -1403,6 +1459,7 @@ function AddProduct() {
         }}
       >
         <button
+          type="button"
           onClick={handlePrevious}
           disabled={currentStep === 0}
           style={{
@@ -1425,6 +1482,7 @@ function AddProduct() {
 
         {currentStep === steps.length - 1 ? (
           <button
+            type="button"
             onClick={handleSubmit}
             disabled={loading || !validateStep(currentStep)}
             style={{
@@ -1470,6 +1528,7 @@ function AddProduct() {
           </button>
         ) : (
           <button
+            type="button"
             onClick={handleNext}
             disabled={!validateStep(currentStep)}
             style={{

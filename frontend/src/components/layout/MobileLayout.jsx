@@ -12,6 +12,9 @@ import {
   FiUser,
   FiX,
   FiMenu,
+  FiShield,
+  FiRotateCcw,
+  FiLogOut,
 } from "react-icons/fi";
 import Header from "./Header";
 
@@ -53,6 +56,9 @@ const MobileLayout = () => {
       "/settings": { title: "Settings", subtitle: "App preferences" },
       "/purchases": { title: "Purchases", subtitle: "Manage orders" },
       "/sales": { title: "Sales", subtitle: "Transaction history" },
+      "/refunds": { title: "Refunds", subtitle: "Process refunds" },
+      "/notifications": { title: "Notifications", subtitle: "System alerts" },
+      "/admin": { title: "Admin Panel", subtitle: "System administration" },
     };
 
     // Handle dynamic routes
@@ -113,84 +119,130 @@ const MobileLayout = () => {
       <AnimatePresence>
         {showMobileMenu && (
           <>
-            {/* Backdrop */}
+            {/* Removed overlay */}
+            {/* Enhanced Mobile Side Menu using CSS classes */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-              className="fixed inset-0 bg-black bg-opacity-50 z-40"
-            />
-
-            {/* Side Menu */}
-            <motion.div
-              initial={{ x: -300 }}
+              initial={{ x: -350 }}
               animate={{ x: 0 }}
-              exit={{ x: -300 }}
+              exit={{ x: -350 }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50 overflow-y-auto"
+              className="mobile-sidebar"
             >
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                      <span className="text-white font-bold">E</span>
+              <div className="mobile-sidebar-content">
+                {/* Header Section */}
+                <div className="mobile-sidebar-header">
+                  <div className="mobile-sidebar-logo">
+                    <div className="mobile-sidebar-brand">
+                      <div className="mobile-sidebar-icon">E</div>
+                      <div>
+                        <h2 className="mobile-sidebar-title">Elith Pharmacy</h2>
+                        <p className="mobile-sidebar-subtitle">
+                          Management System
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h2 className="font-bold text-lg">Elith Pharmacy</h2>
-                      <p className="text-sm text-gray-500">Management System</p>
-                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      onClick={() => setShowMobileMenu(false)}
+                      className="mobile-sidebar-close"
+                    >
+                      <FiX size={24} />
+                    </motion.button>
                   </div>
-                  <button
-                    onClick={() => setShowMobileMenu(false)}
-                    className="p-2 rounded-lg hover:bg-gray-100"
-                  >
-                    <FiX size={24} />
-                  </button>
                 </div>
 
-                {/* Menu Items */}
-                <nav className="space-y-2">
-                  {[
-                    { icon: FiHome, label: "Dashboard", path: "/" },
-                    {
-                      icon: FiShoppingCart,
-                      label: "Point of Sale",
-                      path: "/pos",
-                    },
-                    { icon: FiPackage, label: "Inventory", path: "/inventory" },
-                    { icon: FiUsers, label: "Customers", path: "/customers" },
-                    { icon: FiBarChart, label: "Reports", path: "/reports" },
-                    {
-                      icon: FiShoppingCart,
-                      label: "Purchases",
-                      path: "/purchases",
-                    },
-                    {
-                      icon: FiBarChart,
-                      label: "Sales History",
-                      path: "/sales",
-                    },
-                    { icon: FiSettings, label: "Settings", path: "/settings" },
-                  ].map((item) => (
-                    <motion.button
-                      key={item.path}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        navigate(item.path);
-                        setShowMobileMenu(false);
-                      }}
-                      className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${
-                        location.pathname === item.path
-                          ? "bg-blue-50 text-blue-600 border border-blue-200"
-                          : "hover:bg-gray-50"
-                      }`}
-                    >
-                      <item.icon size={20} />
-                      <span className="font-medium">{item.label}</span>
-                    </motion.button>
-                  ))}
+                {/* Navigation Items */}
+                <nav className="mobile-sidebar-nav" style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                  <div className="mobile-nav-grid mobile-nav-grid-expanded">
+                    {[
+                      {
+                        icon: FiHome,
+                        label: "Dashboard",
+                        path: "/",
+                      },
+                      {
+                        icon: FiShoppingCart,
+                        label: "Point of Sale",
+                        path: "/pos",
+                      },
+                      {
+                        icon: FiPackage,
+                        label: "Inventory",
+                        path: "/inventory",
+                      },
+                      {
+                        icon: FiUsers,
+                        label: "Customers",
+                        path: "/customers",
+                      },
+                      {
+                        icon: FiShoppingCart,
+                        label: "Purchases",
+                        path: "/purchases",
+                      },
+                      {
+                        icon: FiBarChart,
+                        label: "Sales History",
+                        path: "/sales",
+                      },
+                      {
+                        icon: FiRotateCcw,
+                        label: "Refunds",
+                        path: "/refunds",
+                      },
+                      {
+                        icon: FiBarChart,
+                        label: "Reports",
+                        path: "/reports",
+                      },
+                      {
+                        icon: FiBell,
+                        label: "Notifications",
+                        path: "/notifications",
+                      },
+                      {
+                        icon: FiShield,
+                        label: "Admin Panel",
+                        path: "/admin",
+                      },
+                      {
+                        icon: FiLogOut,
+                        label: "Logout",
+                        path: "/logout",
+                        isLogout: true,
+                      },
+                      {
+                        icon: FiSettings,
+                        label: "Settings",
+                        path: "/settings",
+                      },
+                    ].map((item, index) => (
+                      <motion.button
+                        key={item.path}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.04 }}
+                        whileHover={{ scale: 1.12 }}
+                        whileTap={{ scale: 0.94 }}
+                        onClick={() => {
+                          if (item.isLogout) {
+                            // TODO: Add logout logic here
+                            setShowMobileMenu(false);
+                          } else {
+                            navigate(item.path);
+                            setShowMobileMenu(false);
+                          }
+                        }}
+                        className={`mobile-nav-grid-item ${location.pathname === item.path ? "active" : ""} ${item.isLogout ? "logout" : ""}`}
+                      >
+                        <div className="mobile-nav-grid-icon">
+                          <item.icon size={22} />
+                        </div>
+                        <div className="mobile-nav-grid-label">{item.label}</div>
+                      </motion.button>
+                    ))}
+                  </div>
                 </nav>
               </div>
             </motion.div>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSpring, animated } from "@react-spring/web";
@@ -35,8 +36,12 @@ function MobileCustomers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, right: 0 });
+  
   // Pull-to-refresh animation
   const [{ y }, api] = useSpring(() => ({ y: 0 }));
+  
   // Load customers
   useEffect(() => {
     const loadCustomers = async () => {
@@ -59,6 +64,16 @@ function MobileCustomers() {
     };
 
     loadCustomers();
+  }, []);
+
+  // Prevent scrollbar flickering during initial render
+  useEffect(() => {
+    // Ensure consistent scrollbar space to prevent layout shifts
+    document.documentElement.style.scrollbarGutter = 'stable';
+    
+    return () => {
+      document.documentElement.style.scrollbarGutter = '';
+    };
   }, []);
 
   // Filter customers when search term or status changes
@@ -89,6 +104,20 @@ function MobileCustomers() {
 
     setFilteredCustomers(filtered);
   }, [searchTerm, selectedStatus, customers]);
+
+  // Click outside to close menu
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (openMenuId && !e.target.closest('.dropdown-menu') && !e.target.closest('.menu-button')) {
+        setOpenMenuId(null);
+      }
+    };
+    if (openMenuId) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [openMenuId]);
+  
   // Pull to refresh
   const handlePullToRefresh = async () => {
     setRefreshing(true);
@@ -118,6 +147,58 @@ function MobileCustomers() {
       setRefreshing(false);
     }
   };
+
+  const handleDeleteCustomer = async (customerId) => {
+    if (window.confirm("Are you sure you want to delete this customer?")) {
+      try {
+        await dataService.customers.delete(customerId);
+        const updatedCustomers = customers.filter(c => c.id !== customerId);
+        setCustomers(updatedCustomers);
+        setFilteredCustomers(updatedCustomers);
+        setOpenMenuId(null);
+      } catch (error) {
+        console.error("❌ [MobileCustomers] Error deleting customer:", error);
+        alert("Failed to delete customer. Please try again.");
+      }
+    }
+  };
+
+  const handleMenuClick = (customerId, event) => {
+    event.stopPropagation();
+    event.preventDefault();
+    
+    if (openMenuId === customerId) {
+      setOpenMenuId(null);
+      return;
+    }
+
+    // Calculate position relative to viewport with bounds checking
+    const rect = event.currentTarget.getBoundingClientRect();
+    const scrollY = window.scrollY || document.documentElement.scrollTop;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    // Calculate optimal position
+    const menuHeight = 200; // Approximate menu height
+    const menuWidth = 200; // Approximate menu width
+    
+    let top = rect.bottom + scrollY + 8;
+    let right = viewportWidth - rect.right;
+    
+    // Adjust if menu would go below viewport
+    if (top + menuHeight > scrollY + viewportHeight) {
+      top = rect.top + scrollY - menuHeight - 8;
+    }
+    
+    // Adjust if menu would go off left edge
+    if (right + menuWidth > viewportWidth) {
+      right = 10;
+    }
+    
+    setMenuPosition({ top, right });
+    setOpenMenuId(customerId);
+  };
+
   const CustomerCard = ({ customer }) => {
     return (
       <motion.div
@@ -163,11 +244,8 @@ function MobileCustomers() {
           {/* Menu Button */}
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={(e) => {
-              e.stopPropagation();
-              // You can add a menu or actions here if needed
-            }}
-            className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
+            onClick={(e) => handleMenuClick(customer.id, e)}
+            className="menu-button p-3 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
           >
             <FiMoreVertical className="w-5 h-5 text-gray-600" />
           </motion.button>
@@ -175,6 +253,75 @@ function MobileCustomers() {
       </motion.div>
     );
   };
+
+  // Dropdown menu as a portal
+  const DropdownMenu = openMenuId
+    ? ReactDOM.createPortal(
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9, y: -10 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: -10 }}
+          className="dropdown-menu absolute bg-white rounded-2xl shadow-2xl border border-gray-200 min-w-[200px] overflow-hidden"
+          style={{
+            top: menuPosition.top,
+            right: menuPosition.right,
+            zIndex: 9999,
+            position: 'absolute',
+            boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15), 0 8px 16px rgba(0, 0, 0, 0.1)',
+            maxHeight: 'calc(100vh - 20px)',
+            maxWidth: 'calc(100vw - 20px)'
+          }}
+        >
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/customers/view/${openMenuId}`);
+              setOpenMenuId(null);
+            }}
+            className="w-full text-left px-5 py-4 text-sm text-gray-800 hover:bg-blue-50 hover:text-blue-700 flex items-center gap-3 transition-all font-medium border-b border-gray-100"
+          >
+            <FiEye className="w-5 h-5 text-blue-600" />
+            View Details
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/customers/edit/${openMenuId}`);
+              setOpenMenuId(null);
+            }}
+            className="w-full text-left px-5 py-4 text-sm text-gray-800 hover:bg-green-50 hover:text-green-700 flex items-center gap-3 transition-all font-medium border-b border-gray-100"
+          >
+            <FiEdit className="w-5 h-5 text-green-600" />
+            Edit Customer
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/customers/sales/${openMenuId}`);
+              setOpenMenuId(null);
+            }}
+            className="w-full text-left px-5 py-4 text-sm text-gray-800 hover:bg-purple-50 hover:text-purple-700 flex items-center gap-3 transition-all font-medium border-b border-gray-100"
+          >
+            <FiShoppingCart className="w-5 h-5 text-purple-600" />
+            View Sales
+          </button>
+          
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteCustomer(openMenuId);
+            }}
+            className="w-full text-left px-5 py-4 text-sm text-red-700 hover:bg-red-50 hover:text-red-800 flex items-center gap-3 transition-all font-medium"
+          >
+            <FiTrash2 className="w-5 h-5 text-red-600" />
+            Delete Customer
+          </button>
+        </motion.div>,
+        document.body
+      )
+    : null;
 
   if (loading) {
     return (
@@ -188,6 +335,7 @@ function MobileCustomers() {
       </div>
     );
   }
+  
   return (
     <div className="mobile-container">
       {/* Mobile Search Header */}
@@ -242,6 +390,7 @@ function MobileCustomers() {
           )}
         </AnimatePresence>
       </div>
+      
       {/* Pull to Refresh Indicator */}
       <animated.div
         style={{
@@ -257,7 +406,8 @@ function MobileCustomers() {
             <FiRefreshCw className="w-6 h-6 text-blue-600" />
           </motion.div>
         )}
-      </animated.div>{" "}
+      </animated.div>
+      
       {/* Customer List */}
       <div
         className="flex-1 overflow-auto p-6"
@@ -285,7 +435,8 @@ function MobileCustomers() {
           {filteredCustomers.map((customer) => (
             <CustomerCard key={customer.id} customer={customer} />
           ))}
-        </AnimatePresence>{" "}
+        </AnimatePresence>
+        
         {filteredCustomers.length === 0 && (
           <div className="mobile-card text-center py-12">
             <FiUser
@@ -301,6 +452,7 @@ function MobileCustomers() {
           </div>
         )}
       </div>
+      
       {/* Floating Action Button */}
       <motion.button
         whileTap={{ scale: 0.9 }}
@@ -312,6 +464,8 @@ function MobileCustomers() {
       >
         <FiPlus size={24} />
       </motion.button>
+
+      {DropdownMenu}
     </div>
   );
 }
