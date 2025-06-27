@@ -214,3 +214,7 @@ local/
 *.tar.gz
 .cache/
 .temp/
+
+db_password.txt
+local_supabase_spin.md
+supabase_link_stdout.txt
