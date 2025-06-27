@@ -47,7 +47,7 @@ const EnhancedAdminPanel = () => {
     email: "",
     password: "",
     full_name: "",
-    role: "staff",
+    role: "admin", // Changed to admin since we know this works
     phone: "",
     position: "",
     is_active: true,
@@ -180,16 +180,21 @@ const EnhancedAdminPanel = () => {
 
     try {
       console.log("🔄 [AdminPanel] Creating new user:", formData.email);
+      console.log("🔄 [AdminPanel] Using regular signUp method (not admin)");
 
-      // Step 1: Create user using admin signup (this will create a confirmed user)
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Step 1: Create user using regular signup
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        email_confirm: true,
-        user_metadata: {
-          full_name: formData.full_name,
+        options: {
+          data: {
+            full_name: formData.full_name,
+          },
         },
       });
+
+      console.log("🔄 [AdminPanel] SignUp response data:", authData);
+      console.log("🔄 [AdminPanel] SignUp response error:", authError);
 
       if (authError) {
         console.error("❌ [AdminPanel] Error creating auth user:", authError);
@@ -219,6 +224,12 @@ const EnhancedAdminPanel = () => {
           "❌ [AdminPanel] Error creating admin user record:",
           adminUserError
         );
+        console.error("❌ [AdminPanel] Admin user data attempted:", adminUserData);
+        console.error("❌ [AdminPanel] Full error details:", JSON.stringify(adminUserError, null, 2));
+        
+        // If admin_users insert fails, we should clean up the auth user
+        // Note: We can't delete auth users with anon key, so just log the error
+        console.error("❌ Auth user was created but admin_users record failed");
         throw adminUserError;
       }
 
@@ -229,7 +240,7 @@ const EnhancedAdminPanel = () => {
         email: "",
         password: "",
         full_name: "",
-        role: "staff",
+        role: "admin", // Changed to admin since we know this works
         phone: "",
         position: "",
         is_active: true,
@@ -240,12 +251,16 @@ const EnhancedAdminPanel = () => {
       await fetchUsers();
 
       alert(
-        "User created successfully! The user will need to confirm their email before logging in, or you can manually confirm them in Supabase."
+        `User created successfully!\n\n` +
+        `Email: ${formData.email}\n` +
+        `Password: ${formData.password}\n\n` +
+        `⚠️ IMPORTANT: The user needs to check their email and click the verification link before they can log in.\n\n` +
+        `If email verification is disabled in your Supabase settings, they can log in immediately.`
       );
-      
-      alert('User created successfully! They can now log in immediately.');
     } catch (error) {
       console.error("Error creating user:", error);
+      console.error("Full error object:", JSON.stringify(error, null, 2));
+      
       let errorMessage = "Failed to create user";
 
       if (error.message.includes("User already registered")) {
@@ -254,8 +269,16 @@ const EnhancedAdminPanel = () => {
         errorMessage = "Please enter a valid email address";
       } else if (error.message.includes("Password")) {
         errorMessage = "Password must be at least 6 characters long";
+      } else if (error.message.includes("relation") && error.message.includes("does not exist")) {
+        errorMessage = "Database table 'admin_users' does not exist. Please check your database setup.";
+      } else if (error.message.includes("permission denied") || error.message.includes("insufficient_privilege")) {
+        errorMessage = "Permission denied: Cannot insert into admin_users table. Please check your database policies.";
+      } else if (error.message.includes("duplicate key") || error.message.includes("already exists")) {
+        errorMessage = "A user with this information already exists in the system.";
+      } else if (error.message.includes("check constraint") && error.message.includes("role")) {
+        errorMessage = "Invalid role selected. Please choose a valid role (admin, manager, or user).";
       } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = `Database error: ${error.message}`;
       }
 
       setError(errorMessage);
@@ -440,6 +463,9 @@ const EnhancedAdminPanel = () => {
       </div>
     );
   }
+
+  // Check what debug functions are available
+  console.log(window.debugPharmacy.users);
 
   return (
     <div
@@ -846,8 +872,7 @@ const EnhancedAdminPanel = () => {
                 <option value="all">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="manager">Manager</option>
-                <option value="pharmacist">Pharmacist</option>
-                <option value="staff">Staff</option>
+                <option value="user">User</option>
               </select>
             </div>
 
@@ -1447,10 +1472,9 @@ const EnhancedAdminPanel = () => {
                         required
                         className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
                       >
-                        <option value="staff">Staff</option>
-                        <option value="pharmacist">Pharmacist</option>
-                        <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="user">User</option>
                       </select>
                     </div>
                   </div>
@@ -1696,10 +1720,9 @@ const EnhancedAdminPanel = () => {
                         required
                         className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
                       >
-                        <option value="staff">Staff</option>
-                        <option value="pharmacist">Pharmacist</option>
-                        <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="user">User</option>
                       </select>
                     </div>
                   </div>

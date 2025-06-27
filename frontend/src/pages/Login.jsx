@@ -47,6 +47,10 @@ const Login = () => {
         console.error('❌ [Login] Auth error:', authError);
         if (authError.message.includes('Invalid login credentials')) {
           throw new Error('The email or password you entered is incorrect');
+        } else if (authError.message.includes('Email not confirmed')) {
+          throw new Error('Please check your email and click the confirmation link before logging in');
+        } else if (authError.message.includes('Too many requests')) {
+          throw new Error('Too many login attempts. Please wait a few minutes and try again');
         }
         throw authError;
       }
@@ -61,7 +65,23 @@ const Login = () => {
 
       if (adminError || !adminUser) {
         console.error('❌ [Login] Admin user error:', adminError);
-        throw new Error('Your account is not authorized to access this system. Please contact your administrator.');
+        console.error('❌ [Login] Admin user data:', adminUser);
+        console.error('❌ [Login] Trying to find user with ID:', authData.user.id);
+        
+        // Check if user exists but is inactive
+        const { data: inactiveUser } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('id', authData.user.id)
+          .single();
+          
+        if (inactiveUser && !inactiveUser.is_active) {
+          throw new Error('Your account has been deactivated. Please contact your administrator.');
+        } else if (!inactiveUser) {
+          throw new Error('Your account is not set up in the system. Please contact your administrator to add you to the user database.');
+        } else {
+          throw new Error('Your account is not authorized to access this system. Please contact your administrator.');
+        }
       }
 
       console.log('✅ [Login] Login successful, user:', adminUser);
@@ -84,6 +104,35 @@ const Login = () => {
     // Add Google OAuth logic here
     console.log('Google login attempt');
   };
+
+  // Manually add user to admin_users (replace with your actual details)
+  const addUserManually = async () => {
+    // First get your user ID from auth
+    const { data: { user } } = await supabase.auth.getUser();
+    console.log("Current user:", user);
+    
+    if (user) {
+      const userData = {
+        id: user.id,
+        email: user.email,
+        full_name: "Admin", // Change this
+        role: "admin",
+        phone: "740665250", // Change this
+        position: "Pharmacy Owner", // Change this
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('admin_users')
+        .insert(userData);
+        
+      console.log("Insert result:", { data, error });
+    }
+  };
+
+  // await addUserManually();
+
   return (
     <>
       <style>{spinKeyframes}</style>
