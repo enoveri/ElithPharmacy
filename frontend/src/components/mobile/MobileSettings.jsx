@@ -399,7 +399,7 @@ function MobileSettings() {
       {/* Settings Content with Explicit Spacing */}
       <div 
         className="relative z-10 flex-1 overflow-auto"
-        style={{ 
+        style={{
           paddingLeft: "1.5rem", 
           paddingRight: "1.5rem",
           paddingBottom: "2rem",
@@ -408,12 +408,12 @@ function MobileSettings() {
       >
         {/* General Section */}
         <div style={{ marginBottom: "3rem" }}>
-          <SettingsSection
-            section="general"
+        <SettingsSection
+          section="general"
             title="General Settings"
-            icon={FiSettingsIcon}
-          >
-            <InputField
+          icon={FiSettingsIcon}
+        >
+          <InputField
               label="Business Name"
               value={formSettings.pharmacy_name || ""}
               onChange={(value) => updateFormSetting("pharmacy_name", value)}
@@ -457,14 +457,14 @@ function MobileSettings() {
             title="Operational Settings"
             icon={FiPackage}
           >
-            <SelectField
-              label="Currency"
+          <SelectField
+            label="Currency"
               value={formSettings.currency || "UGX"}
               onChange={(value) => updateFormSetting("currency", value)}
-              options={[
+            options={[
                 { value: "UGX", label: "Ugandan Shilling (UGX)" },
-                { value: "USD", label: "US Dollar (USD)" },
-                { value: "EUR", label: "Euro (EUR)" },
+              { value: "USD", label: "US Dollar (USD)" },
+              { value: "EUR", label: "Euro (EUR)" },
                 { value: "GBP", label: "British Pound (GBP)" },
               ]}
             />
@@ -481,35 +481,35 @@ function MobileSettings() {
               onChange={(value) => updateFormSetting("low_stock_threshold", parseInt(value))}
               type="number"
               placeholder="10"
-            />
-          </SettingsSection>
+          />
+        </SettingsSection>
         </div>
 
         {/* Alert Settings Section */}
         <div style={{ marginBottom: "3rem" }}>
-          <SettingsSection
+        <SettingsSection
             section="alerts"
             title="Alert Settings"
-            icon={FiBell}
-          >
-            <ToggleSwitch
+          icon={FiBell}
+        >
+          <ToggleSwitch
               enabled={formSettings.low_stock_alerts || false}
               onChange={(value) => updateFormSetting("low_stock_alerts", value)}
-              label="Low Stock Alerts"
-              description="Get notified when products are running low"
-            />
-            <ToggleSwitch
+            label="Low Stock Alerts"
+            description="Get notified when products are running low"
+          />
+          <ToggleSwitch
               enabled={formSettings.expiry_alerts || false}
               onChange={(value) => updateFormSetting("expiry_alerts", value)}
               label="Expiry Alerts"
               description="Get notified about expiring products"
-            />
-          </SettingsSection>
+          />
+        </SettingsSection>
         </div>
 
         {/* System Settings Section */}
         <div style={{ marginBottom: "3rem" }}>
-          <SettingsSection
+        <SettingsSection
             section="system"
             title="System Settings"
             icon={FiDatabase}
@@ -523,26 +523,26 @@ function MobileSettings() {
                 { value: "dark", label: "Dark" },
                 { value: "auto", label: "Auto" },
               ]}
-            />
-            <SelectField
-              label="Session Timeout (minutes)"
+          />
+          <SelectField
+            label="Session Timeout (minutes)"
               value={formSettings.session_timeout || 30}
               onChange={(value) => updateFormSetting("session_timeout", parseInt(value))}
-              options={[
-                { value: 15, label: "15 minutes" },
-                { value: 30, label: "30 minutes" },
-                { value: 60, label: "1 hour" },
-                { value: 240, label: "4 hours" },
-              ]}
-            />
-            <ToggleSwitch
+            options={[
+              { value: 15, label: "15 minutes" },
+              { value: 30, label: "30 minutes" },
+              { value: 60, label: "1 hour" },
+              { value: 240, label: "4 hours" },
+            ]}
+          />
+          <ToggleSwitch
               enabled={formSettings.enable_audit_log || false}
               onChange={(value) => updateFormSetting("enable_audit_log", value)}
               label="Enable Audit Log"
               description="Keep track of system activities"
-            />
-          </SettingsSection>
-        </div>
+          />
+        </SettingsSection>
+      </div>
       </div>
     </div>
   );

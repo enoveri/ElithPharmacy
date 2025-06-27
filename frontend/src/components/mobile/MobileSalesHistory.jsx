@@ -5,17 +5,14 @@ import { useSpring, animated } from "@react-spring/web";
 import {
   FiSearch,
   FiFilter,
-  FiCalendar,
   FiDollarSign,
   FiUser,
-  FiPackage,
-  FiClock,
-  FiEye,
-  FiRefreshCw,
-  FiChevronDown,
   FiShoppingCart,
   FiTrendingUp,
+  FiRefreshCw,
   FiMoreVertical,
+  FiCalendar,
+  FiX,
 } from "react-icons/fi";
 import { dataService } from "../../services";
 import { useSettingsStore } from "../../store";
@@ -184,76 +181,8 @@ function MobileSalesHistory() {
       setRefreshing(false);
     }
   };
-  const SaleCard = ({ sale }) => {
-    const saleDate = new Date(sale.date);
 
-    return (
-      <motion.div
-        layout
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        whileTap={{ scale: 0.98 }}
-        onClick={() => navigate(`/sales/${sale.id}`)}
-        className="mobile-list-item cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4 flex-1">
-            {/* Sale Icon */}
-            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg flex-shrink-0">
-              <FiShoppingCart className="w-6 h-6 text-white" />
-            </div>
-
-            {/* Sale Info */}
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-gray-900 text-lg mb-1">
-                Sale #{sale.id}
-              </h3>
-              <div className="flex items-center space-x-3">
-                <span
-                  className={`status-badge ${sale.status === "completed" ? "active" : sale.status === "refunded" ? "out-of-stock" : "low-stock"}`}
-                >
-                  {sale.status}
-                </span>
-                <span className="text-sm text-gray-500">
-                  {sale.items} item{sale.items !== 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {saleDate.toLocaleDateString()} • {sale.customerName}
-              </div>
-            </div>
-          </div>
-
-          {/* Amount and Menu */}
-          <div className="flex items-center space-x-3">
-            <div className="text-right">
-              <div className="text-lg font-bold gradient-text">
-                {currency}
-                {sale.total.toFixed(2)}
-              </div>
-              <div className="text-xs text-gray-500">
-                {sale.paymentMethod.toUpperCase()}
-              </div>
-            </div>
-
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={(e) => {
-                e.stopPropagation();
-                // You can add a menu or actions here if needed
-              }}
-              className="p-2 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors flex-shrink-0"
-            >
-              <FiMoreVertical className="w-5 h-5 text-gray-600" />
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  // Calculate summary stats
+  // Summary stats
   const totalRevenue = filteredSales.reduce(
     (sum, sale) => (sale.status === "completed" ? sum + sale.total : sum),
     0
@@ -264,52 +193,143 @@ function MobileSalesHistory() {
   const averageOrderValue =
     totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
 
+  // Sale card
+  const SaleCard = ({ sale }) => {
+    const saleDate = new Date(sale.date);
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => navigate(`/sales/${sale.id}`)}
+        className="glass-card mobile-sale-card cursor-pointer"
+      >
+        <div className="flex items-center gap-3 mb-2">
+          <div className={`sale-status-badge ${sale.status}`}>{sale.status}</div>
+          <span className="text-xs text-gray-500 flex items-center gap-1">
+            <FiCalendar className="inline-block" />
+            {saleDate.toLocaleDateString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="sale-icon">
+            <FiShoppingCart size={20} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-base text-gray-900 truncate">
+              {sale.customerName}
+            </div>
+            <div className="text-xs text-gray-500 truncate">
+              Sale #{sale.id} • {sale.items} item{sale.items !== 1 ? "s" : ""}
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-lg font-bold gradient-text">
+              {currency}{sale.total.toFixed(2)}
+            </div>
+            <div className="text-xs text-gray-500">
+              {sale.paymentMethod.toUpperCase()}
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
+  // Filter modal (bottom sheet)
+  const FilterModal = () => (
+    <AnimatePresence>
+      {showFilters && (
+        <motion.div
+          initial={{ y: "100%" }}
+          animate={{ y: 0 }}
+          exit={{ y: "100%" }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="mobile-filter-modal"
+        >
+          <div className="flex items-center justify-between p-4 border-b">
+            <span className="font-semibold text-lg">Filters</span>
+            <button onClick={() => setShowFilters(false)} className="p-2 rounded-full hover:bg-gray-100">
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="p-4 space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+              <div className="flex space-x-2">
+                {["all", "completed", "refunded"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setSelectedStatus(status)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
+                      selectedStatus === status
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {status}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
+              <div className="flex space-x-2 flex-wrap">
+                {["today", "yesterday", "week", "month", "all"].map((period) => (
+                  <button
+                    key={period}
+                    onClick={() => setSelectedPeriod(period)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium capitalize mb-2 transition-all ${
+                      selectedPeriod === period
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {period === "all" ? "All Time" : period}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
           <FiRefreshCw className="w-8 h-8 text-blue-600" />
         </motion.div>
       </div>
     );
   }
+
   return (
-    <div className="mobile-container">
-      {/* Mobile Search Header */}
-      <div
-        className="bg-white/95 backdrop-blur-lg border-b border-gray-200/50 p-4 sticky top-0 z-10"
-        style={{
-          boxShadow: "0 4px 20px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        {/* Summary Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          <div className="text-center">
-            <div className="text-lg font-bold text-green-600">
-              {currency}
-              {totalRevenue.toFixed(2)}
-            </div>
-            <div className="text-xs text-gray-600">Revenue</div>
+    <div className="mobile-sales-history-page">
+      {/* Sticky glassy header with summary */}
+      <div className="mobile-sales-header glass-card">
+        <div className="grid grid-cols-3 gap-4 mb-2">
+          <div className="summary-card">
+            <div className="icon-bg green"><FiDollarSign size={18} /></div>
+            <div className="summary-value">{currency}{totalRevenue.toFixed(2)}</div>
+            <div className="summary-label">Revenue</div>
           </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-blue-600">
-              {totalTransactions}
-            </div>
-            <div className="text-xs text-gray-600">Sales</div>
+          <div className="summary-card">
+            <div className="icon-bg blue"><FiShoppingCart size={18} /></div>
+            <div className="summary-value">{totalTransactions}</div>
+            <div className="summary-label">Sales</div>
           </div>
-          <div className="text-center">
-            <div className="text-lg font-bold text-purple-600">
-              {currency}
-              {averageOrderValue.toFixed(2)}
-            </div>
-            <div className="text-xs text-gray-600">Avg. Order</div>
+          <div className="summary-card">
+            <div className="icon-bg purple"><FiTrendingUp size={18} /></div>
+            <div className="summary-value">{currency}{averageOrderValue.toFixed(2)}</div>
+            <div className="summary-label">Avg. Order</div>
           </div>
         </div>
-
-        <div className="flex items-center space-x-3 mb-3">
+        <div className="flex items-center space-x-3">
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -317,98 +337,34 @@ function MobileSalesHistory() {
               placeholder="Search sales..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 shadow-sm"
+              style={{ boxShadow: "0 2px 8px rgba(59,130,246,0.06)" }}
             />
           </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => setShowFilters(!showFilters)}
-            className="p-3 bg-gray-100 rounded-xl"
+            onClick={() => setShowFilters(true)}
+            className="p-3 bg-blue-50 rounded-xl shadow-sm"
           >
-            <FiFilter className="w-5 h-5 text-gray-600" />
+            <FiFilter className="w-5 h-5 text-blue-600" />
           </motion.button>
         </div>
-
-        <AnimatePresence>
-          {showFilters && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden space-y-3"
-            >
-              {/* Status Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Status
-                </label>
-                <div className="flex space-x-2">
-                  {["all", "completed", "refunded"].map((status) => (
-                    <motion.button
-                      key={status}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setSelectedStatus(status)}
-                      className={`px-3 py-2 rounded-lg text-sm font-medium capitalize ${
-                        selectedStatus === status
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {status}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Period Filter */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Period
-                </label>
-                <div className="flex space-x-2 flex-wrap">
-                  {["today", "yesterday", "week", "month", "all"].map(
-                    (period) => (
-                      <motion.button
-                        key={period}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedPeriod(period)}
-                        className={`px-3 py-2 rounded-lg text-sm font-medium capitalize mb-2 ${
-                          selectedPeriod === period
-                            ? "bg-blue-600 text-white"
-                            : "bg-gray-100 text-gray-600"
-                        }`}
-                      >
-                        {period === "all" ? "All Time" : period}
-                      </motion.button>
-                    )
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
-
+      <FilterModal />
       {/* Pull to Refresh Indicator */}
       <animated.div
-        style={{
-          transform: y.to((y) => `translateY(${y}px)`),
-        }}
+        style={{ transform: y.to((y) => `translateY(${y}px)`) }}
         className="flex justify-center py-2"
       >
         {refreshing && (
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          >
+          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
             <FiRefreshCw className="w-6 h-6 text-blue-600" />
           </motion.div>
         )}
       </animated.div>
-
       {/* Sales List */}
       <div
-        className="flex-1 overflow-auto p-4"
+        className="flex-1 overflow-auto p-4 mobile-sales-list"
         onTouchStart={() => {
           const startY = event.touches[0].clientY;
           const scrollTop = event.currentTarget.scrollTop;
@@ -433,16 +389,12 @@ function MobileSalesHistory() {
             <SaleCard key={sale.id} sale={sale} />
           ))}
         </AnimatePresence>
-
         {filteredSales.length === 0 && (
-          <div className="text-center py-12">
-            <FiShoppingCart className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              No sales found
-            </h3>
-            <p className="text-gray-500">
-              Try adjusting your search or filters
-            </p>
+          <div className="empty-sales-state">
+            <FiShoppingCart className="w-14 h-14 text-blue-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">No sales found</h3>
+            <p className="text-gray-500 mb-4">Try adjusting your search or filters</p>
+            <button className="cta-btn" onClick={() => navigate('/pos')}>Make a Sale</button>
           </div>
         )}
       </div>

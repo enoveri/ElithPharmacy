@@ -49,11 +49,11 @@ const Settings = () => {
     const getUser = async () => {
       try {
         console.log("🔄 [Settings] Getting current user...");
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
         console.log("👤 [Settings] User received:", user ? "User found" : "No user");
-        setUser(user);
+      setUser(user);
         // Set loading to false if no user is found
         if (!user) {
           console.log("❌ [Settings] No user found, stopping loading");
@@ -241,8 +241,8 @@ const Settings = () => {
             color: "#111827",
             marginBottom: "8px",
           }}>
-            Settings
-          </h1>
+                Settings
+              </h1>
           <p style={{
             fontSize: "16px",
             color: "#6b7280",
@@ -250,13 +250,13 @@ const Settings = () => {
           }}>
             Configure your pharmacy management system
           </p>
-        </div>
+          </div>
 
-        {/* Action Buttons */}
+          {/* Action Buttons */}
         <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            onClick={handleResetSettings}
-            disabled={isLoading}
+            <button
+              onClick={handleResetSettings}
+              disabled={isLoading}
             style={{
               display: "flex",
               alignItems: "center",
@@ -276,10 +276,10 @@ const Settings = () => {
           >
             <FiRefreshCw style={{ fontSize: "16px" }} />
             Reset
-          </button>
-          <button
-            onClick={handleSaveSettings}
-            disabled={saving || isLoading}
+            </button>
+            <button
+              onClick={handleSaveSettings}
+              disabled={saving || isLoading}
             style={{
               display: "flex",
               alignItems: "center",
@@ -304,7 +304,7 @@ const Settings = () => {
           >
             <FiSave style={{ fontSize: "16px" }} />
             {saving ? "Saving..." : "Save"}
-          </button>
+            </button>
         </div>
       </div>
 
@@ -351,8 +351,8 @@ const Settings = () => {
             color: "#111827",
             marginBottom: "20px",
           }}>
-            Settings Categories
-          </h3>
+              Settings Categories
+            </h3>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {[
@@ -361,14 +361,14 @@ const Settings = () => {
               { id: "notifications", label: "Notifications", icon: FiBell, description: "Alerts & notifications" },
               { id: "appearance", label: "Appearance", icon: FiMoon, description: "Theme & UI" },
               { id: "system", label: "System", icon: FiDatabase, description: "Advanced settings" },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
 
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
                   style={{
                     display: "flex",
                     alignItems: "center",
@@ -400,18 +400,18 @@ const Settings = () => {
                       fontWeight: "500",
                       marginBottom: "2px",
                     }}>
-                      {tab.label}
-                    </div>
+                        {tab.label}
+                      </div>
                     <div style={{
                       fontSize: "12px",
                       color: "#9ca3af",
                     }}>
-                      {tab.description}
+                          {tab.description}
                     </div>
-                  </div>
-                </button>
-              );
-            })}
+                    </div>
+                  </button>
+                );
+              })}
           </div>
         </div>
 
@@ -424,7 +424,7 @@ const Settings = () => {
           border: "1px solid #f1f5f9",
         }}>
           {/* General Settings Tab */}
-          {activeTab === "general" && (
+            {activeTab === "general" && (
             <div>
 
 
@@ -443,11 +443,11 @@ const Settings = () => {
                     paddingBottom: "12px",
                     borderBottom: "2px solid #e5e7eb",
                   }}>
-                    Business Information
-                  </h3>
+                      Business Information
+                    </h3>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-                    <div>
+                      <div>
                       <label style={{
                         display: "block",
                         fontSize: "14px",
@@ -455,11 +455,11 @@ const Settings = () => {
                         color: "#374151",
                         marginBottom: "8px",
                       }}>
-                        Business Name
-                      </label>
-                      <input
-                        type="text"
-                        value={formSettings.pharmacy_name || ""}
+                          Business Name
+                        </label>
+                        <input
+                          type="text"
+                          value={formSettings.pharmacy_name || ""}
                         onChange={(e) => updateFormSetting("pharmacy_name", e.target.value)}
                         style={{
                           width: "100%",
@@ -470,7 +470,7 @@ const Settings = () => {
                           backgroundColor: "#f9fafb",
                           transition: "all 0.2s",
                         }}
-                        placeholder="Enter your pharmacy name"
+                          placeholder="Enter your pharmacy name"
                         onFocus={(e) => {
                           e.target.style.borderColor = "#3b82f6";
                           e.target.style.backgroundColor = "white";
@@ -479,10 +479,10 @@ const Settings = () => {
                           e.target.style.borderColor = "#d1d5db";
                           e.target.style.backgroundColor = "#f9fafb";
                         }}
-                      />
-                    </div>
+                        />
+                      </div>
 
-                    <div>
+                      <div>
                       <label style={{
                         display: "block",
                         fontSize: "14px",
@@ -490,10 +490,10 @@ const Settings = () => {
                         color: "#374151",
                         marginBottom: "8px",
                       }}>
-                        Address
-                      </label>
-                      <textarea
-                        value={formSettings.address || ""}
+                          Address
+                        </label>
+                        <textarea
+                          value={formSettings.address || ""}
                         onChange={(e) => updateFormSetting("address", e.target.value)}
                         rows={3}
                         style={{
@@ -506,7 +506,7 @@ const Settings = () => {
                           transition: "all 0.2s",
                           resize: "none",
                         }}
-                        placeholder="Enter your pharmacy address"
+                          placeholder="Enter your pharmacy address"
                         onFocus={(e) => {
                           e.target.style.borderColor = "#3b82f6";
                           e.target.style.backgroundColor = "white";
@@ -515,11 +515,11 @@ const Settings = () => {
                           e.target.style.borderColor = "#d1d5db";
                           e.target.style.backgroundColor = "#f9fafb";
                         }}
-                      />
-                    </div>
+                        />
+                      </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                      <div>
+                        <div>
                         <label style={{
                           display: "block",
                           fontSize: "14px",
@@ -527,11 +527,11 @@ const Settings = () => {
                           color: "#374151",
                           marginBottom: "8px",
                         }}>
-                          Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={formSettings.phone || ""}
+                            Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={formSettings.phone || ""}
                           onChange={(e) => updateFormSetting("phone", e.target.value)}
                           style={{
                             width: "100%",
@@ -542,7 +542,7 @@ const Settings = () => {
                             backgroundColor: "#f9fafb",
                             transition: "all 0.2s",
                           }}
-                          placeholder="Enter phone number"
+                            placeholder="Enter phone number"
                           onFocus={(e) => {
                             e.target.style.borderColor = "#3b82f6";
                             e.target.style.backgroundColor = "white";
@@ -551,10 +551,10 @@ const Settings = () => {
                             e.target.style.borderColor = "#d1d5db";
                             e.target.style.backgroundColor = "#f9fafb";
                           }}
-                        />
-                      </div>
+                          />
+                        </div>
 
-                      <div>
+                        <div>
                         <label style={{
                           display: "block",
                           fontSize: "14px",
@@ -562,11 +562,11 @@ const Settings = () => {
                           color: "#374151",
                           marginBottom: "8px",
                         }}>
-                          Email Address
-                        </label>
-                        <input
-                          type="email"
-                          value={formSettings.email || ""}
+                            Email Address
+                          </label>
+                          <input
+                            type="email"
+                            value={formSettings.email || ""}
                           onChange={(e) => updateFormSetting("email", e.target.value)}
                           style={{
                             width: "100%",
@@ -577,7 +577,7 @@ const Settings = () => {
                             backgroundColor: "#f9fafb",
                             transition: "all 0.2s",
                           }}
-                          placeholder="Enter email address"
+                            placeholder="Enter email address"
                           onFocus={(e) => {
                             e.target.style.borderColor = "#3b82f6";
                             e.target.style.backgroundColor = "white";
@@ -586,11 +586,11 @@ const Settings = () => {
                             e.target.style.borderColor = "#d1d5db";
                             e.target.style.backgroundColor = "#f9fafb";
                           }}
-                        />
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
+                      <div>
                       <label style={{
                         display: "block",
                         fontSize: "14px",
@@ -598,11 +598,11 @@ const Settings = () => {
                         color: "#374151",
                         marginBottom: "8px",
                       }}>
-                        Pharmacy License Number
-                      </label>
-                      <input
-                        type="text"
-                        value={formSettings.pharmacy_license || ""}
+                          Pharmacy License Number
+                        </label>
+                        <input
+                          type="text"
+                          value={formSettings.pharmacy_license || ""}
                         onChange={(e) => updateFormSetting("pharmacy_license", e.target.value)}
                         style={{
                           width: "100%",
@@ -613,7 +613,7 @@ const Settings = () => {
                           backgroundColor: "#f9fafb",
                           transition: "all 0.2s",
                         }}
-                        placeholder="Enter pharmacy license number"
+                          placeholder="Enter pharmacy license number"
                         onFocus={(e) => {
                           e.target.style.borderColor = "#3b82f6";
                           e.target.style.backgroundColor = "white";
@@ -624,8 +624,8 @@ const Settings = () => {
                         }}
                       />
                     </div>
+                    </div>
                   </div>
-                </div>
 
                 {/* Operational Settings Column */}
                 <div>
@@ -637,12 +637,12 @@ const Settings = () => {
                     paddingBottom: "12px",
                     borderBottom: "2px solid #e5e7eb",
                   }}>
-                    Operational Settings
-                  </h3>
+                      Operational Settings
+                    </h3>
 
                   <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-                      <div>
+                        <div>
                         <label style={{
                           display: "block",
                           fontSize: "14px",
@@ -650,10 +650,10 @@ const Settings = () => {
                           color: "#374151",
                           marginBottom: "8px",
                         }}>
-                          Currency
-                        </label>
-                        <select
-                          value={formSettings.currency || "UGX"}
+                            Currency
+                          </label>
+                          <select
+                            value={formSettings.currency || "UGX"}
                           onChange={(e) => updateFormSetting("currency", e.target.value)}
                           style={{
                             width: "100%",
@@ -677,10 +677,10 @@ const Settings = () => {
                           <option value="USD">US Dollar (USD)</option>
                           <option value="EUR">Euro (EUR)</option>
                           <option value="GBP">British Pound (GBP)</option>
-                        </select>
-                      </div>
+                          </select>
+                        </div>
 
-                      <div>
+                        <div>
                         <label style={{
                           display: "block",
                           fontSize: "14px",
@@ -688,10 +688,10 @@ const Settings = () => {
                           color: "#374151",
                           marginBottom: "8px",
                         }}>
-                          Tax Rate (%)
-                        </label>
-                        <input
-                          type="number"
+                            Tax Rate (%)
+                          </label>
+                          <input
+                            type="number"
                           value={formSettings.tax_rate || 18}
                           onChange={(e) => updateFormSetting("tax_rate", parseFloat(e.target.value))}
                           style={{
@@ -703,7 +703,7 @@ const Settings = () => {
                             backgroundColor: "#f9fafb",
                             transition: "all 0.2s",
                           }}
-                          placeholder="18"
+                            placeholder="18"
                           onFocus={(e) => {
                             e.target.style.borderColor = "#3b82f6";
                             e.target.style.backgroundColor = "white";
@@ -712,11 +712,11 @@ const Settings = () => {
                             e.target.style.borderColor = "#d1d5db";
                             e.target.style.backgroundColor = "#f9fafb";
                           }}
-                        />
+                          />
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
+                      <div>
                       <label style={{
                         display: "block",
                         fontSize: "14px",
@@ -724,10 +724,10 @@ const Settings = () => {
                         color: "#374151",
                         marginBottom: "8px",
                       }}>
-                        Low Stock Threshold
-                      </label>
-                      <input
-                        type="number"
+                          Low Stock Threshold
+                        </label>
+                        <input
+                          type="number"
                         value={formSettings.low_stock_threshold || 10}
                         onChange={(e) => updateFormSetting("low_stock_threshold", parseInt(e.target.value))}
                         style={{
@@ -739,7 +739,7 @@ const Settings = () => {
                           backgroundColor: "#f9fafb",
                           transition: "all 0.2s",
                         }}
-                        placeholder="10"
+                          placeholder="10"
                         onFocus={(e) => {
                           e.target.style.borderColor = "#3b82f6";
                           e.target.style.backgroundColor = "white";
@@ -754,9 +754,9 @@ const Settings = () => {
                         color: "#6b7280",
                         marginTop: "4px",
                       }}>
-                        Alert when product quantity falls below this number
-                      </p>
-                    </div>
+                          Alert when product quantity falls below this number
+                        </p>
+                      </div>
 
                     <div>
                       <h4 style={{
@@ -765,19 +765,19 @@ const Settings = () => {
                         color: "#111827",
                         marginBottom: "16px",
                       }}>
-                        Alert Settings
-                      </h4>
-                      
+                          Alert Settings
+                        </h4>
+
                       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div>
+                            <div>
                             <p style={{ fontSize: "14px", fontWeight: "500", color: "#374151", margin: "0" }}>
-                              Low Stock Alerts
+                                Low Stock Alerts
                             </p>
                             <p style={{ fontSize: "12px", color: "#6b7280", margin: "0" }}>
-                              Get notified when products are running low
+                                Get notified when products are running low
                             </p>
-                          </div>
+                              </div>
                           <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                             <input
                               type="checkbox"
@@ -806,17 +806,17 @@ const Settings = () => {
                               }} />
                             </div>
                           </label>
-                        </div>
+                          </div>
 
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <div>
+                            <div>
                             <p style={{ fontSize: "14px", fontWeight: "500", color: "#374151", margin: "0" }}>
-                              Expiry Alerts
+                                Expiry Alerts
                             </p>
                             <p style={{ fontSize: "12px", color: "#6b7280", margin: "0" }}>
-                              Get notified about expiring products
+                                Get notified about expiring products
                             </p>
-                          </div>
+                              </div>
                           <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                             <input
                               type="checkbox"
@@ -843,16 +843,16 @@ const Settings = () => {
                                 transition: "all 0.2s",
                                 boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
                               }} />
-                            </div>
+                          </div>
                           </label>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
+                </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Other tabs content placeholder */}
           {activeTab !== "general" && (
@@ -863,8 +863,8 @@ const Settings = () => {
               <p style={{ color: "#9ca3af", fontSize: "14px" }}>
                 This section is coming soon...
               </p>
-            </div>
-          )}
+              </div>
+            )}
         </div>
       </div>
     </div>
