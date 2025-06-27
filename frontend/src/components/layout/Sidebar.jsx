@@ -1,4 +1,4 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   FiHome,
   FiPlus,
@@ -16,6 +16,8 @@ import {
   FiShield,
 } from "react-icons/fi";
 import { TbPin, TbPinFilled } from "react-icons/tb";
+import { useAuth } from "../../contexts/AuthContext";
+import { useUserRole } from "../../hooks/useUserRole";
 
 const Sidebar = ({
   collapsed = false,
@@ -25,12 +27,27 @@ const Sidebar = ({
   onCloseMobileMenu,
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const { userRole, isAdmin, loading: roleLoading } = useUserRole();
   const isActive = (path) => location.pathname === path;
 
   // Handle navigation click on mobile
   const handleNavClick = () => {
     if (isMobile && onCloseMobileMenu) {
       onCloseMobileMenu();
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigate to login page after successful logout
+      navigate('/login');
+    } catch (error) {
+      console.error("Error logging out:", error);
+      alert("Error logging out. Please try again.");
     }
   };
   const navItems = [
@@ -41,7 +58,8 @@ const Sidebar = ({
     { path: "/sales", label: "Sales", icon: FiList },
     { path: "/customers", label: "Customers", icon: FiUser },
     { path: "/reports", label: "Reports", icon: FiBarChart },
-    { path: "/admin", label: "Admin Panel", icon: FiShield },
+    // Admin Panel - only show for admin users
+    ...(isAdmin ? [{ path: "/admin", label: "Admin Panel", icon: FiShield }] : []),
     { path: "/settings", label: "Settings", icon: FiRotateCcw },
   ];
   return (
@@ -215,6 +233,7 @@ const Sidebar = ({
       >
         {/* Logout Button */}
         <button
+          onClick={handleLogout}
           className={`w-full group flex items-center justify-center gap-4 ${
             collapsed && !isMobile ? "p-4" : "px-6 py-4"
           } rounded-xl transition-all duration-200`}
