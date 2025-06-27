@@ -48,7 +48,27 @@ const Login = () => {
         if (authError.message.includes('Invalid login credentials')) {
           throw new Error('The email or password you entered is incorrect');
         } else if (authError.message.includes('Email not confirmed')) {
-          throw new Error('Please check your email and click the confirmation link before logging in');
+          // Instead of failing, let's try to proceed with the user lookup
+          console.log('⚠️ [Login] Email not confirmed, but proceeding with lookup...');
+          
+          // Try to find user in admin_users table by email
+          const { data: userByEmail, error: emailError } = await supabase
+            .from('admin_users')
+            .select('*')
+            .eq('email', formData.email)
+            .eq('is_active', true)
+            .single();
+            
+          if (userByEmail) {
+            console.log('✅ [Login] Found user in admin_users, email confirmation not required for admin panel');
+            
+            // For admin users, redirect directly without requiring email confirmation
+            console.log('✅ [Login] Redirecting to home page');
+            navigate('/');
+            return;
+          } else {
+            throw new Error('Please check your email and click the confirmation link before logging in, or contact your administrator');
+          }
         } else if (authError.message.includes('Too many requests')) {
           throw new Error('Too many login attempts. Please wait a few minutes and try again');
         }
@@ -56,6 +76,11 @@ const Login = () => {
       }
 
       // If auth successful, check if user exists in admin_users table
+      console.log('🔍 [Login] Auth successful, checking admin_users table...');
+      console.log('🔍 [Login] Auth user ID:', authData.user.id);
+      console.log('🔍 [Login] Auth user email:', authData.user.email);
+      
+      // First try to find user by ID (the correct way)
       const { data: adminUser, error: adminError } = await supabase
         .from('admin_users')
         .select('*')
@@ -64,15 +89,52 @@ const Login = () => {
         .single();
 
       if (adminError || !adminUser) {
-        console.error('❌ [Login] Admin user error:', adminError);
-        console.error('❌ [Login] Admin user data:', adminUser);
-        console.error('❌ [Login] Trying to find user with ID:', authData.user.id);
+        console.log('❌ [Login] No user found by ID, trying email lookup...');
         
-        // Check if user exists but is inactive
+        // Try to find by email as fallback (indicates ID mismatch)
+        const { data: userByEmail, error: emailError } = await supabase
+          .from('admin_users')
+          .select('*')
+          .eq('email', authData.user.email)
+          .eq('is_active', true)
+          .single();
+          
+        if (userByEmail) {
+          console.log('⚠️ [Login] Found user by email but not by ID - ID mismatch detected!');
+          console.log('🔍 [Login] Auth ID:', authData.user.id);
+          console.log('🔍 [Login] Admin table ID:', userByEmail.id);
+          
+          // Update the admin_users record with the correct Auth ID
+          console.log('🔧 [Login] Fixing ID mismatch...');
+          const { error: updateError } = await supabase
+            .from('admin_users')
+            .update({ id: authData.user.id })
+            .eq('email', authData.user.email);
+            
+          if (updateError) {
+            console.error('❌ [Login] Failed to fix ID mismatch:', updateError);
+            throw new Error('Account setup incomplete. Please contact your administrator.');
+          }
+          
+          console.log('✅ [Login] ID mismatch fixed, proceeding with login...');
+          
+          // Use the corrected user data
+          const correctedUser = { ...userByEmail, id: authData.user.id };
+          
+          console.log('✅ [Login] Login successful, user:', correctedUser);
+
+          // Redirect to home page
+          console.log('✅ [Login] Redirecting to home page');
+          navigate('/');
+          return;
+        }
+        
+        // If still no user found, check if they exist but are inactive
+        console.log('❌ [Login] No active user found, checking for inactive user...');
         const { data: inactiveUser } = await supabase
           .from('admin_users')
           .select('*')
-          .eq('id', authData.user.id)
+          .eq('email', authData.user.email)
           .single();
           
         if (inactiveUser && !inactiveUser.is_active) {
@@ -86,12 +148,9 @@ const Login = () => {
 
       console.log('✅ [Login] Login successful, user:', adminUser);
 
-      // If everything is successful, redirect based on role
-      if (adminUser.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+      // Redirect to home page
+      console.log('✅ [Login] Redirecting to home page');
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message || 'An unexpected error occurred');
@@ -104,34 +163,6 @@ const Login = () => {
     // Add Google OAuth logic here
     console.log('Google login attempt');
   };
-
-  // Manually add user to admin_users (replace with your actual details)
-  const addUserManually = async () => {
-    // First get your user ID from auth
-    const { data: { user } } = await supabase.auth.getUser();
-    console.log("Current user:", user);
-    
-    if (user) {
-      const userData = {
-        id: user.id,
-        email: user.email,
-        full_name: "Admin", // Change this
-        role: "admin",
-        phone: "740665250", // Change this
-        position: "Pharmacy Owner", // Change this
-        is_active: true,
-        created_at: new Date().toISOString()
-      };
-      
-      const { data, error } = await supabase
-        .from('admin_users')
-        .insert(userData);
-        
-      console.log("Insert result:", { data, error });
-    }
-  };
-
-  // await addUserManually();
 
   return (
     <>
