@@ -22,12 +22,18 @@ import {
 } from "../components/ui/MobileComponents";
 import { dataService } from "../services";
 import { useNotificationsStore, useSettingsStore } from "../store";
+import { useSalesStore, useProductsStore, useCustomersStore } from "../store";
 
 const MobileDashboard = () => {
   const navigate = useNavigate();
   const { settings } = useSettingsStore();
   const { notifications, unreadCount } = useNotificationsStore();
   const { currency } = settings;
+
+  // Zustand stores for global data
+  const { sales, fetchSales } = useSalesStore();
+  const { products, fetchProducts } = useProductsStore();
+  const { customers, fetchCustomers } = useCustomersStore();
 
   // Dynamic greeting based on time of day
   const getGreeting = () => {
@@ -43,6 +49,7 @@ const MobileDashboard = () => {
     }
   };
 
+  // Dashboard stats state
   const [dashboardStats, setDashboardStats] = useState({
     todaysSales: 0,
     todaysTransactions: 0,
@@ -57,26 +64,43 @@ const MobileDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const [stats, sales, products] = await Promise.all([
-          dataService.dashboard.getStats(),
-          dataService.sales.getRecent(5),
-          dataService.products.getLowStock(),
-        ]);
+    async function loadData() {
+      setLoading(true);
+      // Only fetch if not already loaded
+      if (!sales || sales.length === 0) await fetchSales();
+      if (!products || products.length === 0) await fetchProducts();
+      if (!customers || customers.length === 0) await fetchCustomers();
 
-        setDashboardStats(stats || {});
-        setRecentSales(sales || []);
-        setLowStockProducts(products || []);
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-      } finally {
-        setLoading(false);
-      }
+      // Compute dashboard stats (mimic desktop logic)
+      const todaysDate = new Date().toLocaleDateString();
+      const todaysSalesList = (sales || []).filter(sale => {
+        const saleDate = sale.date ? new Date(sale.date).toLocaleDateString() : "";
+        return saleDate === todaysDate;
+      });
+      const todaysSales = todaysSalesList.reduce((sum, sale) => sum + (sale.totalAmount || sale.total || 0), 0);
+      const todaysTransactions = todaysSalesList.length;
+      const totalProducts = products ? products.length : 0;
+      const totalCustomers = customers ? customers.length : 0;
+      const totalRevenue = (sales || []).reduce((sum, sale) => sum + (sale.totalAmount || sale.total || 0), 0);
+      const lowStockProductsList = (products || []).filter(p => (p.quantity || 0) < 10);
+      const lowStockItems = lowStockProductsList.length;
+      // Dummy monthly growth for now (could be improved)
+      const monthlyGrowth = 0;
+      setDashboardStats({
+        todaysSales,
+        todaysTransactions,
+        totalProducts,
+        totalCustomers,
+        totalRevenue,
+        lowStockItems,
+        monthlyGrowth,
+      });
+      setRecentSales((sales || []).slice(0, 5));
+      setLowStockProducts(lowStockProductsList);
+      setLoading(false);
     }
-
-    fetchData();
+    loadData();
+    // eslint-disable-next-line
   }, []);
 
   const quickActions = [
