@@ -16,7 +16,8 @@ import {
   FiTrendingUp,
   FiPackage,
 } from "react-icons/fi";
-import { useSettings } from "../contexts/SettingsContext";
+import { dataService } from "../services";
+import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
 
@@ -25,71 +26,53 @@ function ViewCustomer() {
   const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  
+  // Use settings store instead of context
+  const { settings } = useSettingsStore();
   const { currency = "UGX" } = settings;
+  
   const [customer, setCustomer] = useState(null);
   const [purchaseHistory, setPurchaseHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock customer data with purchase history
+  // Load real customer data and purchase history
   useEffect(() => {
-    setTimeout(() => {
-      setCustomer({
-        id: 1,
-        firstName: "John",
-        lastName: "Doe",
-        email: "john.doe@email.com",
-        phone: "+234 801 234 5678",
-        address: "123 Lagos Street, Lagos",
-        city: "Lagos",
-        state: "Lagos State",
-        zipCode: "100001",
-        dateOfBirth: "1985-06-15",
-        gender: "male",
-        registrationDate: "2024-01-15",
-        status: "active",
-        totalPurchases: 12,
-        totalSpent: 45750.5,
-        lastPurchase: "2024-01-20",
-        loyaltyPoints: 450,
-        emergencyContact: "Jane Doe",
-        emergencyPhone: "+234 802 345 6789",
-        allergies: "Penicillin, Shellfish",
-        medicalConditions: "Hypertension",
-      });
+    const loadCustomerData = async () => {
+      if (!id) return;
 
-      setPurchaseHistory([
-        {
-          id: 1,
-          date: "2024-01-20",
-          items: [
-            { name: "Paracetamol 500mg", quantity: 2, price: 25.5 },
-            { name: "Vitamin C 1000mg", quantity: 1, price: 35.75 },
-          ],
-          total: 86.75,
-          status: "completed",
-        },
-        {
-          id: 2,
-          date: "2024-01-15",
-          items: [
-            { name: "Amoxicillin 250mg", quantity: 1, price: 45.0 },
-            { name: "Ibuprofen 400mg", quantity: 3, price: 32.25 },
-          ],
-          total: 141.75,
-          status: "completed",
-        },
-        {
-          id: 3,
-          date: "2024-01-10",
-          items: [{ name: "Cough Syrup 100ml", quantity: 2, price: 28.0 }],
-          total: 56.0,
-          status: "completed",
-        },
-      ]);
+      setLoading(true);
+      setError(null);
 
-      setLoading(false);
-    }, 1000);
+      try {
+        console.log("🔄 [ViewCustomer] Loading customer data for ID:", id);
+        
+        // Fetch customer data and sales history in parallel
+        const [customerData, salesData] = await Promise.all([
+          dataService.customers.getById(id),
+          dataService.sales.getByCustomer(id).catch(() => []) // Don't fail if no sales
+        ]);
+
+        console.log("✅ [ViewCustomer] Customer data loaded:", customerData);
+        console.log("✅ [ViewCustomer] Sales data loaded:", salesData?.length || 0, "sales");
+
+        if (!customerData) {
+          setError("Customer not found");
+          return;
+        }
+
+        setCustomer(customerData);
+        setPurchaseHistory(salesData || []);
+
+      } catch (err) {
+        console.error("❌ [ViewCustomer] Error loading customer data:", err);
+        setError("Failed to load customer data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCustomerData();
   }, [id]);
 
   if (loading) {
@@ -118,7 +101,7 @@ function ViewCustomer() {
     );
   }
 
-  if (!customer) {
+  if (error || !customer) {
     return (
       <div
         style={{
@@ -140,10 +123,13 @@ function ViewCustomer() {
             marginBottom: "8px",
           }}
         >
-          Customer Not Found
+          {error || "Customer Not Found"}
         </h2>
         <p style={{ color: "#6b7280", marginBottom: "24px" }}>
-          The customer you're looking for doesn't exist or has been removed.
+          {error === "Customer not found" 
+            ? "The customer you're looking for doesn't exist or has been removed."
+            : "There was an error loading the customer data. Please try again."
+          }
         </p>
         <button
           onClick={() => navigate("/customers")}
@@ -168,6 +154,35 @@ function ViewCustomer() {
     );
   }
 
+  // Helper function to calculate customer stats from sales data
+  const getCustomerStats = () => {
+    const totalPurchases = purchaseHistory.length;
+    const totalSpent = purchaseHistory.reduce((sum, sale) => {
+      return sum + (sale.total_amount || sale.totalAmount || 0);
+    }, 0);
+    
+    // Get last purchase date
+    const lastPurchase = purchaseHistory.length > 0 
+      ? purchaseHistory.sort((a, b) => new Date(b.sale_date || b.saleDate) - new Date(a.sale_date || a.saleDate))[0]
+      : null;
+    
+    const lastPurchaseDate = lastPurchase 
+      ? (lastPurchase.sale_date || lastPurchase.saleDate)
+      : null;
+
+    // Simple loyalty points calculation (could be enhanced)
+    const loyaltyPoints = Math.floor(totalSpent / 100); // 1 point per 100 UGX spent
+
+    return {
+      totalPurchases,
+      totalSpent,
+      lastPurchaseDate,
+      loyaltyPoints
+    };
+  };
+
+  const stats = getCustomerStats();
+
   return (
     <div
       className={isMobile ? "mobile-container" : ""}
@@ -181,101 +196,143 @@ function ViewCustomer() {
             }
       }
     >
-      {/* Header */}
-      <div
-        className={isMobile ? "mobile-card" : ""}
-        style={
-          isMobile
-            ? { marginBottom: "16px" }
-            : {
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "32px",
-              }
-        }
-      >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button
-            onClick={() => navigate("/customers")}
-            className={isMobile ? "mobile-action-button secondary" : ""}
-            style={
-              isMobile
-                ? {}
-                : {
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 16px",
-                    backgroundColor: "white",
-                    color: "var(--color-text-secondary)",
-                    border: "1px solid var(--color-border-light)",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    marginRight: "16px",
-                  }
-            }
-          >
-            <FiArrowLeft size={16} />
-            Back to Customers
-          </button>
-          <div>
-            <h1
-              style={{
-                fontSize: "28px",
-                fontWeight: "bold",
-                color: "var(--color-text-primary)",
-                margin: "0 0 4px 0",
-              }}
+      {/* Mobile Header */}
+      {isMobile ? (
+        <div className="mobile-card" style={{ marginBottom: "20px", position: "sticky", top: "16px", zIndex: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "16px" }}>
+            <button
+              onClick={() => navigate("/customers")}
+              className="mobile-action-button secondary"
+              style={{ marginRight: "12px" }}
             >
-              {customer.firstName} {customer.lastName}
-            </h1>
-            <p
-              style={{
-                color: "var(--color-text-secondary)",
-                margin: 0,
-              }}
-            >
-              Customer since{" "}
-              {new Date(customer.registrationDate).toLocaleDateString()}
-            </p>
+              <FiArrowLeft size={18} />
+            </button>
+            <div style={{ flex: 1 }}>
+              <h1
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "700",
+                  color: "#1a202c",
+                  margin: "0 0 4px 0",
+                  lineHeight: "1.2",
+                }}
+              >
+                {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
+              </h1>
+              <p
+                style={{
+                  fontSize: "13px",
+                  color: "#718096",
+                  margin: 0,
+                }}
+              >
+                Customer since {new Date(customer.registration_date || customer.registrationDate).toLocaleDateString()}
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => navigate(`/customers/edit/${customer.id}`)}
+            className="mobile-action-button"
+            style={{ 
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px"
+            }}
+          >
+            <FiEdit size={16} />
+            Edit Customer
+          </button>
         </div>
-
-        <button
-          onClick={() => navigate(`/customers/edit/${customer.id}`)}
+      ) : (
+        /* Desktop Header */
+        <div
           style={{
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
-            padding: "12px 20px",
-            backgroundColor: "var(--color-primary-600)",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: "pointer",
+            marginBottom: "32px",
           }}
         >
-          <FiEdit size={16} />
-          Edit Customer
-        </button>
-      </div>
+          <div style={{ display: "flex", alignItems: "center" }}>
+            <button
+              onClick={() => navigate("/customers")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "8px 16px",
+                backgroundColor: "white",
+                color: "var(--color-text-secondary)",
+                border: "1px solid var(--color-border-light)",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+                marginRight: "16px",
+              }}
+            >
+              <FiArrowLeft size={16} />
+              Back to Customers
+            </button>
+            <div>
+              <h1
+                style={{
+                  fontSize: "28px",
+                  fontWeight: "bold",
+                  color: "var(--color-text-primary)",
+                  margin: "0 0 4px 0",
+                }}
+              >
+                {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
+              </h1>
+              <p
+                style={{
+                  color: "var(--color-text-secondary)",
+                  margin: 0,
+                }}
+              >
+                Customer since{" "}
+                {new Date(customer.registration_date || customer.registrationDate).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
 
-      {/* Customer Overview Cards */}
+          <button
+            onClick={() => navigate(`/customers/edit/${customer.id}`)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "12px 20px",
+              backgroundColor: "var(--color-primary-600)",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            <FiEdit size={16} />
+            Edit Customer
+          </button>
+        </div>
+      )}
+
+      {/* Customer Overview Cards - Mobile Responsive */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: "24px",
-          marginBottom: "32px",
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)",
+          gap: isMobile ? "12px" : "24px",
+          marginBottom: isMobile ? "20px" : "32px",
         }}
       >
-        <div
-          style={{
+        {/* Total Purchases */}
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -285,43 +342,45 @@ function ViewCustomer() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "center" : "flex-start",
+              textAlign: isMobile ? "center" : "left",
+              gap: isMobile ? "8px" : "12px",
             }}
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
+                width: isMobile ? "40px" : "48px",
+                height: isMobile ? "40px" : "48px",
                 backgroundColor: "#dbeafe",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: "12px",
               }}
             >
-              <FiShoppingCart color="#3b82f6" size={24} />
+              <FiShoppingCart color="#3b82f6" size={isMobile ? 20 : 24} />
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+              <div style={{ fontSize: isMobile ? "11px" : "12px", color: "#6b7280", marginBottom: "2px" }}>
                 Total Purchases
               </div>
               <div
                 style={{
-                  fontSize: "24px",
+                  fontSize: isMobile ? "18px" : "24px",
                   fontWeight: "bold",
                   color: "#1f2937",
                 }}
               >
-                {customer.totalPurchases}
+                {stats.totalPurchases}
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          style={{
+        {/* Total Spent */}
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -331,44 +390,46 @@ function ViewCustomer() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "center" : "flex-start",
+              textAlign: isMobile ? "center" : "left",
+              gap: isMobile ? "8px" : "12px",
             }}
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
+                width: isMobile ? "40px" : "48px",
+                height: isMobile ? "40px" : "48px",
                 backgroundColor: "#d1fae5",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: "12px",
               }}
             >
-              <FiDollarSign color="#10b981" size={24} />
+              <FiDollarSign color="#10b981" size={isMobile ? 20 : 24} />
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+              <div style={{ fontSize: isMobile ? "11px" : "12px", color: "#6b7280", marginBottom: "2px" }}>
                 Total Spent
               </div>
               <div
                 style={{
-                  fontSize: "24px",
+                  fontSize: isMobile ? "18px" : "24px",
                   fontWeight: "bold",
                   color: "#1f2937",
                 }}
               >
                 {currency}
-                {customer.totalSpent.toLocaleString()}
+                {stats.totalSpent.toLocaleString()}
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          style={{
+        {/* Loyalty Points */}
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -378,43 +439,45 @@ function ViewCustomer() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "center" : "flex-start",
+              textAlign: isMobile ? "center" : "left",
+              gap: isMobile ? "8px" : "12px",
             }}
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
+                width: isMobile ? "40px" : "48px",
+                height: isMobile ? "40px" : "48px",
                 backgroundColor: "#fef3c7",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: "12px",
               }}
             >
-              <FiTrendingUp color="#f59e0b" size={24} />
+              <FiTrendingUp color="#f59e0b" size={isMobile ? 20 : 24} />
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#6b7280" }}>
+              <div style={{ fontSize: isMobile ? "11px" : "12px", color: "#6b7280", marginBottom: "2px" }}>
                 Loyalty Points
               </div>
               <div
                 style={{
-                  fontSize: "24px",
+                  fontSize: isMobile ? "18px" : "24px",
                   fontWeight: "bold",
                   color: "#1f2937",
                 }}
               >
-                {customer.loyaltyPoints}
+                {stats.loyaltyPoints}
               </div>
             </div>
           </div>
         </div>
 
-        <div
-          style={{
+        {/* Status */}
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -424,57 +487,59 @@ function ViewCustomer() {
           <div
             style={{
               display: "flex",
-              alignItems: "center",
-              marginBottom: "16px",
+              flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "center" : "flex-start",
+              textAlign: isMobile ? "center" : "left",
+              gap: isMobile ? "8px" : "12px",
             }}
           >
             <div
               style={{
-                width: "48px",
-                height: "48px",
-                backgroundColor:
-                  customer.status === "active" ? "#d1fae5" : "#fef3c7",
+                width: isMobile ? "40px" : "48px",
+                height: isMobile ? "40px" : "48px",
+                backgroundColor: customer.status === "active" ? "#d1fae5" : "#fef3c7",
                 borderRadius: "50%",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                marginRight: "12px",
               }}
             >
               <FiUser
                 color={customer.status === "active" ? "#10b981" : "#f59e0b"}
-                size={24}
+                size={isMobile ? 20 : 24}
               />
             </div>
             <div>
-              <div style={{ fontSize: "12px", color: "#6b7280" }}>Status</div>
+              <div style={{ fontSize: isMobile ? "11px" : "12px", color: "#6b7280", marginBottom: "2px" }}>
+                Status
+              </div>
               <div
                 style={{
-                  fontSize: "16px",
+                  fontSize: isMobile ? "16px" : "18px",
                   fontWeight: "bold",
                   color: customer.status === "active" ? "#10b981" : "#f59e0b",
                 }}
               >
-                {customer.status.charAt(0).toUpperCase() +
-                  customer.status.slice(1)}
+                {customer.status.charAt(0).toUpperCase() + customer.status.slice(1)}
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
+      {/* Main Content - Mobile Responsive */}
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "24px",
-          marginBottom: "32px",
+          display: isMobile ? "flex" : "grid",
+          flexDirection: isMobile ? "column" : undefined,
+          gridTemplateColumns: isMobile ? undefined : "1fr 1fr",
+          gap: isMobile ? "20px" : "24px",
+          marginBottom: isMobile ? "20px" : "32px",
         }}
       >
         {/* Customer Details */}
-        <div
-          style={{
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -483,24 +548,28 @@ function ViewCustomer() {
         >
           <h3
             style={{
-              fontSize: "18px",
+              fontSize: isMobile ? "16px" : "18px",
               fontWeight: "600",
               color: "#1f2937",
-              marginBottom: "20px",
+              marginBottom: isMobile ? "16px" : "20px",
             }}
           >
             Customer Details
           </h3>
 
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            style={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: isMobile ? "12px" : "16px" 
+            }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <FiMail color="#6b7280" size={16} />
               <div>
                 <div style={{ fontSize: "12px", color: "#6b7280" }}>Email</div>
-                <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                  {customer.email}
+                <div style={{ fontSize: "14px", color: "#1f2937", wordBreak: "break-word" }}>
+                  {customer.email || "N/A"}
                 </div>
               </div>
             </div>
@@ -510,20 +579,19 @@ function ViewCustomer() {
               <div>
                 <div style={{ fontSize: "12px", color: "#6b7280" }}>Phone</div>
                 <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                  {customer.phone}
+                  {customer.phone || "N/A"}
                 </div>
               </div>
             </div>
 
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <FiMapPin color="#6b7280" size={16} />
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              <FiMapPin color="#6b7280" size={16} style={{ marginTop: "2px" }} />
               <div>
                 <div style={{ fontSize: "12px", color: "#6b7280" }}>
                   Address
                 </div>
-                <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                  {customer.address}, {customer.city}, {customer.state}{" "}
-                  {customer.zipCode}
+                <div style={{ fontSize: "14px", color: "#1f2937", lineHeight: "1.4" }}>
+                  {customer.address || "N/A"}{customer.city ? `, ${customer.city}` : ""}{customer.state ? `, ${customer.state}` : ""}{(customer.zip_code || customer.zipCode) ? ` ${customer.zip_code || customer.zipCode}` : ""}
                 </div>
               </div>
             </div>
@@ -535,7 +603,7 @@ function ViewCustomer() {
                   Date of Birth
                 </div>
                 <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                  {new Date(customer.dateOfBirth).toLocaleDateString()}
+                  {(customer.date_of_birth || customer.dateOfBirth) ? new Date(customer.date_of_birth || customer.dateOfBirth).toLocaleDateString() : "N/A"}
                 </div>
               </div>
             </div>
@@ -547,7 +615,7 @@ function ViewCustomer() {
                   Last Purchase
                 </div>
                 <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                  {new Date(customer.lastPurchase).toLocaleDateString()}
+                  {stats.lastPurchaseDate ? new Date(stats.lastPurchaseDate).toLocaleDateString() : "N/A"}
                 </div>
               </div>
             </div>
@@ -555,8 +623,8 @@ function ViewCustomer() {
         </div>
 
         {/* Medical Information */}
-        <div
-          style={{
+        <div className={isMobile ? "mobile-card" : ""} 
+          style={isMobile ? {} : {
             backgroundColor: "white",
             borderRadius: "12px",
             padding: "24px",
@@ -565,17 +633,21 @@ function ViewCustomer() {
         >
           <h3
             style={{
-              fontSize: "18px",
+              fontSize: isMobile ? "16px" : "18px",
               fontWeight: "600",
               color: "#1f2937",
-              marginBottom: "20px",
+              marginBottom: isMobile ? "16px" : "20px",
             }}
           >
             Medical Information
           </h3>
 
           <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+            style={{ 
+              display: "flex", 
+              flexDirection: "column", 
+              gap: isMobile ? "12px" : "16px" 
+            }}
           >
             <div>
               <div
@@ -588,7 +660,7 @@ function ViewCustomer() {
                 Emergency Contact
               </div>
               <div style={{ fontSize: "14px", color: "#1f2937" }}>
-                {customer.emergencyContact} - {customer.emergencyPhone}
+                {(customer.emergency_contact || customer.emergencyContact) || "N/A"}{(customer.emergency_phone || customer.emergencyPhone) ? ` - ${customer.emergency_phone || customer.emergencyPhone}` : ""}
               </div>
             </div>
 
@@ -631,18 +703,18 @@ function ViewCustomer() {
               <div
                 style={{
                   fontSize: "14px",
-                  color: customer.medicalConditions ? "#f59e0b" : "#6b7280",
+                  color: (customer.medical_conditions || customer.medicalConditions) ? "#f59e0b" : "#6b7280",
                   padding: "8px 12px",
-                  backgroundColor: customer.medicalConditions
+                  backgroundColor: (customer.medical_conditions || customer.medicalConditions)
                     ? "#fffbeb"
                     : "#f9fafb",
                   borderRadius: "6px",
-                  border: customer.medicalConditions
+                  border: (customer.medical_conditions || customer.medicalConditions)
                     ? "1px solid #fed7aa"
                     : "1px solid #e5e7eb",
                 }}
               >
-                {customer.medicalConditions ||
+                {(customer.medical_conditions || customer.medicalConditions) ||
                   "No medical conditions on record"}
               </div>
             </div>
@@ -650,9 +722,9 @@ function ViewCustomer() {
         </div>
       </div>
 
-      {/* Purchase History */}
-      <div
-        style={{
+      {/* Purchase History - Mobile Responsive */}
+      <div className={isMobile ? "mobile-card" : ""} 
+        style={isMobile ? {} : {
           backgroundColor: "white",
           borderRadius: "12px",
           padding: "24px",
@@ -661,31 +733,53 @@ function ViewCustomer() {
       >
         <h3
           style={{
-            fontSize: "18px",
+            fontSize: isMobile ? "16px" : "18px",
             fontWeight: "600",
             color: "#1f2937",
-            marginBottom: "20px",
+            marginBottom: isMobile ? "16px" : "20px",
           }}
         >
           Purchase History
         </h3>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {purchaseHistory.map((purchase) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? "12px" : "16px" }}>
+          {purchaseHistory.map((sale) => (
             <div
-              key={purchase.id}
+              key={sale.id}
               style={{
                 border: "1px solid #e5e7eb",
                 borderRadius: "8px",
-                padding: "16px",
+                padding: isMobile ? "12px" : "16px",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                backgroundColor: "white",
+                ...(isMobile && {
+                  touchAction: "manipulation",
+                  WebkitTapHighlightColor: "rgba(0,0,0,0.1)",
+                })
+              }}
+              onClick={() => navigate(`/sales/${sale.id}`)}
+              onMouseEnter={(e) => {
+                if (!isMobile) {
+                  e.target.style.boxShadow = "0 2px 8px rgba(0,0,0,0.1)";
+                  e.target.style.transform = "translateY(-1px)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isMobile) {
+                  e.target.style.boxShadow = "none";
+                  e.target.style.transform = "translateY(0)";
+                }
               }}
             >
               <div
                 style={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: isMobile ? "flex-start" : "center",
                   marginBottom: "12px",
+                  flexDirection: isMobile ? "column" : "row",
+                  gap: isMobile ? "4px" : "0",
                 }}
               >
                 <div>
@@ -696,37 +790,39 @@ function ViewCustomer() {
                       color: "#1f2937",
                     }}
                   >
-                    Purchase #{purchase.id}
+                    Sale #{sale.id}
                   </div>
                   <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                    {new Date(purchase.date).toLocaleDateString()}
+                    {new Date(sale.sale_date || sale.saleDate || sale.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 <div
                   style={{
-                    fontSize: "16px",
+                    fontSize: isMobile ? "18px" : "16px",
                     fontWeight: "bold",
                     color: "#10b981",
+                    alignSelf: isMobile ? "flex-end" : "auto",
                   }}
                 >
                   {currency}
-                  {(purchase.total || 0).toFixed(2)}
+                  {(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
                 </div>
               </div>
 
               <div
-                style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+                style={{ display: "flex", flexDirection: "column", gap: "6px" }}
               >
-                {purchase.items.map((item, index) => (
+                {(sale.sale_items || sale.items || []).slice(0, isMobile ? 2 : 3).map((item, index) => (
                   <div
                     key={index}
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "center",
-                      padding: "8px 12px",
+                      padding: "6px 10px",
                       backgroundColor: "#f9fafb",
-                      borderRadius: "6px",
+                      borderRadius: "4px",
+                      fontSize: isMobile ? "13px" : "14px",
                     }}
                   >
                     <div
@@ -734,19 +830,43 @@ function ViewCustomer() {
                         display: "flex",
                         alignItems: "center",
                         gap: "8px",
+                        flex: 1,
+                        minWidth: 0,
                       }}
                     >
-                      <FiPackage color="#6b7280" size={14} />
-                      <span style={{ fontSize: "14px", color: "#1f2937" }}>
-                        {item.name}
+                      <FiPackage color="#6b7280" size={12} />
+                      <span style={{ 
+                        color: "#1f2937",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}>
+                        {item.product_name || item.name || `Product #${item.product_id}`}
                       </span>
                     </div>
-                    <div style={{ fontSize: "14px", color: "#6b7280" }}>
+                    <div style={{ 
+                      color: "#6b7280",
+                      flexShrink: 0,
+                      marginLeft: "8px",
+                    }}>
                       {item.quantity} × {currency}
-                      {(item.price || 0).toFixed(2)}
+                      {(item.unit_price || item.price || 0).toFixed(2)}
                     </div>
                   </div>
                 ))}
+                {(sale.sale_items || sale.items || []).length > (isMobile ? 2 : 3) && (
+                  <div
+                    style={{
+                      padding: "6px 10px",
+                      textAlign: "center",
+                      fontSize: "12px",
+                      color: "#6b7280",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    +{(sale.sale_items || sale.items || []).length - (isMobile ? 2 : 3)} more items
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -755,12 +875,12 @@ function ViewCustomer() {
             <div
               style={{
                 textAlign: "center",
-                padding: "48px 0",
+                padding: isMobile ? "32px 16px" : "48px 0",
                 color: "#6b7280",
               }}
             >
               <FiShoppingCart
-                size={48}
+                size={isMobile ? 40 : 48}
                 style={{ marginBottom: "16px", opacity: 0.5 }}
               />
               <h4
@@ -772,7 +892,9 @@ function ViewCustomer() {
               >
                 No Purchase History
               </h4>
-              <p>This customer hasn't made any purchases yet.</p>
+              <p style={{ fontSize: isMobile ? "14px" : "16px" }}>
+                This customer hasn't made any purchases yet.
+              </p>
             </div>
           )}
         </div>

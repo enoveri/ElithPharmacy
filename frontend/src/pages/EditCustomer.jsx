@@ -252,7 +252,13 @@ function EditCustomer() {
                   className={isMobile ? "mobile-form-label" : ""}
                   style={
                     isMobile
-                      ? {}
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
                       : {
                           display: "block",
                           fontSize: "13px",
@@ -272,7 +278,18 @@ function EditCustomer() {
                   className={isMobile ? "mobile-form-input" : ""}
                   style={
                     isMobile
-                      ? {}
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: errors.firstName
+                            ? "2px solid #ef4444"
+                            : "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
                       : {
                           width: "100%",
                           padding: "10px 12px",
@@ -289,29 +306,41 @@ function EditCustomer() {
                 {errors.firstName && (
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: isMobile ? "13px" : "11px",
                       color: "#ef4444",
-                      marginTop: "3px",
+                      marginTop: isMobile ? "6px" : "3px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: isMobile ? "6px" : "3px",
+                      fontWeight: isMobile ? "500" : "normal",
                     }}
                   >
-                    <FiAlertCircle size={12} />
+                    <FiAlertCircle size={isMobile ? 14 : 12} />
                     {errors.firstName}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Last Name *
                 </label>
@@ -320,44 +349,72 @@ function EditCustomer() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.lastName
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: errors.lastName
+                            ? "2px solid #ef4444"
+                            : "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.lastName
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter last name"
                 />
                 {errors.lastName && (
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: isMobile ? "13px" : "11px",
                       color: "#ef4444",
-                      marginTop: "3px",
+                      marginTop: isMobile ? "6px" : "3px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: isMobile ? "6px" : "3px",
+                      fontWeight: isMobile ? "500" : "normal",
                     }}
                   >
-                    <FiAlertCircle size={12} />
+                    <FiAlertCircle size={isMobile ? 14 : 12} />
                     {errors.lastName}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Email Address *
                 </label>
@@ -366,44 +423,72 @@ function EditCustomer() {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.email
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: errors.email
+                            ? "2px solid #ef4444"
+                            : "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.email
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter email address"
                 />
                 {errors.email && (
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: isMobile ? "13px" : "11px",
                       color: "#ef4444",
-                      marginTop: "3px",
+                      marginTop: isMobile ? "6px" : "3px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: isMobile ? "6px" : "3px",
+                      fontWeight: isMobile ? "500" : "normal",
                     }}
                   >
-                    <FiAlertCircle size={12} />
+                    <FiAlertCircle size={isMobile ? 14 : 12} />
                     {errors.email}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Phone Number *
                 </label>
@@ -412,44 +497,72 @@ function EditCustomer() {
                   name="phone"
                   value={formData.phone}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.phone
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: errors.phone
+                            ? "2px solid #ef4444"
+                            : "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.phone
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter phone number"
                 />
                 {errors.phone && (
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: isMobile ? "13px" : "11px",
                       color: "#ef4444",
-                      marginTop: "3px",
+                      marginTop: isMobile ? "6px" : "3px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: isMobile ? "6px" : "3px",
+                      fontWeight: isMobile ? "500" : "normal",
                     }}
                   >
-                    <FiAlertCircle size={12} />
+                    <FiAlertCircle size={isMobile ? 14 : 12} />
                     {errors.phone}
                   </p>
                 )}
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Date of Birth
                 </label>
@@ -458,26 +571,51 @@ function EditCustomer() {
                   name="dateOfBirth"
                   value={formData.dateOfBirth}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                 />
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Gender
                 </label>
@@ -485,14 +623,28 @@ function EditCustomer() {
                   name="gender"
                   value={formData.gender}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                 >
                   <option value="">Select gender</option>
                   <option value="male">Male</option>
@@ -520,15 +672,26 @@ function EditCustomer() {
                 gap: "16px",
               }}
             >
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Street Address *
                 </label>
@@ -537,30 +700,47 @@ function EditCustomer() {
                   name="address"
                   value={formData.address}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.address
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: errors.address
+                            ? "2px solid #ef4444"
+                            : "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: errors.address
+                            ? "1px solid #ef4444"
+                            : "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Enter street address"
                 />
                 {errors.address && (
                   <p
                     style={{
-                      fontSize: "11px",
+                      fontSize: isMobile ? "13px" : "11px",
                       color: "#ef4444",
-                      marginTop: "3px",
+                      marginTop: isMobile ? "6px" : "3px",
                       display: "flex",
                       alignItems: "center",
-                      gap: "3px",
+                      gap: isMobile ? "6px" : "3px",
+                      fontWeight: isMobile ? "500" : "normal",
                     }}
                   >
-                    <FiAlertCircle size={12} />
+                    <FiAlertCircle size={isMobile ? 14 : 12} />
                     {errors.address}
                   </p>
                 )}
@@ -569,19 +749,30 @@ function EditCustomer() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "1fr 1fr 200px",
+                  gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 200px",
                   gap: "16px",
                 }}
               >
-                <div>
+                <div className={isMobile ? "mobile-form-group" : ""}>
                   <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "500",
-                      color: "#374151",
-                      marginBottom: "6px",
-                    }}
+                    className={isMobile ? "mobile-form-label" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            display: "block",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#1f2937",
+                            marginBottom: "8px",
+                          }
+                        : {
+                            display: "block",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            color: "#374151",
+                            marginBottom: "6px",
+                          }
+                    }
                   >
                     City *
                   </label>
@@ -590,44 +781,72 @@ function EditCustomer() {
                     name="city"
                     value={formData.city}
                     onChange={handleInputChange}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: errors.city
-                        ? "1px solid #ef4444"
-                        : "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      backgroundColor: "#ffffff",
-                    }}
+                    className={isMobile ? "mobile-form-input" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: errors.city
+                              ? "2px solid #ef4444"
+                              : "2px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "16px",
+                            backgroundColor: "#ffffff",
+                            color: "#1f2937",
+                            outline: "none",
+                          }
+                        : {
+                            width: "100%",
+                            padding: "10px 12px",
+                            border: errors.city
+                              ? "1px solid #ef4444"
+                              : "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            backgroundColor: "#ffffff",
+                          }
+                    }
                     placeholder="Enter city"
                   />
                   {errors.city && (
                     <p
                       style={{
-                        fontSize: "11px",
+                        fontSize: isMobile ? "13px" : "11px",
                         color: "#ef4444",
-                        marginTop: "3px",
+                        marginTop: isMobile ? "6px" : "3px",
                         display: "flex",
                         alignItems: "center",
-                        gap: "3px",
+                        gap: isMobile ? "6px" : "3px",
+                        fontWeight: isMobile ? "500" : "normal",
                       }}
                     >
-                      <FiAlertCircle size={12} />
+                      <FiAlertCircle size={isMobile ? 14 : 12} />
                       {errors.city}
                     </p>
                   )}
                 </div>
 
-                <div>
+                <div className={isMobile ? "mobile-form-group" : ""}>
                   <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "500",
-                      color: "#374151",
-                      marginBottom: "6px",
-                    }}
+                    className={isMobile ? "mobile-form-label" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            display: "block",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#1f2937",
+                            marginBottom: "8px",
+                          }
+                        : {
+                            display: "block",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            color: "#374151",
+                            marginBottom: "6px",
+                          }
+                    }
                   >
                     State *
                   </label>
@@ -636,44 +855,72 @@ function EditCustomer() {
                     name="state"
                     value={formData.state}
                     onChange={handleInputChange}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: errors.state
-                        ? "1px solid #ef4444"
-                        : "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      backgroundColor: "#ffffff",
-                    }}
+                    className={isMobile ? "mobile-form-input" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: errors.state
+                              ? "2px solid #ef4444"
+                              : "2px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "16px",
+                            backgroundColor: "#ffffff",
+                            color: "#1f2937",
+                            outline: "none",
+                          }
+                        : {
+                            width: "100%",
+                            padding: "10px 12px",
+                            border: errors.state
+                              ? "1px solid #ef4444"
+                              : "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            backgroundColor: "#ffffff",
+                          }
+                    }
                     placeholder="Enter state"
                   />
                   {errors.state && (
                     <p
                       style={{
-                        fontSize: "11px",
+                        fontSize: isMobile ? "13px" : "11px",
                         color: "#ef4444",
-                        marginTop: "3px",
+                        marginTop: isMobile ? "6px" : "3px",
                         display: "flex",
                         alignItems: "center",
-                        gap: "3px",
+                        gap: isMobile ? "6px" : "3px",
+                        fontWeight: isMobile ? "500" : "normal",
                       }}
                     >
-                      <FiAlertCircle size={12} />
+                      <FiAlertCircle size={isMobile ? 14 : 12} />
                       {errors.state}
                     </p>
                   )}
                 </div>
 
-                <div>
+                <div className={isMobile ? "mobile-form-group" : ""}>
                   <label
-                    style={{
-                      display: "block",
-                      fontSize: "13px",
-                      fontWeight: "500",
-                      color: "#374151",
-                      marginBottom: "6px",
-                    }}
+                    className={isMobile ? "mobile-form-label" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            display: "block",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#1f2937",
+                            marginBottom: "8px",
+                          }
+                        : {
+                            display: "block",
+                            fontSize: "13px",
+                            fontWeight: "500",
+                            color: "#374151",
+                            marginBottom: "6px",
+                          }
+                    }
                   >
                     ZIP Code
                   </label>
@@ -682,14 +929,28 @@ function EditCustomer() {
                     name="zipCode"
                     value={formData.zipCode}
                     onChange={handleInputChange}
-                    style={{
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #e5e7eb",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                      backgroundColor: "#ffffff",
-                    }}
+                    className={isMobile ? "mobile-form-input" : ""}
+                    style={
+                      isMobile
+                        ? {
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: "2px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "16px",
+                            backgroundColor: "#ffffff",
+                            color: "#1f2937",
+                            outline: "none",
+                          }
+                        : {
+                            width: "100%",
+                            padding: "10px 12px",
+                            border: "1px solid #e5e7eb",
+                            borderRadius: "6px",
+                            fontSize: "13px",
+                            backgroundColor: "#ffffff",
+                          }
+                    }
                     placeholder="ZIP code"
                   />
                 </div>
@@ -711,19 +972,30 @@ function EditCustomer() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))",
                 gap: "16px",
               }}
             >
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Emergency Contact Name
                 </label>
@@ -732,27 +1004,52 @@ function EditCustomer() {
                   name="emergencyContact"
                   value={formData.emergencyContact}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Emergency contact name"
                 />
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Emergency Contact Phone
                 </label>
@@ -761,27 +1058,52 @@ function EditCustomer() {
                   name="emergencyPhone"
                   value={formData.emergencyPhone}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                   placeholder="Emergency contact phone"
                 />
               </div>
 
-              <div>
+              <div className={isMobile ? "mobile-form-group" : ""}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Status
                 </label>
@@ -789,29 +1111,54 @@ function EditCustomer() {
                   name="status"
                   value={formData.status}
                   onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                        }
+                  }
                 >
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                 </select>
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div className={isMobile ? "mobile-form-group" : ""} style={{ gridColumn: "1 / -1" }}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Known Allergies
                 </label>
@@ -820,28 +1167,54 @@ function EditCustomer() {
                   value={formData.allergies}
                   onChange={handleInputChange}
                   rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                    resize: "vertical",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                          resize: "vertical",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                          resize: "vertical",
+                        }
+                  }
                   placeholder="List any known allergies (comma separated)"
                 />
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
+              <div className={isMobile ? "mobile-form-group" : ""} style={{ gridColumn: "1 / -1" }}>
                 <label
-                  style={{
-                    display: "block",
-                    fontSize: "13px",
-                    fontWeight: "500",
-                    color: "#374151",
-                    marginBottom: "6px",
-                  }}
+                  className={isMobile ? "mobile-form-label" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          marginBottom: "8px",
+                        }
+                      : {
+                          display: "block",
+                          fontSize: "13px",
+                          fontWeight: "500",
+                          color: "#374151",
+                          marginBottom: "6px",
+                        }
+                  }
                 >
                   Medical Conditions
                 </label>
@@ -850,15 +1223,30 @@ function EditCustomer() {
                   value={formData.medicalConditions}
                   onChange={handleInputChange}
                   rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                    resize: "vertical",
-                  }}
+                  className={isMobile ? "mobile-form-input" : ""}
+                  style={
+                    isMobile
+                      ? {
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "2px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "16px",
+                          backgroundColor: "#ffffff",
+                          color: "#1f2937",
+                          outline: "none",
+                          resize: "vertical",
+                        }
+                      : {
+                          width: "100%",
+                          padding: "10px 12px",
+                          border: "1px solid #e5e7eb",
+                          borderRadius: "6px",
+                          fontSize: "13px",
+                          backgroundColor: "#ffffff",
+                          resize: "vertical",
+                        }
+                  }
                   placeholder="List any medical conditions"
                 />
               </div>
@@ -928,15 +1316,18 @@ function EditCustomer() {
               style={{
                 fontSize: isMobile ? "20px" : "18px",
                 fontWeight: "600",
-                color: isMobile ? "white" : "#1f2937",
+                color: "#1f2937",
                 margin: "0",
-                textShadow: isMobile ? "0 2px 4px rgba(0, 0, 0, 0.1)" : "none",
               }}
             >
               {id ? "Edit Customer" : "Add Customer"} - Step {currentStep} of{" "}
               {steps.length}
             </h1>
-            <p style={{ color: "#6b7280", fontSize: "12px", margin: "0" }}>
+            <p style={{ 
+              color: "#6b7280", 
+              fontSize: isMobile ? "14px" : "12px", 
+              margin: "0",
+            }}>
               {steps[currentStep - 1]?.description}
             </p>
           </div>
@@ -965,17 +1356,18 @@ function EditCustomer() {
             >
               <div
                 style={{
-                  width: "28px",
-                  height: "28px",
+                  width: isMobile ? "36px" : "28px",
+                  height: isMobile ? "36px" : "28px",
                   borderRadius: "50%",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   transition: "all 0.3s ease",
                   backgroundColor:
-                    currentStep >= step.id ? "#3b82f6" : "#f3f4f6",
-                  color: currentStep >= step.id ? "white" : "#9ca3af",
-                  border: currentStep >= step.id ? "none" : "2px solid #e5e7eb",
+                    currentStep >= step.id ? "#3b82f6" : isMobile ? "#ffffff" : "#f3f4f6",
+                  color: currentStep >= step.id ? "white" : isMobile ? "#6b7280" : "#9ca3af",
+                  border: currentStep >= step.id ? "none" : isMobile ? "3px solid #d1d5db" : "2px solid #e5e7eb",
+                  boxShadow: isMobile ? "0 2px 4px rgba(0,0,0,0.1)" : "none",
                 }}
               >
                 {currentStep > step.id ? (
@@ -986,11 +1378,12 @@ function EditCustomer() {
               </div>
               <h3
                 style={{
-                  fontSize: "10px",
-                  fontWeight: "500",
-                  marginTop: "3px",
+                  fontSize: isMobile ? "12px" : "10px",
+                  fontWeight: isMobile ? "600" : "500",
+                  marginTop: isMobile ? "6px" : "3px",
                   textAlign: "center",
-                  color: currentStep >= step.id ? "#3b82f6" : "#6b7280",
+                  color: currentStep >= step.id ? "#3b82f6" : isMobile ? "#1f2937" : "#6b7280",
+                  textShadow: isMobile ? "0 1px 2px rgba(0,0,0,0.1)" : "none",
                 }}
               >
                 {step.title}

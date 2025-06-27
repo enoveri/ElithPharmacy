@@ -119,15 +119,7 @@ const MobileLayout = () => {
       <AnimatePresence>
         {showMobileMenu && (
           <>
-            {/* Backdrop with enhanced styling */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowMobileMenu(false)}
-              className="mobile-sidebar-overlay"
-            />
-
+            {/* Removed overlay */}
             {/* Enhanced Mobile Side Menu using CSS classes */}
             <motion.div
               initial={{ x: -350 }}
@@ -161,139 +153,97 @@ const MobileLayout = () => {
                 </div>
 
                 {/* Navigation Items */}
-                <nav className="mobile-sidebar-nav">
-                  <div className="mobile-nav-items">
+                <nav className="mobile-sidebar-nav" style={{flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+                  <div className="mobile-nav-grid mobile-nav-grid-expanded">
                     {[
                       {
                         icon: FiHome,
                         label: "Dashboard",
                         path: "/",
-                        description: "Overview & Analytics",
                       },
                       {
                         icon: FiShoppingCart,
                         label: "Point of Sale",
                         path: "/pos",
-                        description: "Process Sales",
                       },
                       {
                         icon: FiPackage,
                         label: "Inventory",
                         path: "/inventory",
-                        description: "Manage Products",
                       },
                       {
                         icon: FiUsers,
                         label: "Customers",
                         path: "/customers",
-                        description: "Customer Management",
                       },
                       {
                         icon: FiShoppingCart,
                         label: "Purchases",
                         path: "/purchases",
-                        description: "Purchase Orders",
                       },
                       {
                         icon: FiBarChart,
                         label: "Sales History",
                         path: "/sales",
-                        description: "Transaction History",
                       },
                       {
                         icon: FiRotateCcw,
                         label: "Refunds",
                         path: "/refunds",
-                        description: "Process Refunds",
                       },
                       {
                         icon: FiBarChart,
                         label: "Reports",
                         path: "/reports",
-                        description: "Business Insights",
                       },
                       {
                         icon: FiBell,
                         label: "Notifications",
                         path: "/notifications",
-                        description: "System Alerts",
                       },
                       {
                         icon: FiShield,
                         label: "Admin Panel",
                         path: "/admin",
-                        description: "System Administration",
+                      },
+                      {
+                        icon: FiLogOut,
+                        label: "Logout",
+                        path: "/logout",
+                        isLogout: true,
                       },
                       {
                         icon: FiSettings,
                         label: "Settings",
                         path: "/settings",
-                        description: "App Preferences",
                       },
                     ].map((item, index) => (
                       <motion.button
                         key={item.path}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.04 }}
+                        whileHover={{ scale: 1.12 }}
+                        whileTap={{ scale: 0.94 }}
                         onClick={() => {
-                          navigate(item.path);
-                          setShowMobileMenu(false);
+                          if (item.isLogout) {
+                            // TODO: Add logout logic here
+                            setShowMobileMenu(false);
+                          } else {
+                            navigate(item.path);
+                            setShowMobileMenu(false);
+                          }
                         }}
-                        className={`mobile-nav-item ${
-                          location.pathname === item.path ? "active" : ""
-                        }`}
+                        className={`mobile-nav-grid-item ${location.pathname === item.path ? "active" : ""} ${item.isLogout ? "logout" : ""}`}
                       >
-                        <div className="mobile-nav-icon">
-                          <item.icon size={20} />
+                        <div className="mobile-nav-grid-icon">
+                          <item.icon size={22} />
                         </div>
-                        <div className="mobile-nav-content">
-                          <div className="mobile-nav-label">{item.label}</div>
-                          <div className="mobile-nav-description">
-                            {item.description}
-                          </div>
-                        </div>
-                        {location.pathname === item.path && (
-                          <motion.div
-                            layoutId="activeMobileNav"
-                            className="mobile-nav-indicator"
-                            transition={{
-                              type: "spring",
-                              damping: 15,
-                              stiffness: 300,
-                            }}
-                          />
-                        )}
+                        <div className="mobile-nav-grid-label">{item.label}</div>
                       </motion.button>
                     ))}
                   </div>
                 </nav>
-
-                {/* Footer Section */}
-                <div className="mobile-sidebar-footer">
-                  {/* User Profile Section */}
-                  <div className="mobile-user-profile">
-                    <div className="mobile-user-avatar">
-                      <FiUser size={20} />
-                    </div>
-                    <div className="mobile-user-info">
-                      <div className="mobile-user-name">Administrator</div>
-                      <div className="mobile-user-role">System Manager</div>
-                    </div>
-                  </div>
-
-                  {/* Logout Button */}
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="mobile-logout-button"
-                  >
-                    <FiLogOut size={20} />
-                    <span>Logout</span>
-                  </motion.button>
-                </div>
               </div>
             </motion.div>
           </>

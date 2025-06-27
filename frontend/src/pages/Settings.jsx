@@ -25,6 +25,7 @@ import {
 } from "react-icons/fi";
 import { supabase } from "../lib/supabase";
 import { useIsMobile } from "../hooks/useIsMobile";
+import MobileSettings from "../components/mobile/MobileSettings";
 import "../styles/mobile.css";
 
 const Settings = () => {
@@ -46,10 +47,22 @@ const Settings = () => {
   // Get current user on mount
   useEffect(() => {
     const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
+      try {
+        console.log("🔄 [Settings] Getting current user...");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        console.log("👤 [Settings] User received:", user ? "User found" : "No user");
+        setUser(user);
+        // Set loading to false if no user is found
+        if (!user) {
+          console.log("❌ [Settings] No user found, stopping loading");
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error("❌ [Settings] Error getting user:", error);
+        setIsLoading(false);
+      }
     };
     getUser();
   }, []);
@@ -174,12 +187,27 @@ const Settings = () => {
   useEffect(() => {
     if (user) {
       fetchSettings();
+    } else if (user === null) {
+      // If user is explicitly null (not logged in), stop loading
+      setIsLoading(false);
     }
   }, [user]);
 
+  // Add a timeout fallback to prevent infinite loading
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (isLoading) {
+        console.log("⚠️ [Settings] Loading timeout, stopping loading state");
+        setIsLoading(false);
+      }
+    }, 10000); // 10 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [isLoading]);
+
   if (isLoading) {
     return (
-      <div className="mobile-container flex items-center justify-center">
+      <div className={`${isMobile ? "mobile-container" : "min-h-screen bg-gray-50"} flex items-center justify-center`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-gray-600">Loading settings...</p>
@@ -188,500 +216,655 @@ const Settings = () => {
     );
   }
 
-  return (
-    <div
-      className={`${isMobile ? "mobile-container" : "min-h-screen bg-gray-50"} ${isMobile ? "p-4" : "p-6"}`}
-    >
-      {/* Header Section */}
-      <div className={`${isMobile ? "mb-6" : "mb-8"}`}>
-        <div
-          className={`flex items-center ${isMobile ? "flex-col space-y-4" : "justify-between"}`}
-        >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
-              <FiSettingsIcon className="h-6 w-6 text-white" />
-            </div>
-            <div className={isMobile ? "text-center" : ""}>
-              <h1
-                className={`${isMobile ? "text-xl" : "text-2xl"} font-bold text-gray-900`}
-              >
-                Settings
-              </h1>
-              <p className="text-sm text-gray-600">
-                Configure your pharmacy system preferences
-              </p>
-            </div>
-          </div>
+  // If mobile, use the MobileSettings component
+  if (isMobile) {
+    return <MobileSettings />;
+  }
 
-          {/* Action Buttons */}
-          <div
-            className={`flex items-center ${isMobile ? "w-full justify-center space-x-3" : "space-x-3"}`}
+  return (
+    <div style={{
+      padding: "24px",
+      backgroundColor: "#f8fafc",
+      minHeight: "100vh",
+    }}>
+      {/* Header Section */}
+      <div style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: "32px",
+      }}>
+        <div>
+          <h1 style={{
+            fontSize: "28px",
+            fontWeight: "700",
+            color: "#111827",
+            marginBottom: "8px",
+          }}>
+            Settings
+          </h1>
+          <p style={{
+            fontSize: "16px",
+            color: "#6b7280",
+            margin: 0,
+          }}>
+            Configure your pharmacy management system
+          </p>
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ display: "flex", gap: "12px" }}>
+          <button
+            onClick={handleResetSettings}
+            disabled={isLoading}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 20px",
+              backgroundColor: "#f3f4f6",
+              color: "#374151",
+              border: "1px solid #d1d5db",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = "#e5e7eb"}
+            onMouseOut={(e) => e.target.style.backgroundColor = "#f3f4f6"}
           >
-            <button
-              onClick={handleResetSettings}
-              disabled={isLoading}
-              className={`flex items-center gap-2 ${isMobile ? "px-4 py-3 text-sm flex-1" : "px-5 py-2.5"} bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 rounded-xl transition-all duration-200 font-medium disabled:opacity-50`}
-            >
-              <FiRefreshCw className="h-4 w-4" />
-              <span>Reset</span>
-            </button>
-            <button
-              onClick={handleSaveSettings}
-              disabled={saving || isLoading}
-              className={`flex items-center gap-2 ${isMobile ? "px-4 py-3 text-sm flex-1" : "px-5 py-2.5"} bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 font-medium disabled:opacity-50`}
-            >
-              <FiSave className="h-4 w-4" />
-              <span>{saving ? "Saving..." : "Save"}</span>
-            </button>
-          </div>
+            <FiRefreshCw style={{ fontSize: "16px" }} />
+            Reset
+          </button>
+          <button
+            onClick={handleSaveSettings}
+            disabled={saving || isLoading}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "10px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              opacity: saving || isLoading ? 0.5 : 1,
+            }}
+            onMouseOver={(e) => {
+              if (!saving && !isLoading) e.target.style.backgroundColor = "#2563eb";
+            }}
+            onMouseOut={(e) => {
+              if (!saving && !isLoading) e.target.style.backgroundColor = "#3b82f6";
+            }}
+          >
+            <FiSave style={{ fontSize: "16px" }} />
+            {saving ? "Saving..." : "Save"}
+          </button>
         </div>
       </div>
 
       {/* Message Display */}
       {message.text && (
-        <div
-          className={`${isMobile ? "mb-4" : "mb-6"} p-4 rounded-xl border ${
-            message.type === "success"
-              ? "bg-green-50/80 border-green-200 text-green-800"
-              : "bg-red-50/80 border-red-200 text-red-800"
-          } backdrop-blur-sm`}
-        >
-          <div className="flex items-center space-x-2">
+        <div style={{
+          padding: "16px",
+          borderRadius: "8px",
+          marginBottom: "24px",
+          backgroundColor: message.type === "success" ? "#f0fdf4" : "#fef2f2",
+          border: `1px solid ${message.type === "success" ? "#bbf7d0" : "#fecaca"}`,
+          color: message.type === "success" ? "#166534" : "#dc2626",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             {message.type === "success" ? (
-              <FiCheck className="h-4 w-4" />
+              <FiCheck style={{ fontSize: "16px" }} />
             ) : (
-              <FiX className="h-4 w-4" />
+              <FiX style={{ fontSize: "16px" }} />
             )}
-            <span className="text-sm font-medium">{message.text}</span>
+            <span style={{ fontSize: "14px", fontWeight: "500" }}>{message.text}</span>
           </div>
         </div>
       )}
 
-      {/* Main Content */}
-      <div className={`${isMobile ? "space-y-6" : "flex gap-6"}`}>
+      {/* Main Content Layout */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "280px 1fr",
+        gap: "24px",
+        alignItems: "start",
+      }}>
         {/* Sidebar Navigation */}
-        <div className={`${isMobile ? "w-full" : "w-80 flex-shrink-0"}`}>
-          <div
-            className={`${isMobile ? "glass-card p-4" : "bg-white/95 backdrop-blur-sm rounded-2xl p-6 border border-white/20 shadow-xl"}`}
-          >
-            <h3
-              className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 ${isMobile ? "mb-3" : "mb-4"}`}
-            >
-              Settings Categories
-            </h3>
+        <div style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          padding: "24px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
+          height: "fit-content",
+        }}>
+          <h3 style={{
+            fontSize: "16px",
+            fontWeight: "600",
+            color: "#111827",
+            marginBottom: "20px",
+          }}>
+            Settings Categories
+          </h3>
 
-            <div
-              className={`${isMobile ? "grid grid-cols-2 gap-2" : "flex flex-col space-y-2"}`}
-            >
-              {[
-                {
-                  id: "general",
-                  label: "General",
-                  icon: FiSettingsIcon,
-                  description: "Basic settings",
-                },
-                {
-                  id: "business",
-                  label: "Business",
-                  icon: FiUser,
-                  description: "Store info",
-                },
-                {
-                  id: "notifications",
-                  label: "Alerts",
-                  icon: FiBell,
-                  description: "Notifications",
-                },
-                {
-                  id: "appearance",
-                  label: "Display",
-                  icon: FiMoon,
-                  description: "Theme & UI",
-                },
-                {
-                  id: "system",
-                  label: "System",
-                  icon: FiDatabase,
-                  description: "Advanced",
-                },
-              ].map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {[
+              { id: "general", label: "General", icon: FiSettingsIcon, description: "Basic settings" },
+              { id: "business", label: "Business", icon: FiUser, description: "Store info" },
+              { id: "notifications", label: "Notifications", icon: FiBell, description: "Alerts & notifications" },
+              { id: "appearance", label: "Appearance", icon: FiMoon, description: "Theme & UI" },
+              { id: "system", label: "System", icon: FiDatabase, description: "Advanced settings" },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
 
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`${
-                      isMobile ? "p-3 flex-col" : "p-4 flex-row"
-                    } flex items-center gap-3 rounded-xl transition-all duration-200 font-medium ${
-                      isActive
-                        ? "bg-blue-50/80 text-blue-700 border border-blue-200/50"
-                        : "text-gray-600 hover:bg-gray-50/70 hover:text-gray-800"
-                    }`}
-                  >
-                    <Icon
-                      className={`${isMobile ? "h-5 w-5" : "h-4 w-4"} ${isActive ? "text-blue-600" : ""}`}
-                    />
-                    <div
-                      className={`${isMobile ? "text-center" : "text-left"}`}
-                    >
-                      <div
-                        className={`${isMobile ? "text-xs" : "text-sm"} font-semibold`}
-                      >
-                        {tab.label}
-                      </div>
-                      {!isMobile && (
-                        <div className="text-xs text-gray-500">
-                          {tab.description}
-                        </div>
-                      )}
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "12px 16px",
+                    borderRadius: "8px",
+                    border: "none",
+                    backgroundColor: isActive ? "#eff6ff" : "transparent",
+                    color: isActive ? "#1d4ed8" : "#6b7280",
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    textAlign: "left",
+                    width: "100%",
+                  }}
+                  onMouseOver={(e) => {
+                    if (!isActive) e.target.style.backgroundColor = "#f9fafb";
+                  }}
+                  onMouseOut={(e) => {
+                    if (!isActive) e.target.style.backgroundColor = "transparent";
+                  }}
+                >
+                  <Icon style={{ 
+                    fontSize: "16px",
+                    color: isActive ? "#1d4ed8" : "#9ca3af",
+                  }} />
+                  <div>
+                    <div style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      marginBottom: "2px",
+                    }}>
+                      {tab.label}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
+                    <div style={{
+                      fontSize: "12px",
+                      color: "#9ca3af",
+                    }}>
+                      {tab.description}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className={`${isMobile ? "w-full" : "flex-1"}`}>
-          <div
-            className={`${isMobile ? "glass-card p-4" : "bg-white/95 backdrop-blur-sm rounded-2xl p-8 border border-white/20 shadow-xl"}`}
-          >
-            {/* Content Area */}
-            {activeTab === "general" && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <FiSettingsIcon className="h-6 w-6 text-blue-600" />
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
-                  >
-                    General Settings
-                  </h2>
-                </div>
+        {/* Main Content Panel */}
+        <div style={{
+          backgroundColor: "white",
+          borderRadius: "12px",
+          padding: "32px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          border: "1px solid #f1f5f9",
+        }}>
+          {/* General Settings Tab */}
+          {activeTab === "general" && (
+            <div>
 
-                <div
-                  className={`${isMobile ? "space-y-6" : "grid grid-cols-1 lg:grid-cols-2 gap-8"}`}
-                >
-                  {/* Business Information */}
-                  <div className="space-y-6">
-                    <h3
-                      className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}
-                    >
-                      Business Information
-                    </h3>
 
-                    <div className={`space-y-${isMobile ? "5" : "5"}`}>
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "48px",
+              }}>
+                {/* Business Information Column */}
+                <div>
+                  <h3 style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    marginBottom: "24px",
+                    paddingBottom: "12px",
+                    borderBottom: "2px solid #e5e7eb",
+                  }}>
+                    Business Information
+                  </h3>
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                    <div>
+                      <label style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#374151",
+                        marginBottom: "8px",
+                      }}>
+                        Business Name
+                      </label>
+                      <input
+                        type="text"
+                        value={formSettings.pharmacy_name || ""}
+                        onChange={(e) => updateFormSetting("pharmacy_name", e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          backgroundColor: "#f9fafb",
+                          transition: "all 0.2s",
+                        }}
+                        placeholder="Enter your pharmacy name"
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.backgroundColor = "white";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.backgroundColor = "#f9fafb";
+                        }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#374151",
+                        marginBottom: "8px",
+                      }}>
+                        Address
+                      </label>
+                      <textarea
+                        value={formSettings.address || ""}
+                        onChange={(e) => updateFormSetting("address", e.target.value)}
+                        rows={3}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          backgroundColor: "#f9fafb",
+                          transition: "all 0.2s",
+                          resize: "none",
+                        }}
+                        placeholder="Enter your pharmacy address"
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.backgroundColor = "white";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.backgroundColor = "#f9fafb";
+                        }}
+                      />
+                    </div>
+
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
                       <div>
-                        <label
-                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                        >
-                          Business Name
+                        <label style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#374151",
+                          marginBottom: "8px",
+                        }}>
+                          Phone Number
                         </label>
                         <input
-                          type="text"
-                          value={formSettings.pharmacy_name || ""}
-                          onChange={(e) =>
-                            updateFormSetting("pharmacy_name", e.target.value)
-                          }
-                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                          placeholder="Enter your pharmacy name"
+                          type="tel"
+                          value={formSettings.phone || ""}
+                          onChange={(e) => updateFormSetting("phone", e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            backgroundColor: "#f9fafb",
+                            transition: "all 0.2s",
+                          }}
+                          placeholder="Enter phone number"
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#3b82f6";
+                            e.target.style.backgroundColor = "white";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#d1d5db";
+                            e.target.style.backgroundColor = "#f9fafb";
+                          }}
                         />
                       </div>
 
                       <div>
-                        <label
-                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                        >
-                          Address
-                        </label>
-                        <textarea
-                          value={formSettings.address || ""}
-                          onChange={(e) =>
-                            updateFormSetting("address", e.target.value)
-                          }
-                          rows={isMobile ? 4 : 3}
-                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 resize-none`}
-                          placeholder="Enter your pharmacy address"
-                        />
-                      </div>
-
-                      <div
-                        className={`grid ${isMobile ? "grid-cols-1 gap-5" : "grid-cols-2 gap-4"}`}
-                      >
-                        <div>
-                          <label
-                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                          >
-                            Phone Number
-                          </label>
-                          <input
-                            type="tel"
-                            value={formSettings.phone || ""}
-                            onChange={(e) =>
-                              updateFormSetting("phone", e.target.value)
-                            }
-                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                            placeholder="Enter phone number"
-                          />
-                        </div>
-
-                        <div>
-                          <label
-                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                          >
-                            Email Address
-                          </label>
-                          <input
-                            type="email"
-                            value={formSettings.email || ""}
-                            onChange={(e) =>
-                              updateFormSetting("email", e.target.value)
-                            }
-                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                            placeholder="Enter email address"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label
-                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                        >
-                          Pharmacy License Number
+                        <label style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#374151",
+                          marginBottom: "8px",
+                        }}>
+                          Email Address
                         </label>
                         <input
-                          type="text"
-                          value={formSettings.pharmacy_license || ""}
-                          onChange={(e) =>
-                            updateFormSetting(
-                              "pharmacy_license",
-                              e.target.value
-                            )
-                          }
-                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                          placeholder="Enter pharmacy license number"
+                          type="email"
+                          value={formSettings.email || ""}
+                          onChange={(e) => updateFormSetting("email", e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            backgroundColor: "#f9fafb",
+                            transition: "all 0.2s",
+                          }}
+                          placeholder="Enter email address"
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#3b82f6";
+                            e.target.style.backgroundColor = "white";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#d1d5db";
+                            e.target.style.backgroundColor = "#f9fafb";
+                          }}
                         />
                       </div>
                     </div>
+
+                    <div>
+                      <label style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#374151",
+                        marginBottom: "8px",
+                      }}>
+                        Pharmacy License Number
+                      </label>
+                      <input
+                        type="text"
+                        value={formSettings.pharmacy_license || ""}
+                        onChange={(e) => updateFormSetting("pharmacy_license", e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          backgroundColor: "#f9fafb",
+                          transition: "all 0.2s",
+                        }}
+                        placeholder="Enter pharmacy license number"
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.backgroundColor = "white";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.backgroundColor = "#f9fafb";
+                        }}
+                      />
+                    </div>
                   </div>
+                </div>
 
-                  {/* Operational Settings */}
-                  <div className="space-y-6">
-                    <h3
-                      className={`${isMobile ? "text-base" : "text-lg"} font-semibold text-gray-900 border-b-2 border-gray-100 pb-2`}
-                    >
-                      Operational Settings
-                    </h3>
+                {/* Operational Settings Column */}
+                <div>
+                  <h3 style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#111827",
+                    marginBottom: "24px",
+                    paddingBottom: "12px",
+                    borderBottom: "2px solid #e5e7eb",
+                  }}>
+                    Operational Settings
+                  </h3>
 
-                    <div className={`space-y-${isMobile ? "5" : "5"}`}>
-                      <div
-                        className={`grid ${isMobile ? "grid-cols-1 gap-5" : "grid-cols-2 gap-4"}`}
-                      >
-                        <div>
-                          <label
-                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                          >
-                            Currency
-                          </label>
-                          <select
-                            value={formSettings.currency || "UGX"}
-                            onChange={(e) =>
-                              updateFormSetting("currency", e.target.value)
-                            }
-                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
-                          >
-                            <option value="UGX">UGX - Ugandan Shilling</option>
-                            <option value="USD">USD - US Dollar</option>
-                            <option value="EUR">EUR - Euro</option>
-                            <option value="GBP">GBP - British Pound</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label
-                            className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                          >
-                            Tax Rate (%)
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value={formSettings.tax_rate || ""}
-                            onChange={(e) =>
-                              updateFormSetting(
-                                "tax_rate",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                            placeholder="18"
-                          />
-                        </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                      <div>
+                        <label style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#374151",
+                          marginBottom: "8px",
+                        }}>
+                          Currency
+                        </label>
+                        <select
+                          value={formSettings.currency || "UGX"}
+                          onChange={(e) => updateFormSetting("currency", e.target.value)}
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            backgroundColor: "#f9fafb",
+                            transition: "all 0.2s",
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#3b82f6";
+                            e.target.style.backgroundColor = "white";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#d1d5db";
+                            e.target.style.backgroundColor = "#f9fafb";
+                          }}
+                        >
+                          <option value="UGX">Ugandan Shilling (UGX)</option>
+                          <option value="USD">US Dollar (USD)</option>
+                          <option value="EUR">Euro (EUR)</option>
+                          <option value="GBP">British Pound (GBP)</option>
+                        </select>
                       </div>
 
                       <div>
-                        <label
-                          className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                        >
-                          Low Stock Threshold
+                        <label style={{
+                          display: "block",
+                          fontSize: "14px",
+                          fontWeight: "600",
+                          color: "#374151",
+                          marginBottom: "8px",
+                        }}>
+                          Tax Rate (%)
                         </label>
                         <input
                           type="number"
-                          min="1"
-                          value={formSettings.low_stock_threshold || ""}
-                          onChange={(e) =>
-                            updateFormSetting(
-                              "low_stock_threshold",
-                              parseInt(e.target.value) || 10
-                            )
-                          }
-                          className={`w-full ${isMobile ? "px-4 py-4 text-base" : "px-4 py-3"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/50 focus:border-blue-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                          placeholder="10"
+                          value={formSettings.tax_rate || 18}
+                          onChange={(e) => updateFormSetting("tax_rate", parseFloat(e.target.value))}
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            border: "1px solid #d1d5db",
+                            borderRadius: "8px",
+                            fontSize: "14px",
+                            backgroundColor: "#f9fafb",
+                            transition: "all 0.2s",
+                          }}
+                          placeholder="18"
+                          onFocus={(e) => {
+                            e.target.style.borderColor = "#3b82f6";
+                            e.target.style.backgroundColor = "white";
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = "#d1d5db";
+                            e.target.style.backgroundColor = "#f9fafb";
+                          }}
                         />
-                        <p className="text-xs text-gray-500 mt-2">
-                          Alert when product quantity falls below this number
-                        </p>
                       </div>
+                    </div>
 
-                      {/* Alert Settings */}
-                      <div className="space-y-4">
-                        <h4 className="text-sm font-semibold text-gray-800">
-                          Alert Settings
-                        </h4>
+                    <div>
+                      <label style={{
+                        display: "block",
+                        fontSize: "14px",
+                        fontWeight: "600",
+                        color: "#374151",
+                        marginBottom: "8px",
+                      }}>
+                        Low Stock Threshold
+                      </label>
+                      <input
+                        type="number"
+                        value={formSettings.low_stock_threshold || 10}
+                        onChange={(e) => updateFormSetting("low_stock_threshold", parseInt(e.target.value))}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "8px",
+                          fontSize: "14px",
+                          backgroundColor: "#f9fafb",
+                          transition: "all 0.2s",
+                        }}
+                        placeholder="10"
+                        onFocus={(e) => {
+                          e.target.style.borderColor = "#3b82f6";
+                          e.target.style.backgroundColor = "white";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.borderColor = "#d1d5db";
+                          e.target.style.backgroundColor = "#f9fafb";
+                        }}
+                      />
+                      <p style={{
+                        fontSize: "12px",
+                        color: "#6b7280",
+                        marginTop: "4px",
+                      }}>
+                        Alert when product quantity falls below this number
+                      </p>
+                    </div>
 
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-gray-50/70 rounded-xl border border-gray-100">
-                            <div>
-                              <div className="text-sm font-semibold text-gray-700">
-                                Low Stock Alerts
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Get notified when products are running low
-                              </div>
-                            </div>
+                    <div>
+                      <h4 style={{
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        color: "#111827",
+                        marginBottom: "16px",
+                      }}>
+                        Alert Settings
+                      </h4>
+                      
+                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <p style={{ fontSize: "14px", fontWeight: "500", color: "#374151", margin: "0" }}>
+                              Low Stock Alerts
+                            </p>
+                            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0" }}>
+                              Get notified when products are running low
+                            </p>
+                          </div>
+                          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                             <input
                               type="checkbox"
                               checked={formSettings.low_stock_alerts || false}
-                              onChange={(e) =>
-                                updateFormSetting(
-                                  "low_stock_alerts",
-                                  e.target.checked
-                                )
-                              }
-                              className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
+                              onChange={(e) => updateFormSetting("low_stock_alerts", e.target.checked)}
+                              style={{ display: "none" }}
                             />
-                          </div>
-
-                          <div className="flex items-center justify-between p-3 bg-gray-50/70 rounded-xl border border-gray-100">
-                            <div>
-                              <div className="text-sm font-semibold text-gray-700">
-                                Expiry Alerts
-                              </div>
-                              <div className="text-xs text-gray-500">
-                                Get notified about expiring products
-                              </div>
+                            <div style={{
+                              width: "44px",
+                              height: "24px",
+                              backgroundColor: formSettings.low_stock_alerts ? "#3b82f6" : "#d1d5db",
+                              borderRadius: "12px",
+                              position: "relative",
+                              transition: "all 0.2s",
+                            }}>
+                              <div style={{
+                                width: "20px",
+                                height: "20px",
+                                backgroundColor: "white",
+                                borderRadius: "50%",
+                                position: "absolute",
+                                top: "2px",
+                                left: formSettings.low_stock_alerts ? "22px" : "2px",
+                                transition: "all 0.2s",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                              }} />
                             </div>
+                          </label>
+                        </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <p style={{ fontSize: "14px", fontWeight: "500", color: "#374151", margin: "0" }}>
+                              Expiry Alerts
+                            </p>
+                            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0" }}>
+                              Get notified about expiring products
+                            </p>
+                          </div>
+                          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                             <input
                               type="checkbox"
                               checked={formSettings.expiry_alerts || false}
-                              onChange={(e) =>
-                                updateFormSetting(
-                                  "expiry_alerts",
-                                  e.target.checked
-                                )
-                              }
-                              className="w-5 h-5 text-blue-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-blue-500 focus:ring-2 transition-all duration-200"
+                              onChange={(e) => updateFormSetting("expiry_alerts", e.target.checked)}
+                              style={{ display: "none" }}
                             />
-                          </div>
+                            <div style={{
+                              width: "44px",
+                              height: "24px",
+                              backgroundColor: formSettings.expiry_alerts ? "#3b82f6" : "#d1d5db",
+                              borderRadius: "12px",
+                              position: "relative",
+                              transition: "all 0.2s",
+                            }}>
+                              <div style={{
+                                width: "20px",
+                                height: "20px",
+                                backgroundColor: "white",
+                                borderRadius: "50%",
+                                position: "absolute",
+                                top: "2px",
+                                left: formSettings.expiry_alerts ? "22px" : "2px",
+                                transition: "all 0.2s",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                              }} />
+                            </div>
+                          </label>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
-            {/* Other tabs content */}
-            {activeTab === "business" && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <FiUser className="h-6 w-6 text-blue-600" />
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
-                  >
-                    Business Information
-                  </h2>
-                </div>
-                <div className="text-center py-12">
-                  <FiUser className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">
-                    Business settings will be available here.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "notifications" && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <FiBell className="h-6 w-6 text-blue-600" />
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
-                  >
-                    Notification Settings
-                  </h2>
-                </div>
-                <div className="text-center py-12">
-                  <FiBell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">
-                    Notification settings will be available here.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "appearance" && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <FiMoon className="h-6 w-6 text-blue-600" />
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
-                  >
-                    Appearance Settings
-                  </h2>
-                </div>
-                <div className="text-center py-12">
-                  <FiMoon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">
-                    Appearance settings will be available here.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activeTab === "system" && (
-              <div className="space-y-6">
-                <div className="flex items-center space-x-3">
-                  <FiDatabase className="h-6 w-6 text-blue-600" />
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-2xl"} font-bold text-gray-900`}
-                  >
-                    System Settings
-                  </h2>
-                </div>
-                <div className="text-center py-12">
-                  <FiDatabase className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">
-                    System settings will be available here.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Other tabs content placeholder */}
+          {activeTab !== "general" && (
+            <div style={{ textAlign: "center", padding: "60px 0" }}>
+              <h3 style={{ fontSize: "18px", color: "#6b7280", marginBottom: "8px" }}>
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} Settings
+              </h3>
+              <p style={{ color: "#9ca3af", fontSize: "14px" }}>
+                This section is coming soon...
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

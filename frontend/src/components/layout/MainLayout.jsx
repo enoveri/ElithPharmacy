@@ -31,7 +31,6 @@ const MainLayout = () => {
       "/customers/edit": "Edit Customer",
       "/customers/view": "Customer Details",
       "/customers/sales": "Customer Sales",
-      "/customers/sales": "Customer Sales",
       "/reports": "Reports & Analytics",
       "/admin": "Admin Panel",
       "/settings": "Settings",
