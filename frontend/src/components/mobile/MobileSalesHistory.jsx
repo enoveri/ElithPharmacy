@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSpring, animated } from "@react-spring/web";
 import {
@@ -14,13 +14,15 @@ import {
   FiCalendar,
   FiX,
   FiAlertCircle,
+  FiPackage,
 } from "react-icons/fi";
 import { dataService } from "../../services";
-import { useSettingsStore } from "../../store";
+import { useSalesStore, useSettingsStore } from "../../store";
 
 function MobileSalesHistory() {
   const { settings } = useSettingsStore();
   const { currency } = settings;
+  const location = useLocation();
   const navigate = useNavigate();
 
   const [sales, setSales] = useState([]);
@@ -33,6 +35,7 @@ function MobileSalesHistory() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedPeriod, setSelectedPeriod] = useState("today");
   const [showFilters, setShowFilters] = useState(false);
+  const [highlightedSale, setHighlightedSale] = useState(null);
 
   // Pull-to-refresh animation
   const [{ y }, api] = useSpring(() => ({ y: 0 }));
@@ -43,7 +46,22 @@ function MobileSalesHistory() {
 
   useEffect(() => {
     filterSales();
-  }, [sales, searchTerm, selectedStatus, selectedPeriod]);
+  }, [sales, customers, searchTerm, selectedStatus, selectedPeriod]);
+
+  useEffect(() => {
+    if (location.state?.saleId) {
+      setHighlightedSale(location.state.saleId);
+      const saleElement = document.getElementById(
+        `sale-${location.state.saleId}`
+      );
+      if (saleElement) {
+        saleElement.scrollIntoView({ behavior: "smooth", block: "center" });
+        setTimeout(() => {
+          setHighlightedSale(null);
+        }, 3000);
+      }
+    }
+  }, [location.state]);
 
   const loadData = async () => {
     try {
@@ -72,6 +90,26 @@ function MobileSalesHistory() {
           customer.name ||
           `Customer #${customerId}`
       : `Customer #${customerId}`;
+  };
+
+  const getPaymentMethodDisplay = (method) => {
+    const paymentMethods = {
+      cash: "Cash",
+      mobile_money: "Mobile Money",
+      bank: "Bank Transfer",
+      credit: "Credit",
+    };
+    return paymentMethods[method] || method || "Unknown";
+  };
+
+  const getPaymentMethodColor = (method) => {
+    const colors = {
+      cash: "#10b981",
+      mobile_money: "#f59e0b",
+      bank: "#3b82f6",
+      credit: "#ef4444",
+    };
+    return colors[method] || "#6b7280";
   };
 
   const filterSales = () => {
@@ -253,117 +291,304 @@ function MobileSalesHistory() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-          <FiRefreshCw className="w-8 h-8 text-blue-600" />
-        </motion.div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          backgroundColor: "var(--color-bg-main)",
+        }}
+      >
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            border: "4px solid #f3f4f6",
+            borderTop: "4px solid #3b82f6",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 text-center">
-        <FiAlertCircle className="w-12 h-12 text-red-500 mb-2" />
-        <h2 className="text-lg font-bold text-gray-800 mb-1">Error Loading Sales Data</h2>
-        <p className="text-gray-500 mb-4">{error}</p>
-        <button
-          onClick={loadData}
-          className="cta-btn"
+      <div
+        style={{
+          padding: "24px",
+          backgroundColor: "var(--color-bg-main)",
+          minHeight: "100vh",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+            textAlign: "center",
+          }}
         >
-          Retry
-        </button>
+          <FiAlertCircle
+            size={64}
+            style={{ color: "#ef4444", marginBottom: "16px" }}
+          />
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#374151",
+              marginBottom: "8px",
+            }}
+          >
+            Error Loading Sales Data
+          </h2>
+          <p style={{ color: "#6b7280", marginBottom: "24px" }}>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mobile-sales-history-page">
-      {/* Sticky glassy header with summary */}
-      <div className="mobile-sales-header glass-card">
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="summary-card small">
-            <div className="icon-bg green"><FiDollarSign size={15} /></div>
-            <div className="summary-value">{currency}{totalRevenue.toFixed(2)}</div>
-            <div className="summary-label">Revenue</div>
-          </div>
-          <div className="summary-card small">
-            <div className="icon-bg blue"><FiShoppingCart size={15} /></div>
-            <div className="summary-value">{totalTransactions}</div>
-            <div className="summary-label">Sales</div>
-          </div>
-          <div className="summary-card small">
-            <div className="icon-bg purple"><FiTrendingUp size={15} /></div>
-            <div className="summary-value">{currency}{averageOrderValue.toFixed(2)}</div>
-            <div className="summary-label">Avg. Order</div>
-          </div>
-        </div>
-        <div className="flex items-center space-x-0 w-full">
-          <div className="relative flex-1">
-            <input
-              type="text"
-              placeholder="Search sales..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 shadow-sm search-input-large"
-              style={{ boxShadow: "0 2px 8px rgba(59,130,246,0.06)" }}
-            />
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-              onClick={() => setShowFilters(true)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-50 rounded-xl shadow-sm"
-              style={{ lineHeight: 0 }}
-            >
-              <FiFilter className="w-5 h-5 text-blue-600" />
-                      </motion.button>
-                </div>
-              </div>
+    <div
+      style={{
+        padding: "12px", // slightly less padding for mobile
+        backgroundColor: "var(--color-bg-main)",
+        minHeight: "100vh",
+      }}
+    >
+      <div style={{ marginBottom: "20px" }}>
+        <p style={{ color: "var(--color-text-secondary)", fontSize: "15px" }}>
+          View and manage your sales transactions
+        </p>
       </div>
-      <FilterModal />
-      {/* Pull to Refresh Indicator */}
-      <animated.div
-        style={{ transform: y.to((y) => `translateY(${y}px)`) }}
-        className="flex justify-center py-2"
-      >
-        {refreshing && (
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}>
-            <FiRefreshCw className="w-6 h-6 text-blue-600" />
-          </motion.div>
-        )}
-      </animated.div>
-      {/* Sales List */}
       <div
-        className="flex-1 overflow-auto p-4 mobile-sales-list"
-        onTouchStart={() => {
-          const startY = event.touches[0].clientY;
-          const scrollTop = event.currentTarget.scrollTop;
-          if (scrollTop === 0) {
-            const handleTouchMove = (e) => {
-              const currentY = e.touches[0].clientY;
-              const pullDistance = currentY - startY;
-              if (pullDistance > 100) {
-                handlePullToRefresh();
-                document.removeEventListener("touchmove", handleTouchMove);
-              }
-            };
-            document.addEventListener("touchmove", handleTouchMove);
-            document.addEventListener("touchend", () => {
-              document.removeEventListener("touchmove", handleTouchMove);
-            });
-          }
+        style={{
+          backgroundColor: "white",
+          borderRadius: "10px",
+          padding: "12px",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
         }}
       >
-        <AnimatePresence>
-          {filteredSales.map((sale) => (
-            <SaleCard key={sale.id} sale={sale} />
-          ))}
-        </AnimatePresence>
-        {filteredSales.length === 0 && (
-          <div className="empty-sales-state">
-            <FiShoppingCart className="w-14 h-14 text-blue-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">No sales found</h3>
-            <p className="text-gray-500 mb-4">Try adjusting your search or filters</p>
-            <button className="cta-btn" onClick={() => navigate('/pos')}>Make a Sale</button>
+        {sales.length === 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "32px",
+              textAlign: "center",
+            }}
+          >
+            <FiPackage
+              size={40}
+              style={{ color: "#9ca3af", marginBottom: "12px" }}
+            />
+            <h3
+              style={{
+                fontSize: "16px",
+                fontWeight: "600",
+                color: "#374151",
+                marginBottom: "6px",
+              }}
+            >
+              No Sales Found
+            </h3>
+            <p style={{ color: "#6b7280", fontSize: "14px" }}>
+              No sales transactions have been recorded yet.
+            </p>
+          </div>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+          >
+            {sales
+              .map((sale) => {
+                // Ensure sale object has required properties
+                if (!sale || !sale.id) {
+                  return null;
+                }
+
+                return (
+                  <div
+                    key={sale.id}
+                    id={`sale-${sale.id}`}
+                    onClick={() => navigate(`/sales/${sale.id}`)}
+                    style={{
+                      padding: "10px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "7px",
+                      backgroundColor:
+                        highlightedSale === sale.id ? "#fef3c7" : "transparent",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "8px",
+                      }}
+                    >
+                      <div>
+                        <h3
+                          style={{
+                            fontSize: "14px",
+                            fontWeight: "600",
+                            color: "#1f2937",
+                          }}
+                        >
+                          {sale.transactionNumber ||
+                            sale.transaction_number ||
+                            `Transaction #${sale.id}`}
+                        </h3>
+                        <p style={{ fontSize: "12px", color: "#6b7280" }}>
+                          {sale.date
+                            ? new Date(sale.date).toLocaleDateString()
+                            : "Unknown date"}
+                          {sale.date &&
+                            ` at ${new Date(sale.date).toLocaleTimeString()}`}
+                        </p>
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "15px",
+                          fontWeight: "bold",
+                          color: "#10b981",
+                        }}
+                      >
+                        {currency}
+                        {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)", // 2 columns for mobile
+                        gap: "10px",
+                        fontSize: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FiUser color="#6b7280" size={14} />
+                        <div>
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {getCustomerName(
+                              sale.customerId || sale.customer_id
+                            )}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                            Customer
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FiPackage color="#6b7280" size={14} />
+                        <div>
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {sale.items && Array.isArray(sale.items)
+                              ? sale.items.length
+                              : sale.sale_items &&
+                                Array.isArray(sale.sale_items)
+                              ? sale.sale_items.length
+                              : 0} item(s)
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                            Products
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FiDollarSign color="#6b7280" size={14} />
+                        <div>
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {currency}
+                            {(sale.subtotal || 0).toFixed(2)}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                            Subtotal
+                          </div>
+                        </div>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: "14px",
+                            height: "14px",
+                            borderRadius: "50%",
+                            backgroundColor: getPaymentMethodColor(
+                              sale.paymentMethod || sale.payment_method
+                            ),
+                          }}
+                        />
+                        <div>
+                          <div
+                            style={{
+                              fontWeight: "500",
+                              color: "#1f2937",
+                            }}
+                          >
+                            {getPaymentMethodDisplay(
+                              sale.paymentMethod || sale.payment_method
+                            )}
+                          </div>
+                          <div style={{ fontSize: "11px", color: "#6b7280" }}>
+                            Payment
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+              .filter(Boolean)}
           </div>
         )}
       </div>

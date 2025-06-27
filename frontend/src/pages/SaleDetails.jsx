@@ -541,7 +541,7 @@ Email: info@elithpharmacy.com`;
       className={isMobile ? "mobile-container" : ""}
       style={
         isMobile
-          ? {}
+          ? { paddingBottom: 24 }
           : {
               padding: "24px",
               backgroundColor: "#f8fafc",
@@ -549,365 +549,93 @@ Email: info@elithpharmacy.com`;
             }
       }
     >
-      {/* Header */}
-      <div
-        className={isMobile ? "mobile-card" : ""}
-        style={
-          isMobile
-            ? { marginBottom: "16px" }
-            : {
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "32px",
-              }
-        }
-      >
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <button
-            onClick={() => navigate("/sales")}
-            className={isMobile ? "mobile-action-button secondary" : ""}
-            style={
-              isMobile
-                ? {}
-                : {
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 16px",
-                    backgroundColor: "white",
-                    color: "#6b7280",
-                    border: "1px solid #d1d5db",
-                    borderRadius: "8px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    marginRight: "16px",
-                  }
-            }
-          >
-            <div className={isMobile ? "mobile-nav-icon" : ""}>
-              <FiArrowLeft size={16} />
-            </div>
-            {isMobile ? "Back" : "Back to Sales"}
-          </button>
-          <div>
-            <h1
-              style={{
-                fontSize: isMobile ? "20px" : "28px",
-                fontWeight: "bold",
-                color: "#1f2937",
-                margin: "0 0 4px 0",
-              }}
-            >
-              {sale.transactionNumber}
-            </h1>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "16px",
-                color: "#6b7280",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "4px",
-                }}
+      {/* Mobile Layout */}
+      {isMobile ? (
+        <>
+          {/* Header Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <button
+                onClick={() => navigate("/sales")}
+                className="mobile-action-button secondary"
+                style={{ marginRight: 8 }}
               >
-                <FiCalendar size={16} />
-                {new Date(sale.date).toLocaleDateString()} at{" "}
-                {new Date(sale.date).toLocaleTimeString()}
+                <span className="mobile-nav-icon">
+                  <FiArrowLeft size={18} />
+                </span>
+                Back
+              </button>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, fontSize: 18, color: "#1f2937" }}>
+                  {sale.transactionNumber}
+                </div>
+                <div style={{ color: "#6b7280", fontSize: 13, marginTop: 2 }}>
+                  <FiCalendar size={14} style={{ marginRight: 4, verticalAlign: -2 }} />
+                  {new Date(sale.date).toLocaleDateString()} at {new Date(sale.date).toLocaleTimeString()}
+                </div>
               </div>
-              <div
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  fontSize: "12px",
-                  fontWeight: "500",
-                  backgroundColor:
-                    sale.status === "completed" ? "#dcfce7" : "#fef3c7",
-                  color: sale.status === "completed" ? "#166534" : "#92400e",
-                }}
+              <span
+                className={`sale-status-badge ${sale.status}`}
+                style={{ fontSize: 12, padding: "4px 10px", borderRadius: 12 }}
               >
-                <FiCheckCircle size={12} style={{ marginRight: "4px" }} />
+                <FiCheckCircle size={12} style={{ marginRight: 4, verticalAlign: -2 }} />
                 {sale.status.toUpperCase()}
-              </div>
+              </span>
+            </div>
+            {/* Action Buttons Row */}
+            <div style={{ display: "flex", gap: 8, marginTop: 14, overflowX: "auto" }}>
+              <button onClick={handleDownloadReceipt} className="mobile-action-button">
+                <FiDownload size={16} /> Receipt
+              </button>
+              <button
+                onClick={shareViaWhatsApp}
+                className="mobile-action-button"
+                style={{ background: "#25D366", color: "#fff" }}
+                disabled={generatingPDF}
+              >
+                <FiMessageCircle size={16} /> WhatsApp
+              </button>
+              <button
+                onClick={shareViaEmail}
+                className="mobile-action-button"
+                style={{ background: "#3b82f6", color: "#fff" }}
+                disabled={generatingPDF}
+              >
+                <FiMail size={16} /> Email
+              </button>
             </div>
           </div>
-        </div>
 
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            onClick={handleDownloadReceipt}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "#6b7280",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            <FiDownload size={16} />
-            Download Receipt
-          </button>
-          <button
-            onClick={handlePrint}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "white",
-              color: "#6b7280",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            <FiPrinter size={16} />
-            Print Receipt
-          </button>
-          <button
-            onClick={shareViaWhatsApp}
-            disabled={generatingPDF}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "#25D366",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor:
-                generatingPDF && sharingMethod === "whatsapp"
-                  ? "not-allowed"
-                  : "pointer",
-              opacity: generatingPDF && sharingMethod === "whatsapp" ? 0.7 : 1,
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (!(generatingPDF && sharingMethod === "whatsapp")) {
-                e.target.style.backgroundColor = "#128C7E";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!(generatingPDF && sharingMethod === "whatsapp")) {
-                e.target.style.backgroundColor = "#25D366";
-              }
-            }}
-          >
-            {generatingPDF && sharingMethod === "whatsapp" ? (
-              <>
-                <div
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    border: "2px solid white",
-                    borderTop: "2px solid transparent",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-                Sharing...
-              </>
-            ) : (
-              <>
-                <FiMessageCircle size={16} />
-                WhatsApp
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={shareViaEmail}
-            disabled={generatingPDF}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "#3b82f6",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor:
-                generatingPDF && sharingMethod === "email"
-                  ? "not-allowed"
-                  : "pointer",
-              opacity: generatingPDF && sharingMethod === "email" ? 0.7 : 1,
-              transition: "all 0.2s ease",
-            }}
-            onMouseEnter={(e) => {
-              if (!(generatingPDF && sharingMethod === "email")) {
-                e.target.style.backgroundColor = "#2563eb";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!(generatingPDF && sharingMethod === "email")) {
-                e.target.style.backgroundColor = "#3b82f6";
-              }
-            }}
-          >
-            {generatingPDF && sharingMethod === "email" ? (
-              <>
-                <div
-                  style={{
-                    width: "16px",
-                    height: "16px",
-                    border: "2px solid white",
-                    borderTop: "2px solid transparent",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-                Sending...
-              </>
-            ) : (
-              <>
-                <FiMail size={16} />
-                Email
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "2fr 1fr",
-          gap: "24px",
-        }}
-      >
-        {/* Left Column - Transaction Details */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Items List */}
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
+          {/* Items Purchased Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>
               Items Purchased
             </h3>
-
             <div style={{ overflowX: "auto" }}>
-              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "left",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Product
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "right",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Price
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "right",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Quantity
-                    </th>
-                    <th
-                      style={{
-                        padding: "12px",
-                        textAlign: "right",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                      }}
-                    >
-                      Total
-                    </th>
+                    <th style={{ padding: 8, textAlign: "left" }}>Product</th>
+                    <th style={{ padding: 8, textAlign: "right" }}>Price</th>
+                    <th style={{ padding: 8, textAlign: "right" }}>Qty</th>
+                    <th style={{ padding: 8, textAlign: "right" }}>Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {(sale.items || sale.sale_items || []).map((item, index) => (
-                    <tr
-                      key={index}
-                      style={{ borderBottom: "1px solid #f3f4f6" }}
-                    >
-                      <td style={{ padding: "16px 12px" }}>
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            color: "#1f2937",
-                          }}
-                        >
-                          {getProductName(
-                            item.productId || item.product_id,
-                            item
-                          )}
-                        </div>
+                  {(sale.items || sale.sale_items || []).map((item, idx) => (
+                    <tr key={idx} style={{ borderBottom: "1px solid #f3f4f6" }}>
+                      <td style={{ padding: 10 }}>
+                        <span style={{ fontWeight: 500, color: "#1f2937" }}>
+                          {getProductName(item.productId || item.product_id, item)}
+                        </span>
                       </td>
-                      <td
-                        style={{
-                          padding: "16px 12px",
-                          textAlign: "right",
-                          color: "#6b7280",
-                        }}
-                      >
+                      <td style={{ padding: 10, textAlign: "right", color: "#6b7280" }}>
                         {currency} {(item.price || 0).toFixed(2)}
                       </td>
-                      <td
-                        style={{
-                          padding: "16px 12px",
-                          textAlign: "right",
-                          color: "#6b7280",
-                        }}
-                      >
+                      <td style={{ padding: 10, textAlign: "right", color: "#6b7280" }}>
                         {item.quantity}
                       </td>
-                      <td
-                        style={{
-                          padding: "16px 12px",
-                          textAlign: "right",
-                          fontWeight: "600",
-                          color: "#1f2937",
-                        }}
-                      >
+                      <td style={{ padding: 10, textAlign: "right", fontWeight: 600, color: "#1f2937" }}>
                         {currency} {(item.total || 0).toFixed(2)}
                       </td>
                     </tr>
@@ -917,402 +645,882 @@ Email: info@elithpharmacy.com`;
             </div>
           </div>
 
-          {/* Payment Information */}
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
+          {/* Payment Info Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>
               Payment Information
             </h3>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: "16px",
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <FiCreditCard size={20} color="#6b7280" />
-                <div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Payment Method
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: "600",
-                      color: "#1f2937",
-                      textTransform: "capitalize",
-                    }}
-                  >
-                    {sale.paymentMethod}
-                  </div>
-                </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <FiCreditCard size={16} color="#6b7280" />
+                <span style={{ color: "#6b7280", fontSize: 13 }}>Payment Method</span>
+                <span style={{ fontWeight: 600, color: "#1f2937", textTransform: "capitalize", marginLeft: "auto" }}>
+                  {sale.paymentMethod}
+                </span>
               </div>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                }}
-              >
-                <FiDollarSign size={20} color="#6b7280" />
-                <div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    Total Amount
-                  </div>
-                  <div
-                    style={{
-                      fontWeight: "600",
-                      color: "#10b981",
-                      fontSize: "18px",
-                    }}
-                  >
-                    {currency}{" "}
-                    {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
-                  </div>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <FiDollarSign size={16} color="#6b7280" />
+                <span style={{ color: "#6b7280", fontSize: 13 }}>Total Amount</span>
+                <span style={{ fontWeight: 600, color: "#10b981", fontSize: 15, marginLeft: "auto" }}>
+                  {currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Column - Summary & Customer */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          {/* Order Summary */}
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
+          {/* Order Summary Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>
               Order Summary
             </h3>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Subtotal:</span>{" "}
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(sale.subtotal || 0).toFixed(2)}
-                </span>
+                <span style={{ color: "#6b7280" }}>Subtotal:</span>
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(sale.tax || 0).toFixed(2)}
-                </span>
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.tax || 0).toFixed(2)}</span>
               </div>
               {(sale.discount || 0) > 0 && (
-                <div
-                  style={{ display: "flex", justifyContent: "space-between" }}
-                >
-                  <span style={{ color: "#6b7280" }}>Discount:</span>{" "}
-                  <span style={{ fontWeight: "600", color: "#ef4444" }}>
-                    -₦{(sale.discount || 0).toFixed(2)}
-                  </span>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Discount:</span>
+                  <span style={{ fontWeight: 600, color: "#ef4444" }}>-{currency} {(sale.discount || 0).toFixed(2)}</span>
                 </div>
               )}
-              <div
-                style={{
-                  borderTop: "1px solid #e5e7eb",
-                  paddingTop: "12px",
-                  display: "flex",
-                  justifyContent: "space-between",
-                }}
-              >
-                <span
-                  style={{
-                    fontSize: "16px",
-                    fontWeight: "600",
-                    color: "#1f2937",
-                  }}
-                >
-                  Total:
-                </span>
-                <span
-                  style={{
-                    fontSize: "18px",
-                    fontWeight: "bold",
-                    color: "#10b981",
-                  }}
-                >
-                  ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
-                </span>
+              <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#1f2937" }}>Total:</span>
+                <span style={{ fontSize: 16, fontWeight: "bold", color: "#10b981" }}>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
 
-          {/* Customer Information */}
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
+          {/* Customer Info Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>
               Customer Information
             </h3>
-
             {customer ? (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <FiUser size={20} color="#6b7280" />
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: "600",
-                        color: "#1f2937",
-                      }}
-                    >
-                      {customer.firstName} {customer.lastName}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Customer ID: {customer.id}
-                    </div>
-                  </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <FiUser size={16} color="#6b7280" />
+                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{customer.firstName} {customer.lastName}</span>
+                  <span style={{ color: "#6b7280", fontSize: 13, marginLeft: "auto" }}>ID: {customer.id}</span>
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <FiPhone size={20} color="#6b7280" />
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: "600",
-                        color: "#1f2937",
-                      }}
-                    >
-                      {customer.phone}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Phone Number
-                    </div>
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <FiPhone size={16} color="#6b7280" />
+                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{customer.phone}</span>
+                  <span style={{ color: "#6b7280", fontSize: 13, marginLeft: "auto" }}>Phone</span>
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <FiMail size={20} color="#6b7280" />
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: "600",
-                        color: "#1f2937",
-                      }}
-                    >
-                      {customer.email}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      Email Address
-                    </div>
-                  </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <FiMail size={16} color="#6b7280" />
+                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{customer.email}</span>
+                  <span style={{ color: "#6b7280", fontSize: 13, marginLeft: "auto" }}>Email</span>
                 </div>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "flex-start",
-                    gap: "12px",
-                  }}
-                >
-                  <FiMapPin
-                    size={20}
-                    color="#6b7280"
-                    style={{ marginTop: "2px" }}
-                  />
-                  <div>
-                    <div
-                      style={{
-                        fontWeight: "600",
-                        color: "#1f2937",
-                      }}
-                    >
-                      {customer.address}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "14px",
-                        color: "#6b7280",
-                      }}
-                    >
-                      {customer.city}, {customer.state}
-                    </div>
-                  </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                  <FiMapPin size={16} color="#6b7280" style={{ marginTop: 2 }} />
+                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{customer.address}</span>
+                  <span style={{ color: "#6b7280", fontSize: 13, marginLeft: "auto" }}>{customer.city}, {customer.state}</span>
                 </div>
               </div>
             ) : (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "16px",
-                  backgroundColor: "#f9fafb",
-                  borderRadius: "8px",
-                }}
-              >
-                <FiUser size={20} color="#6b7280" />
-                <div>
-                  <div
-                    style={{
-                      fontWeight: "600",
-                      color: "#1f2937",
-                    }}
-                  >
-                    Walk-in Customer
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "14px",
-                      color: "#6b7280",
-                    }}
-                  >
-                    No customer information available
-                  </div>
-                </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, background: "#f9fafb", borderRadius: 8, padding: 12 }}>
+                <FiUser size={16} color="#6b7280" />
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>Walk-in Customer</span>
+                <span style={{ color: "#6b7280", fontSize: 13, marginLeft: "auto" }}>No info</span>
               </div>
             )}
           </div>
 
-          {/* Transaction Details */}
-          <div
-            style={{
-              backgroundColor: "white",
-              borderRadius: "12px",
-              padding: "24px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
+          {/* Transaction Details Card */}
+          <div className="mobile-card" style={{ marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: "#1f2937", marginBottom: 12 }}>
               Transaction Details
             </h3>
-
-            <div
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: "12px",
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Transaction ID:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  {sale.id}
-                </span>
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>{sale.id}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Cashier ID:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  {sale.cashierId || "N/A"}
-                </span>
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>{sale.cashierId || "N/A"}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Items Count:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  {sale.items.length} item(s)
-                </span>
+                <span style={{ fontWeight: 600, color: "#1f2937" }}>{sale.items.length} item(s)</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      ) : (
+        <>
+          {/* Header */}
+          <div
+            className={isMobile ? "mobile-card" : ""}
+            style={
+              isMobile
+                ? { marginBottom: "16px" }
+                : {
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "32px",
+                  }
+            }
+          >
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <button
+                onClick={() => navigate("/sales")}
+                className={isMobile ? "mobile-action-button secondary" : ""}
+                style={
+                  isMobile
+                    ? {}
+                    : {
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                        padding: "8px 16px",
+                        backgroundColor: "white",
+                        color: "#6b7280",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "8px",
+                        fontSize: "14px",
+                        fontWeight: "500",
+                        cursor: "pointer",
+                        marginRight: "16px",
+                      }
+                }
+              >
+                <div className={isMobile ? "mobile-nav-icon" : ""}>
+                  <FiArrowLeft size={16} />
+                </div>
+                {isMobile ? "Back" : "Back to Sales"}
+              </button>
+              <div>
+                <h1
+                  style={{
+                    fontSize: isMobile ? "20px" : "28px",
+                    fontWeight: "bold",
+                    color: "#1f2937",
+                    margin: "0 0 4px 0",
+                  }}
+                >
+                  {sale.transactionNumber}
+                </h1>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                    color: "#6b7280",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "4px",
+                    }}
+                  >
+                    <FiCalendar size={16} />
+                    {new Date(sale.date).toLocaleDateString()} at{" "}
+                    {new Date(sale.date).toLocaleTimeString()}
+                  </div>
+                  <div
+                    style={{
+                      padding: "4px 8px",
+                      borderRadius: "12px",
+                      fontSize: "12px",
+                      fontWeight: "500",
+                      backgroundColor:
+                        sale.status === "completed" ? "#dcfce7" : "#fef3c7",
+                      color: sale.status === "completed" ? "#166534" : "#92400e",
+                    }}
+                  >
+                    <FiCheckCircle size={12} style={{ marginRight: "4px" }} />
+                    {sale.status.toUpperCase()}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: "12px" }}>
+              <button
+                onClick={handleDownloadReceipt}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  backgroundColor: "white",
+                  color: "#6b7280",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                }}
+              >
+                <FiDownload size={16} />
+                Download Receipt
+              </button>
+              <button
+                onClick={handlePrint}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  backgroundColor: "white",
+                  color: "#6b7280",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                }}
+              >
+                <FiPrinter size={16} />
+                Print Receipt
+              </button>
+              <button
+                onClick={shareViaWhatsApp}
+                disabled={generatingPDF}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  backgroundColor: "#25D366",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor:
+                    generatingPDF && sharingMethod === "whatsapp"
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity: generatingPDF && sharingMethod === "whatsapp" ? 0.7 : 1,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!(generatingPDF && sharingMethod === "whatsapp")) {
+                    e.target.style.backgroundColor = "#128C7E";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!(generatingPDF && sharingMethod === "whatsapp")) {
+                    e.target.style.backgroundColor = "#25D366";
+                  }
+                }}
+              >
+                {generatingPDF && sharingMethod === "whatsapp" ? (
+                  <>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid white",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                      }}
+                    />
+                    Sharing...
+                  </>
+                ) : (
+                  <>
+                    <FiMessageCircle size={16} />
+                    WhatsApp
+                  </>
+                )}
+              </button>
+
+              <button
+                onClick={shareViaEmail}
+                disabled={generatingPDF}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "8px 16px",
+                  backgroundColor: "#3b82f6",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor:
+                    generatingPDF && sharingMethod === "email"
+                      ? "not-allowed"
+                      : "pointer",
+                  opacity: generatingPDF && sharingMethod === "email" ? 0.7 : 1,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!(generatingPDF && sharingMethod === "email")) {
+                    e.target.style.backgroundColor = "#2563eb";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!(generatingPDF && sharingMethod === "email")) {
+                    e.target.style.backgroundColor = "#3b82f6";
+                  }
+                }}
+              >
+                {generatingPDF && sharingMethod === "email" ? (
+                  <>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid white",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                      }}
+                    />
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <FiMail size={16} />
+                    Email
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "2fr 1fr",
+              gap: "24px",
+            }}
+          >
+            {/* Left Column - Transaction Details */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {/* Items List */}
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    marginBottom: "20px",
+                  }}
+                >
+                  Items Purchased
+                </h3>
+
+                <div style={{ overflowX: "auto" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                    <thead>
+                      <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
+                        <th
+                          style={{
+                            padding: "12px",
+                            textAlign: "left",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Product
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px",
+                            textAlign: "right",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Price
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px",
+                            textAlign: "right",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Quantity
+                        </th>
+                        <th
+                          style={{
+                            padding: "12px",
+                            textAlign: "right",
+                            fontSize: "14px",
+                            fontWeight: "600",
+                          }}
+                        >
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(sale.items || sale.sale_items || []).map((item, index) => (
+                        <tr
+                          key={index}
+                          style={{ borderBottom: "1px solid #f3f4f6" }}
+                        >
+                          <td style={{ padding: "16px 12px" }}>
+                            <div
+                              style={{
+                                fontWeight: "600",
+                                color: "#1f2937",
+                              }}
+                            >
+                              {getProductName(
+                                item.productId || item.product_id,
+                                item
+                              )}
+                            </div>
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 12px",
+                              textAlign: "right",
+                              color: "#6b7280",
+                            }}
+                          >
+                            {currency} {(item.price || 0).toFixed(2)}
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 12px",
+                              textAlign: "right",
+                              color: "#6b7280",
+                            }}
+                          >
+                            {item.quantity}
+                          </td>
+                          <td
+                            style={{
+                              padding: "16px 12px",
+                              textAlign: "right",
+                              fontWeight: "600",
+                              color: "#1f2937",
+                            }}
+                          >
+                            {currency} {(item.total || 0).toFixed(2)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Payment Information */}
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    marginBottom: "20px",
+                  }}
+                >
+                  Payment Information
+                </h3>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: "16px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <FiCreditCard size={20} color="#6b7280" />
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          color: "#6b7280",
+                        }}
+                      >
+                        Payment Method
+                      </div>
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          color: "#1f2937",
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {sale.paymentMethod}
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <FiDollarSign size={20} color="#6b7280" />
+                    <div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          color: "#6b7280",
+                        }}
+                      >
+                        Total Amount
+                      </div>
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          color: "#10b981",
+                          fontSize: "18px",
+                        }}
+                      >
+                        {currency}{" "}
+                        {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Summary & Customer */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              {/* Order Summary */}
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    marginBottom: "20px",
+                  }}
+                >
+                  Order Summary
+                </h3>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#6b7280" }}>Subtotal:</span>{" "}
+                    <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                      ₦{(sale.subtotal || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#6b7280" }}>Tax:</span>
+                    <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                      ₦{(sale.tax || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  {(sale.discount || 0) > 0 && (
+                    <div
+                      style={{ display: "flex", justifyContent: "space-between" }}
+                    >
+                      <span style={{ color: "#6b7280" }}>Discount:</span>{" "}
+                      <span style={{ fontWeight: "600", color: "#ef4444" }}>
+                        -₦{(sale.discount || 0).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
+                  <div
+                    style={{
+                      borderTop: "1px solid #e5e7eb",
+                      paddingTop: "12px",
+                      display: "flex",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        color: "#1f2937",
+                      }}
+                    >
+                      Total:
+                    </span>
+                    <span
+                      style={{
+                        fontSize: "18px",
+                        fontWeight: "bold",
+                        color: "#10b981",
+                      }}
+                    >
+                      ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    marginBottom: "20px",
+                  }}
+                >
+                  Customer Information
+                </h3>
+
+                {customer ? (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "16px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <FiUser size={20} color="#6b7280" />
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: "600",
+                            color: "#1f2937",
+                          }}
+                        >
+                          {customer.firstName} {customer.lastName}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          Customer ID: {customer.id}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <FiPhone size={20} color="#6b7280" />
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: "600",
+                            color: "#1f2937",
+                          }}
+                        >
+                          {customer.phone}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          Phone Number
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <FiMail size={20} color="#6b7280" />
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: "600",
+                            color: "#1f2937",
+                          }}
+                        >
+                          {customer.email}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          Email Address
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "flex-start",
+                        gap: "12px",
+                      }}
+                    >
+                      <FiMapPin
+                        size={20}
+                        color="#6b7280"
+                        style={{ marginTop: "2px" }}
+                      />
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: "600",
+                            color: "#1f2937",
+                          }}
+                        >
+                          {customer.address}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "14px",
+                            color: "#6b7280",
+                          }}
+                        >
+                          {customer.city}, {customer.state}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                      padding: "16px",
+                      backgroundColor: "#f9fafb",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <FiUser size={20} color="#6b7280" />
+                    <div>
+                      <div
+                        style={{
+                          fontWeight: "600",
+                          color: "#1f2937",
+                        }}
+                      >
+                        Walk-in Customer
+                      </div>
+                      <div
+                        style={{
+                          fontSize: "14px",
+                          color: "#6b7280",
+                        }}
+                      >
+                        No customer information available
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Transaction Details */}
+              <div
+                style={{
+                  backgroundColor: "white",
+                  borderRadius: "12px",
+                  padding: "24px",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                }}
+              >
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    marginBottom: "20px",
+                  }}
+                >
+                  Transaction Details
+                </h3>
+
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "12px",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#6b7280" }}>Transaction ID:</span>
+                    <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {sale.id}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#6b7280" }}>Cashier ID:</span>
+                    <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {sale.cashierId || "N/A"}
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#6b7280" }}>Items Count:</span>
+                    <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {sale.items.length} item(s)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       <style>{`
         @keyframes spin {
