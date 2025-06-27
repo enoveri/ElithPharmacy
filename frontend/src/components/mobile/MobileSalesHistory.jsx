@@ -13,6 +13,7 @@ import {
   FiMoreVertical,
   FiCalendar,
   FiX,
+  FiAlertCircle,
 } from "react-icons/fi";
 import { dataService } from "../../services";
 import { useSettingsStore } from "../../store";
@@ -23,8 +24,10 @@ function MobileSalesHistory() {
   const navigate = useNavigate();
 
   const [sales, setSales] = useState([]);
+  const [customers, setCustomers] = useState([]);
   const [filteredSales, setFilteredSales] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -34,104 +37,55 @@ function MobileSalesHistory() {
   // Pull-to-refresh animation
   const [{ y }, api] = useSpring(() => ({ y: 0 }));
 
-  // Mock sales data
-  const mockSales = [
-    {
-      id: "SAL-001",
-      customerName: "John Doe",
-      customerId: 1,
-      total: 145.5,
-      items: 3,
-      status: "completed",
-      paymentMethod: "cash",
-      date: "2024-01-15T10:30:00Z",
-      products: [
-        { name: "Aspirin 100mg", quantity: 2, price: 15.0 },
-        { name: "Vitamin D3", quantity: 1, price: 25.5 },
-        { name: "Paracetamol", quantity: 3, price: 35.0 },
-      ],
-    },
-    {
-      id: "SAL-002",
-      customerName: "Jane Smith",
-      customerId: 2,
-      total: 89.25,
-      items: 2,
-      status: "completed",
-      paymentMethod: "mpesa",
-      date: "2024-01-15T14:15:00Z",
-      products: [
-        { name: "Cough Syrup", quantity: 1, price: 45.0 },
-        { name: "Bandages", quantity: 2, price: 22.25 },
-      ],
-    },
-    {
-      id: "SAL-003",
-      customerName: "Mike Johnson",
-      customerId: 3,
-      total: 67.8,
-      items: 1,
-      status: "refunded",
-      paymentMethod: "card",
-      date: "2024-01-14T16:45:00Z",
-      products: [{ name: "Pain Relief Gel", quantity: 1, price: 67.8 }],
-    },
-    {
-      id: "SAL-004",
-      customerName: "Sarah Wilson",
-      customerId: 4,
-      total: 234.9,
-      items: 5,
-      status: "completed",
-      paymentMethod: "cash",
-      date: "2024-01-14T09:20:00Z",
-      products: [
-        { name: "Antibiotic Course", quantity: 1, price: 120.0 },
-        { name: "Vitamins", quantity: 2, price: 50.0 },
-        { name: "First Aid Kit", quantity: 1, price: 64.9 },
-      ],
-    },
-  ];
-
   useEffect(() => {
-    loadSales();
+    loadData();
   }, []);
 
   useEffect(() => {
     filterSales();
   }, [sales, searchTerm, selectedStatus, selectedPeriod]);
 
-  const loadSales = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      // In a real app, this would fetch from the database
-      // const data = await dataService.getSales();
-      setSales(mockSales);
-    } catch (error) {
-      console.error("Error loading sales:", error);
+      setError(null);
+      const [salesData, customersData] = await Promise.all([
+        dataService.sales.getAll(),
+        dataService.customers.getAll().catch(() => []),
+      ]);
+      setSales(salesData || []);
+      setCustomers(customersData || []);
+    } catch (err) {
+      setError("Failed to load sales data");
+      setSales([]);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const getCustomerName = (customerId) => {
+    if (!customerId) return "Walk-in Customer";
+    const customer = customers.find((c) => c.id === customerId);
+    return customer
+      ? `${customer.firstName || customer.first_name || ""} ${customer.lastName || customer.last_name || ""}`.trim() ||
+          customer.name ||
+          `Customer #${customerId}`
+      : `Customer #${customerId}`;
+  };
+
   const filterSales = () => {
     let filtered = sales;
-
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(
         (sale) =>
-          sale.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          sale.customerName.toLowerCase().includes(searchTerm.toLowerCase())
+          (sale.id && sale.id.toLowerCase().includes(searchTerm.toLowerCase())) ||
+          (getCustomerName(sale.customerId).toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-
-    // Filter by status
     if (selectedStatus !== "all") {
       filtered = filtered.filter((sale) => sale.status === selectedStatus);
     }
-
-    // Filter by period
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
@@ -155,10 +109,7 @@ function MobileSalesHistory() {
         }
       });
     }
-
-    // Sort by date (newest first)
     filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
-
     setFilteredSales(filtered);
   };
 
@@ -171,7 +122,7 @@ function MobileSalesHistory() {
     });
 
     try {
-      await loadSales();
+      await loadData();
       setTimeout(() => {
         api.start({ y: 0 });
         setRefreshing(false);
@@ -182,9 +133,9 @@ function MobileSalesHistory() {
     }
   };
 
-  // Summary stats
+  // Summary stats (safe defaults)
   const totalRevenue = filteredSales.reduce(
-    (sum, sale) => (sale.status === "completed" ? sum + sale.total : sum),
+    (sum, sale) => (sale.status === "completed" ? sum + (sale.total || 0) : sum),
     0
   );
   const totalTransactions = filteredSales.filter(
@@ -196,6 +147,8 @@ function MobileSalesHistory() {
   // Sale card
   const SaleCard = ({ sale }) => {
     const saleDate = new Date(sale.date);
+    const safeTotal = typeof sale.total === "number" ? sale.total : 0;
+    const safeItems = typeof sale.items === "number" ? sale.items : 0;
     return (
       <motion.div
         layout
@@ -219,18 +172,18 @@ function MobileSalesHistory() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="font-bold text-base text-gray-900 truncate">
-              {sale.customerName}
+              {getCustomerName(sale.customerId)}
             </div>
             <div className="text-xs text-gray-500 truncate">
-              Sale #{sale.id} • {sale.items} item{sale.items !== 1 ? "s" : ""}
+              Sale #{sale.id} • {safeItems} item{safeItems !== 1 ? "s" : ""}
             </div>
           </div>
           <div className="text-right">
             <div className="text-lg font-bold gradient-text">
-              {currency}{sale.total.toFixed(2)}
+              {currency}{safeTotal.toFixed(2)}
             </div>
             <div className="text-xs text-gray-500">
-              {sale.paymentMethod.toUpperCase()}
+              {(sale.paymentMethod || "").toUpperCase()}
             </div>
           </div>
         </div>
@@ -308,47 +261,63 @@ function MobileSalesHistory() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center">
+        <FiAlertCircle className="w-12 h-12 text-red-500 mb-2" />
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Error Loading Sales Data</h2>
+        <p className="text-gray-500 mb-4">{error}</p>
+        <button
+          onClick={loadData}
+          className="cta-btn"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="mobile-sales-history-page">
       {/* Sticky glassy header with summary */}
       <div className="mobile-sales-header glass-card">
-        <div className="grid grid-cols-3 gap-4 mb-2">
-          <div className="summary-card">
-            <div className="icon-bg green"><FiDollarSign size={18} /></div>
+        <div className="grid grid-cols-3 gap-2 mb-2">
+          <div className="summary-card small">
+            <div className="icon-bg green"><FiDollarSign size={15} /></div>
             <div className="summary-value">{currency}{totalRevenue.toFixed(2)}</div>
             <div className="summary-label">Revenue</div>
           </div>
-          <div className="summary-card">
-            <div className="icon-bg blue"><FiShoppingCart size={18} /></div>
+          <div className="summary-card small">
+            <div className="icon-bg blue"><FiShoppingCart size={15} /></div>
             <div className="summary-value">{totalTransactions}</div>
             <div className="summary-label">Sales</div>
           </div>
-          <div className="summary-card">
-            <div className="icon-bg purple"><FiTrendingUp size={18} /></div>
+          <div className="summary-card small">
+            <div className="icon-bg purple"><FiTrendingUp size={15} /></div>
             <div className="summary-value">{currency}{averageOrderValue.toFixed(2)}</div>
             <div className="summary-label">Avg. Order</div>
           </div>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-0 w-full">
           <div className="relative flex-1">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
               placeholder="Search sales..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 shadow-sm"
+              className="w-full pl-4 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 shadow-sm search-input-large"
               style={{ boxShadow: "0 2px 8px rgba(59,130,246,0.06)" }}
             />
-          </div>
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={() => setShowFilters(true)}
-            className="p-3 bg-blue-50 rounded-xl shadow-sm"
-          >
-            <FiFilter className="w-5 h-5 text-blue-600" />
-          </motion.button>
-        </div>
+              onClick={() => setShowFilters(true)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-50 rounded-xl shadow-sm"
+              style={{ lineHeight: 0 }}
+            >
+              <FiFilter className="w-5 h-5 text-blue-600" />
+                      </motion.button>
+                </div>
+              </div>
       </div>
       <FilterModal />
       {/* Pull to Refresh Indicator */}

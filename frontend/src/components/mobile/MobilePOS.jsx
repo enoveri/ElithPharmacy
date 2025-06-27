@@ -344,34 +344,14 @@ const MobilePOS = () => {
       {/* Fixed Header Section */}
       <div className="pos-fixed-header">
         <div className="px-4 py-4">
-          {" "}
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-bold pos-title">Point of Sale</h1>
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowCart(true)}
-              className="mobile-action-button relative bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-200"
-              style={{
-                color: "white",
-                padding: "12px",
-                borderRadius: "12px",
-              }}
-            >
-              <FiShoppingCart size={20} color="white" />
-              {cart.length > 0 && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold shadow-lg"
-                >
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                </motion.div>
-              )}
-            </motion.button>
+            {/* Removed POS heading */}
+            <div />
+            {/* Cart button will be moved below */}
           </div>
-          {/* Search and Scanner */}
+          {/* Search and Cart */}
           <div className="flex gap-3 mb-4">
-            <div className="search-container flex-1">
+            <div className="search-container flex-1 relative">
               <FiSearch className="search-icon" />
               <input
                 type="text"
@@ -380,16 +360,26 @@ const MobilePOS = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="search-input"
               />
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => setShowCart(true)}
+                className="mobile-action-button cart-icon-btn absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 backdrop-blur-sm border border-white/30 hover:bg-white/30 transition-all duration-200"
+                style={{ color: "white", padding: "10px", borderRadius: "12px", lineHeight: 0 }}
+              >
+                <FiShoppingCart size={20} color="white" />
+                {cart.length > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-semibold shadow-lg"
+                  >
+                    {cart.reduce((sum, item) => sum + item.quantity, 0)}
+                  </motion.div>
+                )}
+              </motion.button>
             </div>
-
-            <motion.button
-              whileTap={{ scale: 0.95 }}
-              className="mobile-action-button secondary"
-              style={{ padding: "12px" }}
-            >
-              <FiCamera size={20} />
-            </motion.button>
-          </div>{" "}
+            {/* Removed camera icon button */}
+          </div>
           {/* Categories */}
           <div className="mb-4">
             <div className="pos-categories-container overflow-x-auto overflow-y-hidden">

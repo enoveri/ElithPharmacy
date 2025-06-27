@@ -407,7 +407,7 @@ const Settings = () => {
                       color: "#9ca3af",
                     }}>
                           {tab.description}
-                    </div>
+                        </div>
                     </div>
                   </button>
                 );
@@ -622,8 +622,8 @@ const Settings = () => {
                           e.target.style.borderColor = "#d1d5db";
                           e.target.style.backgroundColor = "#f9fafb";
                         }}
-                      />
-                    </div>
+                        />
+                      </div>
                     </div>
                   </div>
 
