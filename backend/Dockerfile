@@ -16,8 +16,13 @@ COPY . .
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
-# Expose any necessary ports
-# EXPOSE 8000  # Uncomment if your backend exposes any ports
+# Note: When connecting to local Supabase from Docker,
+# host.docker.internal is used to access the host machine
+# This is handled in config.py
+
+# Add healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+  CMD ps aux | grep "[p]ython sync.py" || exit 1
 
 # Command to run the sync script
 CMD ["python", "sync.py", "--sync"] 

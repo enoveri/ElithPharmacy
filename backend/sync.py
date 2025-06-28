@@ -17,46 +17,63 @@ from loguru import logger
 from supabase import create_client, Client
 import requests
 
-from config import LOCAL_SUPABASE_KEY, LOCAL_SUPABASE_URL, REMOTE_SUPABASE_KEY,\
-    REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES, LOCAL_SERVICE_ROLE_KEY
+from config import LOCAL_SUPABASE_URL, REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES, LOCAL_SERVICE_ROLE_KEY, REMOTE_SERVICE_ROLE_KEY
 
 class PharmacyDatabaseSync:
     """Class to handle synchronization between local and remote Supabase instances"""
     
     def __init__(self):
         """Initialize the sync class"""
+
+        self.PHARMACY_DB_TABLES = [
+            "products",
+            "categories",
+            "customers",
+            "sales",
+            "sale_items",
+            "settings",
+            "admin_users",
+            "notifications",
+            "email_templates",
+            # "email_stats", # this is a view, not a table
+            "email_queue",
+            "email_logs",
+        ]
+
         # Configure logging
         logger.add("sync.log", rotation="10 MB", retention="1 week")
         
         # Initialize clients
         self.local_supabase = None
         self.remote_supabase = None
-    
-    def get_tables(self, supabase: Client):
-        """Get all tables from a Supabase instance"""
-        try:
-            response = supabase.table("pg_catalog.pg_tables").select("tablename").execute()
-            return [row["tablename"] for row in response.data]
-        except Exception as e:
-            logger.error(f"Error getting tables: {e}")
-            return []
+        
+        # Health status
+        self.last_sync_time = None
+        self.is_healthy = True
+        self.health_status = "Initialized"
 
     def connect_to_supabase(self, target="both"):
         """Establish connections to both Supabase instances"""
         if target == "local":
             try:
-                self.local_supabase = create_client(LOCAL_SUPABASE_URL, LOCAL_SUPABASE_KEY)
-                logger.info("Connected to local Supabase")
+                self.local_supabase = create_client(LOCAL_SUPABASE_URL, LOCAL_SERVICE_ROLE_KEY)
+                logger.info(f"Connected to local Supabase at {LOCAL_SUPABASE_URL}")
+                self.health_status = "Connected to local Supabase"
             except Exception as e:
                 logger.error(f"Failed to connect to local Supabase: {e}")
                 self.local_supabase = None
+                self.is_healthy = False
+                self.health_status = f"Failed to connect to local Supabase: {str(e)}"
         elif target == "remote":
             try:
-                self.remote_supabase = create_client(REMOTE_SUPABASE_URL, REMOTE_SUPABASE_KEY)
-                logger.info("Connected to remote Supabase")
+                self.remote_supabase = create_client(REMOTE_SUPABASE_URL, REMOTE_SERVICE_ROLE_KEY)
+                logger.info(f"Connected to remote Supabase at {REMOTE_SUPABASE_URL}")
+                self.health_status = "Connected to remote Supabase"
             except Exception as e:
                 logger.error(f"Failed to connect to remote Supabase: {e}")
                 self.remote_supabase = None
+                self.is_healthy = False
+                self.health_status = f"Failed to connect to remote Supabase: {str(e)}"
         elif target == "both":
             self.connect_to_supabase("local")
             self.connect_to_supabase("remote")
@@ -65,16 +82,28 @@ class PharmacyDatabaseSync:
             return False
         return True
 
+    def get_health_status(self):
+        """Return the health status of the sync service"""
+        status = {
+            "is_healthy": self.is_healthy,
+            "status": self.health_status,
+            "last_sync_time": self.last_sync_time,
+            "local_connection": self.local_supabase is not None,
+            "remote_connection": self.remote_supabase is not None,
+        }
+        return status
+        
     def sync_local_to_remote(self):
         """Sync data from local to remote database"""
         if not self.local_supabase or not self.remote_supabase:
             logger.error("Cannot sync: one or both database connections are unavailable")
+            self.is_healthy = False
+            self.health_status = "Cannot sync: database connections unavailable"
             return
         
         logger.info("Starting sync from local to remote")
         
-        tables = self.get_tables(self.local_supabase)
-        for table in tables:
+        for table in self.PHARMACY_DB_TABLES:
             try:
                 # Get local records with sync flag
                 response = self.local_supabase.table(table).select("*").eq("synced", False).execute()
@@ -102,17 +131,20 @@ class PharmacyDatabaseSync:
             
             except Exception as e:
                 logger.error(f"Error syncing {table}: {e}")
+                self.is_healthy = False
+                self.health_status = f"Error syncing {table}: {str(e)}"
 
     def sync_remote_to_local(self):
         """Sync data from remote to local database"""
         if not self.local_supabase or not self.remote_supabase:
             logger.error("Cannot sync: one or both database connections are unavailable")
+            self.is_healthy = False
+            self.health_status = "Cannot sync: database connections unavailable"
             return
         
         logger.info("Starting sync from remote to local")
         
-        tables = self.get_tables(self.remote_supabase)
-        for table in tables:
+        for table in self.PHARMACY_DB_TABLES:
             try:
                 # Get last sync timestamp for this table
                 last_sync_file = f"last_sync_{table}.txt"
@@ -147,6 +179,8 @@ class PharmacyDatabaseSync:
             
             except Exception as e:
                 logger.error(f"Error syncing {table} from remote: {e}")
+                self.is_healthy = False
+                self.health_status = f"Error syncing {table} from remote: {str(e)}"
 
     def run_sync(self):
         """Run a complete sync cycle"""
@@ -155,6 +189,9 @@ class PharmacyDatabaseSync:
         if self.local_supabase and self.remote_supabase:
             self.sync_local_to_remote()
             self.sync_remote_to_local()
+            self.last_sync_time = time.strftime("%Y-%m-%dT%H:%M:%S")
+            self.is_healthy = True
+            self.health_status = f"Last successful sync at {self.last_sync_time}"
         else:
             if not self.local_supabase:
                 logger.error("Cannot sync: local database connection is unavailable")
@@ -164,6 +201,8 @@ class PharmacyDatabaseSync:
     def start(self):
         """Start the sync service"""
         logger.info("Starting pharmacy database sync service")
+        logger.info(f"Local Supabase URL: {LOCAL_SUPABASE_URL}")
+        logger.info(f"Remote Supabase URL: {REMOTE_SUPABASE_URL}")
         
         # Run immediately on startup
         self.run_sync()
