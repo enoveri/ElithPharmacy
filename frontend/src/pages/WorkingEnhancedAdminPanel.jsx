@@ -236,6 +236,28 @@ const EnhancedAdminPanel = () => {
 
       console.log("✅ [AdminPanel] Admin user record created successfully");
 
+      // Log user credentials and let Supabase send default email
+      try {
+        console.log("🔄 [AdminPanel] Logging user credentials for admin reference...");
+        const { data: logResult, error: logError } = await supabase.rpc(
+          'log_user_credentials',
+          {
+            user_email: formData.email,
+            user_name: formData.full_name,
+            user_role: formData.role,
+            user_password: formData.password
+          }
+        );
+
+        if (logError) {
+          console.error("❌ [AdminPanel] Error logging credentials:", logError);
+        } else {
+          console.log("✅ [AdminPanel] Credentials logged successfully:", logResult);
+        }
+      } catch (logError) {
+        console.error("❌ [AdminPanel] Failed to log credentials:", logError);
+      }
+
       // Reset form and close modal
       setFormData({
         email: "",
@@ -253,10 +275,12 @@ const EnhancedAdminPanel = () => {
 
       alert(
         `User created successfully!\n\n` +
+        `📧 Supabase confirmation email sent to: ${formData.email}\n` +
+        `🔑 User Login Credentials:\n\n` +
         `Email: ${formData.email}\n` +
         `Password: ${formData.password}\n\n` +
-        `⚠️ IMPORTANT: The user needs to check their email and click the verification link before they can log in.\n\n` +
-        `If email verification is disabled in your Supabase settings, they can log in immediately.`
+        `⚠️ IMPORTANT: Please share the password with the user manually.\n` +
+        `They will receive a Supabase confirmation email but need the password to login.`
       );
     } catch (error) {
       console.error("Error creating user:", error);
