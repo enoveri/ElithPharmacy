@@ -218,3 +218,4 @@ local/
 db_password.txt
 local_supabase_spin.md
 supabase_link_stdout.txt
+docker-compose.yml
