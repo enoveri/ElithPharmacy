@@ -68,7 +68,7 @@ function ViewCustomer() {
         console.error("❌ [ViewCustomer] Error loading customer data:", err);
         setError("Failed to load customer data");
       } finally {
-        setLoading(false);
+      setLoading(false);
       }
     };
 
@@ -249,76 +249,76 @@ function ViewCustomer() {
         /* Desktop Header */
         <div
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "32px",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center" }}>
-            <button
-              onClick={() => navigate("/customers")}
-              style={{
                 display: "flex",
+                justifyContent: "space-between",
                 alignItems: "center",
-                gap: "8px",
-                padding: "8px 16px",
-                backgroundColor: "white",
-                color: "var(--color-text-secondary)",
-                border: "1px solid var(--color-border-light)",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-                marginRight: "16px",
+                marginBottom: "32px",
+          }}
+      >
+        <div style={{ display: "flex", alignItems: "center" }}>
+          <button
+            onClick={() => navigate("/customers")}
+              style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "8px 16px",
+                    backgroundColor: "white",
+                    color: "var(--color-text-secondary)",
+                    border: "1px solid var(--color-border-light)",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    marginRight: "16px",
+              }}
+          >
+            <FiArrowLeft size={16} />
+            Back to Customers
+          </button>
+          <div>
+            <h1
+              style={{
+                fontSize: "28px",
+                fontWeight: "bold",
+                color: "var(--color-text-primary)",
+                margin: "0 0 4px 0",
               }}
             >
-              <FiArrowLeft size={16} />
-              Back to Customers
-            </button>
-            <div>
-              <h1
-                style={{
-                  fontSize: "28px",
-                  fontWeight: "bold",
-                  color: "var(--color-text-primary)",
-                  margin: "0 0 4px 0",
-                }}
-              >
                 {customer.first_name || customer.firstName} {customer.last_name || customer.lastName}
-              </h1>
-              <p
-                style={{
-                  color: "var(--color-text-secondary)",
-                  margin: 0,
-                }}
-              >
-                Customer since{" "}
+            </h1>
+            <p
+              style={{
+                color: "var(--color-text-secondary)",
+                margin: 0,
+              }}
+            >
+              Customer since{" "}
                 {new Date(customer.registration_date || customer.registrationDate).toLocaleDateString()}
-              </p>
-            </div>
+            </p>
           </div>
-
-          <button
-            onClick={() => navigate(`/customers/edit/${customer.id}`)}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "12px 20px",
-              backgroundColor: "var(--color-primary-600)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: "pointer",
-            }}
-          >
-            <FiEdit size={16} />
-            Edit Customer
-          </button>
         </div>
+
+        <button
+          onClick={() => navigate(`/customers/edit/${customer.id}`)}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            backgroundColor: "var(--color-primary-600)",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          <FiEdit size={16} />
+          Edit Customer
+        </button>
+      </div>
       )}
 
       {/* Customer Overview Cards - Mobile Responsive */}
