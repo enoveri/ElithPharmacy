@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - VITE_SUPABASE_URL=http://localhost:54321
+      - VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+    # network_mode: "host"
+    restart: unless-stopped
+
+  # Backend service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend:/app
+    environment:
+      - LOCAL_SUPABASE_URL=http://localhost:54321
+      - LOCAL_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      - LOCAL_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      - REMOTE_SUPABASE_URL=https://betilyonbkpvjgdziwrx.supabase.co
+      - REMOTE_SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJldGlseW9uYmtwdmpnZHppd3J4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MjMzNDksImV4cCI6MjA2NTE5OTM0OX0.3ad_A1Q0naWJwuk4-zUR5jqznNzX6o3wJzZhALoLmuo
+      - REMOTE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJldGlseW9uYmtwdmpnZHppd3J4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0OTYyMzM0OSwiZXhwIjoyMDY1MTk5MzQ5fQ.jkIY7JoL-cm8WyT3knCx5b4SiRYaeEQIJnqcIj2LrNs
+      - SYNC_INTERVAL_MINUTES=2
+      - SYNC_LOG_FILE=sync.log
+    # network_mode: "host"
+    restart: unless-stopped 

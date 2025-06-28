@@ -20,8 +20,6 @@ import requests
 from config import LOCAL_SUPABASE_KEY, LOCAL_SUPABASE_URL, REMOTE_SUPABASE_KEY,\
     REMOTE_SUPABASE_URL, SYNC_INTERVAL_MINUTES, LOCAL_SERVICE_ROLE_KEY
 
-from backend.bk.schemas import NOTIFICATIONS_SCHEMA_SQL, SETTINGS_SCHEMA, ADMIN_USERS_SCHEMA
-
 class PharmacyDatabaseSync:
     """Class to handle synchronization between local and remote Supabase instances"""
     
@@ -43,7 +41,7 @@ class PharmacyDatabaseSync:
             logger.error(f"Error getting tables: {e}")
             return []
 
-    def connect_to_supabase(self, target="local"):
+    def connect_to_supabase(self, target="both"):
         """Establish connections to both Supabase instances"""
         if target == "local":
             try:
@@ -158,7 +156,10 @@ class PharmacyDatabaseSync:
             self.sync_local_to_remote()
             self.sync_remote_to_local()
         else:
-            logger.warning("Skipping sync due to connection issues")
+            if not self.local_supabase:
+                logger.error("Cannot sync: local database connection is unavailable")
+            if not self.remote_supabase:
+                logger.error("Cannot sync: remote database connection is unavailable")
 
     def start(self):
         """Start the sync service"""
@@ -530,4 +531,8 @@ def main():
     
 
 if __name__ == "__main__":
-    main() 
+    try:
+        main()
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        sys.exit(1)
