@@ -13,7 +13,6 @@ const useNotificationsStore = create((set, get) => ({
   // Fetch notifications from database
   fetchNotifications: async (options = {}) => {
     try {
-      console.log("🔄 [Notifications] Starting fetchNotifications...");
       set({ loading: true, error: null });
 
       // Use enhanced notification database layer
@@ -26,7 +25,6 @@ const useNotificationsStore = create((set, get) => ({
       }
 
       const notifications = result.data || [];
-      console.log("📦 [Notifications] Fetched notifications:", notifications);
 
       // Get unread count
       const unreadResult = await notificationDb.getUnreadCount();
@@ -37,12 +35,7 @@ const useNotificationsStore = create((set, get) => ({
         unreadCount,
         loading: false,
       });
-
-      console.log(
-        `📬 [Notifications] Loaded ${notifications.length} notifications (${unreadCount} unread)`
-      );
     } catch (error) {
-      console.error("❌ [Notifications] Error fetching notifications:", error);
       set({
         error: error.message,
         loading: false,
@@ -64,10 +57,6 @@ const useNotificationsStore = create((set, get) => ({
           unreadCount: state.unreadCount + 1,
         }));
 
-        console.log(
-          "📢 [Notifications] New notification added:",
-          newNotification.title
-        );
         return { success: true, data: newNotification };
       } else {
         throw new Error(
@@ -75,7 +64,6 @@ const useNotificationsStore = create((set, get) => ({
         );
       }
     } catch (error) {
-      console.error("❌ [Notifications] Error adding notification:", error);
       set({ error: error.message });
       return { success: false, error };
     }
@@ -95,10 +83,6 @@ const useNotificationsStore = create((set, get) => ({
           unreadCount: Math.max(0, state.unreadCount - 1),
         }));
 
-        console.log(
-          "✅ [Notifications] Notification marked as read:",
-          notificationId
-        );
         return { success: true };
       } else {
         throw new Error(
@@ -106,10 +90,6 @@ const useNotificationsStore = create((set, get) => ({
         );
       }
     } catch (error) {
-      console.error(
-        "❌ [Notifications] Error marking notification as read:",
-        error
-      );
       set({ error: error.message });
       return { success: false, error };
     }
@@ -130,7 +110,6 @@ const useNotificationsStore = create((set, get) => ({
           unreadCount: 0,
         }));
 
-        console.log("✅ [Notifications] All notifications marked as read");
         return { success: true };
       } else {
         throw new Error(
@@ -138,10 +117,6 @@ const useNotificationsStore = create((set, get) => ({
         );
       }
     } catch (error) {
-      console.error(
-        "❌ [Notifications] Error marking all notifications as read:",
-        error
-      );
       set({ error: error.message });
       return { success: false, error };
     }
@@ -170,7 +145,6 @@ const useNotificationsStore = create((set, get) => ({
           };
         });
 
-        console.log("🗑️ [Notifications] Notification deleted:", notificationId);
         return { success: true };
       } else {
         throw new Error(
@@ -178,7 +152,6 @@ const useNotificationsStore = create((set, get) => ({
         );
       }
     } catch (error) {
-      console.error("❌ [Notifications] Error deleting notification:", error);
       set({ error: error.message });
       return { success: false, error };
     }
@@ -195,7 +168,6 @@ const useNotificationsStore = create((set, get) => ({
           unreadCount: 0,
         });
 
-        console.log("🗑️ [Notifications] All notifications deleted");
         return { success: true };
       } else {
         throw new Error(
@@ -203,10 +175,6 @@ const useNotificationsStore = create((set, get) => ({
         );
       }
     } catch (error) {
-      console.error(
-        "❌ [Notifications] Error deleting all notifications:",
-        error
-      );
       set({ error: error.message });
       return { success: false, error };
     }
@@ -223,10 +191,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error(
-        "❌ [Notifications] Error creating low stock alert:",
-        error
-      );
       return { success: false, error };
     }
   },
@@ -240,7 +204,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Notifications] Error creating sale alert:", error);
       return { success: false, error };
     }
   },
@@ -254,34 +217,24 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Notifications] Error creating expiry alert:", error);
       return { success: false, error };
     }
   },
   // Check for automatic notifications with comprehensive service
   checkAutoNotifications: async () => {
     try {
-      console.log(
-        "🔄 [Store] Running comprehensive auto-notification check..."
-      );
       set({ lastAutoCheck: new Date().toISOString() });
 
       // Use the comprehensive notification service
       const result = await notificationService.runComprehensiveCheck();
 
       if (result.success) {
-        console.log(
-          `✅ [Store] Auto-check created ${result.totalNotifications} notifications`
-        );
         // Refresh notifications to include new ones
         await get().fetchNotifications();
-      } else {
-        console.error("❌ [Store] Auto-check failed:", result.error);
       }
 
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error in comprehensive auto-check:", error);
       set({ error: error.message });
       return { success: false, error };
     }
@@ -310,7 +263,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error creating low stock alert:", error);
       return { success: false, error };
     }
   },
@@ -323,7 +275,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error creating sale alert:", error);
       return { success: false, error };
     }
   },
@@ -371,7 +322,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error creating expiry alert:", error);
       return { success: false, error };
     }
   },
@@ -390,7 +340,6 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error creating custom notification:", error);
       return { success: false, error };
     }
   },
@@ -404,15 +353,12 @@ const useNotificationsStore = create((set, get) => ({
       }
       return result;
     } catch (error) {
-      console.error("❌ [Store] Error triggering inventory check:", error);
       return { success: false, error };
     }
   },
   // Manual notification creation for debugging
   createManualNotifications: async () => {
     try {
-      console.log("🔧 [Debug] Creating manual notifications for testing...");
-
       // First, try to create a simple test notification
       const testNotification = {
         type: "info",
@@ -422,10 +368,8 @@ const useNotificationsStore = create((set, get) => ({
         data: { test: true },
       };
 
-      console.log("� [Debug] Creating test notification:", testNotification);
       const testResult =
         await dataService.notifications.create(testNotification);
-      console.log("🔧 [Debug] Test notification result:", testResult);
 
       // Try to create another notification for low stock
       const lowStockNotification = {
@@ -436,21 +380,14 @@ const useNotificationsStore = create((set, get) => ({
         data: { productId: "test-product", currentStock: 5 },
       };
 
-      console.log(
-        "🔧 [Debug] Creating low stock notification:",
-        lowStockNotification
-      );
       const lowStockResult =
         await dataService.notifications.create(lowStockNotification);
-      console.log("� [Debug] Low stock notification result:", lowStockResult);
 
       // Refresh notifications
-      console.log("🔧 [Debug] Refreshing notifications...");
       await get().fetchNotifications();
 
       return { success: true, message: "Test notifications created" };
     } catch (error) {
-      console.error("❌ [Debug] Error creating manual notifications:", error);
       return { success: false, error };
     }
   },

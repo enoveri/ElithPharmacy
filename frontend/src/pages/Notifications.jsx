@@ -109,7 +109,6 @@ const Notifications = () => {
           return newSet;
         });
       } catch (error) {
-        console.error("Error deleting notification:", error);
         setDeletingNotifications((prev) => {
           const newSet = new Set(prev);
           newSet.delete(notificationId);

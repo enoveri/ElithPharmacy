@@ -35,31 +35,21 @@ export const useNotifications = (options = {}) => {
    */
   const runComprehensiveCheck = useCallback(async () => {
     try {
-      console.log(
-        "🔄 [useNotifications] Running comprehensive notification check..."
-      );
-
       // Run the comprehensive service check
       const serviceResult = await notificationService.runComprehensiveCheck();
 
       if (serviceResult.success) {
-        console.log(
-          `✅ [useNotifications] Service check created ${serviceResult.totalNotifications} notifications`
-        );
+        // Refresh notifications from database
+        await fetchNotifications();
+
+        // Update last check timestamp
+        lastCheckRef.current = Date.now();
+
+        return serviceResult;
       }
 
-      // Refresh notifications from database
-      await fetchNotifications();
-
-      // Update last check timestamp
-      lastCheckRef.current = Date.now();
-
-      return serviceResult;
+      return { success: false, error };
     } catch (error) {
-      console.error(
-        "❌ [useNotifications] Error in comprehensive check:",
-        error
-      );
       if (onError) onError(error);
       return { success: false, error };
     }
@@ -79,10 +69,6 @@ export const useNotifications = (options = {}) => {
             return await runComprehensiveCheck();
         }
       } catch (error) {
-        console.error(
-          `❌ [useNotifications] Error triggering ${type} check:`,
-          error
-        );
         return { success: false, error };
       }
     },
@@ -101,10 +87,6 @@ export const useNotifications = (options = {}) => {
         }
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error creating sale notification:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -123,10 +105,6 @@ export const useNotifications = (options = {}) => {
         }
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error creating customer notification:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -145,10 +123,6 @@ export const useNotifications = (options = {}) => {
         }
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error creating refund notification:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -172,10 +146,6 @@ export const useNotifications = (options = {}) => {
         }
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error creating custom notification:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -191,10 +161,6 @@ export const useNotifications = (options = {}) => {
         const result = await markAsRead(notificationId);
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error marking notification as read:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -209,10 +175,6 @@ export const useNotifications = (options = {}) => {
       const result = await markAllAsRead();
       return result;
     } catch (error) {
-      console.error(
-        "❌ [useNotifications] Error marking all notifications as read:",
-        error
-      );
       return { success: false, error };
     }
   }, [markAllAsRead]);
@@ -226,10 +188,6 @@ export const useNotifications = (options = {}) => {
         const result = await deleteNotification(notificationId);
         return result;
       } catch (error) {
-        console.error(
-          "❌ [useNotifications] Error deleting notification:",
-          error
-        );
         return { success: false, error };
       }
     },
@@ -281,9 +239,6 @@ export const useNotifications = (options = {}) => {
 
     // Setup interval for periodic checks
     intervalRef.current = setInterval(() => {
-      console.log(
-        "⏰ [useNotifications] Running scheduled notification check..."
-      );
       runComprehensiveCheck();
     }, checkInterval);
 
