@@ -6,6 +6,7 @@ $appName = "Elith Pharmacy"
 $appUrl = "http://localhost:5173"  # The URL where the app is hosted
 $supabasePort = "54321"  # Default Supabase port
 $logFile = "$env:USERPROFILE\ElithPharmacy\app_startup.log"
+$frontendPort = 5173  # Added frontendPort variable
 
 # Create log directory if it doesn't exist
 $logDir = Split-Path -Parent $logFile
@@ -38,24 +39,33 @@ function Write-Log {
 
 # Function to check if the app is already running
 function Test-AppRunning {
-    # Check if Chrome is running with our app URL
-    $chromeProcesses = Get-Process -Name "chrome" -ErrorAction SilentlyContinue | Where-Object {
-        $_.MainWindowTitle -like "*$appName*" -or $_.MainWindowTitle -like "*$appUrl*"
+    # Check if the frontend port is open, indicating the app is running
+    try {
+        $appRunning = Test-NetConnection -ComputerName localhost -Port $frontendPort -WarningAction SilentlyContinue -InformationLevel Quiet -TimeoutSeconds 5
+        
+        if ($appRunning) {
+            Write-Log "App is running on port $frontendPort" -level "SUCCESS"
+            return $true
+        }
     }
-    
-    if ($null -ne $chromeProcesses -and $chromeProcesses.Count -gt 0) {
-        return $true
+    catch {
+        Write-Log "Error checking if app is running on port ${frontendPort}: $($_.Exception)" -level "WARNING"
     }
     
     # Also check if Docker containers are running
     try {
         $containers = docker ps --format "{{.Names}}" | Where-Object { $_ -like "*elithpharmacy*" -or $_ -like "*frontend*" }
-        return ($null -ne $containers -and $containers.Count -gt 0)
+        if ($null -ne $containers -and $containers.Count -gt 0) {
+            Write-Log "Found running containers for $appName" -level "SUCCESS"
+            return $true
+        }
     }
     catch {
         # Docker might not be running, so just return false
-        return $false
+        Write-Log "Docker not running or error checking containers" -level "WARNING"
     }
+    
+    return $false
 }
 
 # Function to check system resources
@@ -149,7 +159,7 @@ function Test-SupabaseRunning {
         $supabaseRunning = Test-NetConnection -ComputerName localhost -Port $supabasePort -WarningAction SilentlyContinue -InformationLevel Quiet
         
         if (-not $supabaseRunning) {
-            Write-Log "Supabase is not running on port $supabasePort" -level "ERROR"
+            Write-Log "Supabase is not running on port $supabasePort" -level "WARNING"
             return $false
         }
         
@@ -159,6 +169,111 @@ function Test-SupabaseRunning {
     catch {
         Write-Log "Error checking Supabase: $_" -level "ERROR"
         return $false
+    }
+}
+
+# Function to find and start Supabase
+function Start-Supabase {
+    # Define possible locations for Elith-Supabase directory
+    $possibleLocations = @(
+        ".\Elith-Supabase",
+        "..\Elith-Supabase",
+        "$env:USERPROFILE\Documents\Elith-Supabase",
+        "$env:USERPROFILE\Elith-Supabase"
+    )
+    
+    $supabaseDir = $null
+    
+    # Find the Supabase directory
+    foreach ($location in $possibleLocations) {
+        if (Test-Path -Path $location) {
+            $supabaseDir = $location
+            Write-Log "Found Elith-Supabase directory at: $supabaseDir" -level "SUCCESS"
+            break
+        }
+    }
+    
+    if ($null -eq $supabaseDir) {
+        Write-Log "Could not find Elith-Supabase directory" -level "ERROR"
+        return $false
+    }
+    
+    # Navigate to the directory
+    Push-Location $supabaseDir
+    
+    try {
+        # Try to start Supabase with retry logic
+        $maxRetries = 50
+        $retryCount = 0
+        $success = $false
+        $portBindingErrorDetected = $false
+        
+        while (-not $success -and $retryCount -lt $maxRetries) {
+            $retryCount++
+            Write-Log "Attempting to start Supabase (Attempt $retryCount of $maxRetries)..." -level "INFO"
+            
+            # First stop any existing Supabase instance
+            Write-Log "Stopping any existing Supabase instances..."
+            npx supabase stop 2>&1 | Out-Null
+            
+            # Give it a moment to fully stop
+            Start-Sleep -Seconds 3
+            
+            # If we detected a port binding error in a previous attempt, try to restart HNS service
+            if ($portBindingErrorDetected -and $retryCount -gt 1) {
+                Write-Log "Port binding error detected. Attempting to fix..." -level "WARNING"
+                $hnsRestarted = Restart-HNSService
+                
+                if ($hnsRestarted) {
+                    Write-Log "HNS service restarted successfully. Retrying Supabase start..." -level "SUCCESS"
+                } else {
+                    Write-Log "Could not restart HNS service. Continuing with Supabase start attempt..." -level "WARNING"
+                }
+            }
+            
+            # Start Supabase
+            $output = npx supabase start 2>&1
+            
+            # Check if Supabase started successfully
+            if ($output -match "Started supabase local development setup") {
+                $success = $true
+                Write-Log "Supabase started successfully" -level "SUCCESS"
+            } else {
+                # Check for port binding error
+                $errorOutput = $output -join "`n"
+                if ($errorOutput -match "Ports are not available" -or $errorOutput -match "bind: An attempt was made to access a socket in a way forbidden by its access permissions") {
+                    $portBindingErrorDetected = $true
+                    Write-Log "Port binding error detected. Will try to resolve before next attempt." -level "WARNING"
+                }
+                
+                Write-Log "Supabase failed to start on attempt $retryCount" -level "WARNING"
+                if ($retryCount -lt $maxRetries) {
+                    Write-Log "Waiting 5 seconds before retry..." -level "INFO"
+                    Start-Sleep -Seconds 5
+                }
+            }
+        }
+        
+        if (-not $success) {
+            Write-Log "Failed to start Supabase after $maxRetries attempts" -level "ERROR"
+            return $false
+        }
+        
+        # Wait for Supabase to fully initialize
+        Write-Log "Waiting for Supabase to initialize..." -level "INFO"
+        Start-Sleep -Seconds 10
+        
+        # Verify Supabase is running
+        $supabaseRunning = Test-SupabaseRunning
+        return $supabaseRunning
+    }
+    catch {
+        Write-Log "Error starting Supabase: $_" -level "ERROR"
+        return $false
+    }
+    finally {
+        # Return to original directory
+        Pop-Location
     }
 }
 
@@ -210,6 +325,54 @@ function Open-AppInChrome {
     }
 }
 
+# Function to restart the Windows Host Network Service (HNS)
+function Restart-HNSService {
+    Write-Log "Attempting to restart Windows Host Network Service (HNS)..." -level "WARNING"
+    
+    # Check if running as administrator
+    $isAdmin = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+    
+    if (-not $isAdmin) {
+        Write-Log "Administrator privileges required to restart HNS service" -level "ERROR"
+        Write-Log "Please run this script as administrator to fix port binding issues" -level "ERROR"
+        return $false
+    }
+    
+    try {
+        # Stop HNS service
+        Write-Log "Stopping HNS service..."
+        $stopResult = net stop hns
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "Failed to stop HNS service: $stopResult" -level "ERROR"
+            return $false
+        }
+        
+        # Give it a moment to fully stop
+        Start-Sleep -Seconds 2
+        
+        # Start HNS service
+        Write-Log "Starting HNS service..."
+        $startResult = net start hns
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "Failed to start HNS service: $startResult" -level "ERROR"
+            return $false
+        }
+        
+        Write-Log "Successfully restarted HNS service" -level "SUCCESS"
+        
+        # Give it a moment to fully initialize
+        Start-Sleep -Seconds 3
+        
+        return $true
+    }
+    catch {
+        Write-Log "Error restarting HNS service: $_" -level "ERROR"
+        return $false
+    }
+}
+
 # Main script execution
 Write-Log "Starting $appName application..." -level "INFO"
 
@@ -238,13 +401,17 @@ if (-not $dockerOk) {
     exit 1
 }
 
-# Step 4: Check if Supabase is running
+# Step 4: Check if Supabase is running and start it if needed
 Write-Log "Step 4: Checking if Supabase is running..."
 $supabaseOk = Test-SupabaseRunning
 if (-not $supabaseOk) {
-    Write-Log "Supabase is not running. Please start Supabase before continuing." -level "ERROR"
-    Write-Log "You can start Supabase using the Supabase CLI or Docker Desktop." -level "INFO"
-    exit 1
+    Write-Log "Attempting to start Supabase automatically..." -level "INFO"
+    $supabaseOk = Start-Supabase
+    if (-not $supabaseOk) {
+        Write-Log "Failed to automatically start Supabase. Please start it manually." -level "ERROR"
+        Write-Log "You can start Supabase using the Supabase CLI or Docker Desktop." -level "INFO"
+        exit 1
+    }
 }
 
 # Step 5: Start the application using Docker Compose
@@ -256,8 +423,8 @@ if (-not $appOk) {
 }
 
 # Step 6: Open app in Chrome
-Write-Log "Step 6: Opening application in Chrome..."
-Open-AppInChrome
+# Write-Log "Step 6: Opening application in Chrome..."
+# Open-AppInChrome
 
 Write-Log "$appName started successfully!" -level "SUCCESS"
 Write-Log "You can access the application at $appUrl" -level "INFO"
