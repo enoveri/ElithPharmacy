@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { dataService } from "../services";
 import { useIsMobile } from "./useIsMobile";
+import { useUserRole } from "./useUserRole";
 
 // Custom hook for fetching data with loading and error states
 export const useDataService = (serviceMethod, dependencies = []) => {
@@ -157,4 +158,5 @@ export {
   useSearch,
   useAsyncOperation,
   useIsMobile,
+  useUserRole,
 };

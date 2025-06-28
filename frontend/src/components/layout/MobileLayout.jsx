@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,10 +17,12 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import Header from "./Header";
+import { useAuth } from "../../contexts/AuthContext";
 
 const MobileLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
@@ -102,6 +104,17 @@ const MobileLayout = () => {
     type: "tween",
     ease: "anticipate",
     duration: 0.3,
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setShowMobileMenu(false);
+      navigate('/login');
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   return (
@@ -227,8 +240,7 @@ const MobileLayout = () => {
                         whileTap={{ scale: 0.94 }}
                         onClick={() => {
                           if (item.isLogout) {
-                            // TODO: Add logout logic here
-                            setShowMobileMenu(false);
+                            handleLogout();
                           } else {
                             navigate(item.path);
                             setShowMobileMenu(false);

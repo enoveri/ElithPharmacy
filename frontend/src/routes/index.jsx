@@ -1,4 +1,5 @@
 import { createBrowserRouter } from "react-router-dom";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 // Import layout components
 import { ResponsiveLayout } from "../components/layout";
@@ -28,15 +29,16 @@ import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
 
 import AdminSetup from "../pages/AdminSetup";
-
-
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
-
 
 export const router = createBrowserRouter([
   {
     path: "/",
-    element: <ResponsiveLayout />,
+    element: (
+      <ProtectedRoute>
+        <ResponsiveLayout />
+      </ProtectedRoute>
+    ),
     children: [
       {
         index: true,
@@ -114,10 +116,13 @@ export const router = createBrowserRouter([
         path: "/notifications",
         element: <Notifications />,
       },
-
       {
         path: "/admin",
-        element: <EnhancedAdminPanel />,
+        element: (
+          <ProtectedRoute adminOnly={true}>
+            <EnhancedAdminPanel />
+          </ProtectedRoute>
+        ),
       },
     ],
   },

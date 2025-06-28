@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
@@ -7,7 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -15,7 +15,24 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(location.state?.message || '');
+  const [success, setSuccess] = useState('');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    if (user) {
+      // If user is already logged in, redirect to the intended page or dashboard
+      const from = location.state?.from || '/';
+      console.log('✅ [Login] User already logged in, redirecting to:', from);
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location]);
+
+  // Set success message from location state (redirect from protected route)
+  useEffect(() => {
+    if (location.state?.message) {
+      setSuccess(location.state.message);
+    }
+  }, [location.state]);
 
   // Add keyframes for spinning animation
   const spinKeyframes = `
@@ -24,6 +41,7 @@ const Login = () => {
       to { transform: rotate(360deg); }
     }
   `;
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -32,6 +50,7 @@ const Login = () => {
     }));
     setError(''); // Clear error when user starts typing
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -63,8 +82,9 @@ const Login = () => {
             console.log('✅ [Login] Found user in admin_users, email confirmation not required for admin panel');
             
             // For admin users, redirect directly without requiring email confirmation
-            console.log('✅ [Login] Redirecting to home page');
-            navigate('/');
+            const from = location.state?.from || '/';
+            console.log('✅ [Login] Redirecting to:', from);
+            navigate(from, { replace: true });
             return;
           } else {
             throw new Error('Please check your email and click the confirmation link before logging in, or contact your administrator');
@@ -123,9 +143,10 @@ const Login = () => {
           
           console.log('✅ [Login] Login successful, user:', correctedUser);
 
-          // Redirect to home page
-          console.log('✅ [Login] Redirecting to home page');
-          navigate('/');
+          // Redirect to the intended page or dashboard
+          const from = location.state?.from || '/';
+          console.log('✅ [Login] Redirecting to:', from);
+          navigate(from, { replace: true });
           return;
         }
         
@@ -148,9 +169,10 @@ const Login = () => {
 
       console.log('✅ [Login] Login successful, user:', adminUser);
 
-      // Redirect to home page
-      console.log('✅ [Login] Redirecting to home page');
-      navigate('/');
+      // Redirect to the intended page or dashboard
+      const from = location.state?.from || '/';
+      console.log('✅ [Login] Redirecting to:', from);
+      navigate(from, { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       setError(error.message || 'An unexpected error occurred');

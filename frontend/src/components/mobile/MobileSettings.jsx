@@ -24,39 +24,17 @@ import {
   FiLogOut,
   FiX,
 } from "react-icons/fi";
+import { useAuth } from "../../contexts/AuthContext";
 import { supabase } from "../../lib/supabase";
 
 function MobileSettings() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [settings, setSettings] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeSection, setActiveSection] = useState(null);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [formSettings, setFormSettings] = useState({});
-
-  // Get current user on mount - same as desktop
-  useEffect(() => {
-    const getUser = async () => {
-    try {
-      console.log("🔄 [MobileSettings] Getting current user...");
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      console.log("👤 [MobileSettings] User received:", user ? "User found" : "No user");
-      setUser(user);
-      // Set loading to false if no user is found
-      if (!user) {
-        console.log("❌ [MobileSettings] No user found, stopping loading");
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("❌ [MobileSettings] Error getting user:", error);
-      setIsLoading(false);
-    }
-    };
-    getUser();
-  }, []);
 
   const fetchSettings = async () => {
     if (!user?.id) {
@@ -67,7 +45,6 @@ function MobileSettings() {
 
     try {
       setIsLoading(true);
-      setError(null);
       console.log("🔄 [MobileSettings] Fetching settings for user:", user.id);
 
       const { data, error } = await supabase
@@ -129,13 +106,10 @@ function MobileSettings() {
       }
     } catch (err) {
       console.error("❌ [MobileSettings] Error in fetchSettings:", err);
-      setError(err.message);
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   const handleSaveSettings = async () => {
     try {
