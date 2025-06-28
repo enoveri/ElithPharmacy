@@ -1716,6 +1716,15 @@
   padding-bottom: 0.5rem;
 }
 
+.customer-modal-scroll {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.customer-modal-scroll::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
 .cart-icon-btn {
   width: 40px;
   height: 40px;
