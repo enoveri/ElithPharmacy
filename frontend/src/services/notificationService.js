@@ -72,9 +72,6 @@ export class NotificationService {
       // Check for duplicates
       const isDuplicate = this.checkForDuplicate(type, notification.data);
       if (isDuplicate) {
-        console.log(
-          `⚠️ [NotificationService] Duplicate notification prevented: ${title}`
-        );
         return { success: true, data: null, wasDuplicate: true };
       }
 
@@ -83,15 +80,10 @@ export class NotificationService {
       if (result.success) {
         // Add to recent notifications cache
         this.addToRecentCache(type, notification.data);
-        console.log(`📢 [NotificationService] Created notification: ${title}`);
       }
 
       return result;
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error creating notification:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -213,10 +205,6 @@ export class NotificationService {
    */
   async checkInventoryNotifications() {
     try {
-      console.log(
-        "🔄 [NotificationService] Checking inventory notifications..."
-      );
-
       const results = await Promise.allSettled([
         this.checkLowStockNotifications(),
         this.checkExpiryNotifications(),
@@ -230,15 +218,8 @@ export class NotificationService {
         (r) => r.status === "rejected" || !r.value?.success
       ).length;
 
-      console.log(
-        `✅ [NotificationService] Inventory check complete: ${successful} successful, ${failed} failed`
-      );
       return { success: true, successful, failed };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error checking inventory notifications:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -290,15 +271,8 @@ export class NotificationService {
         }
       }
 
-      console.log(
-        `📦 [NotificationService] Created ${created} stock notifications`
-      );
       return { success: true, created };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error checking stock notifications:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -363,15 +337,8 @@ export class NotificationService {
         if (result.success && !result.wasDuplicate) created++;
       }
 
-      console.log(
-        `⏰ [NotificationService] Created ${created} expiry notifications`
-      );
       return { success: true, created };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error checking expiry notifications:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -403,15 +370,8 @@ export class NotificationService {
         if (result.success && !result.wasDuplicate) created++;
       }
 
-      console.log(
-        `🔄 [NotificationService] Created ${created} reorder notifications`
-      );
       return { success: true, created };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error checking reorder notifications:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -470,10 +430,6 @@ export class NotificationService {
 
       return { success: true };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error creating sale notification:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -499,10 +455,6 @@ export class NotificationService {
         }
       );
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error creating refund notification:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -533,10 +485,6 @@ export class NotificationService {
         }
       );
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error creating customer notification:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -555,10 +503,6 @@ export class NotificationService {
         ...options,
       });
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error creating system notification:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -570,10 +514,6 @@ export class NotificationService {
    */
   async runComprehensiveCheck() {
     try {
-      console.log(
-        "🔄 [NotificationService] Starting comprehensive notification check..."
-      );
-
       const results = await Promise.allSettled([
         this.checkInventoryNotifications(),
         // Add more checks as needed
@@ -590,10 +530,6 @@ export class NotificationService {
         (r) => r.status === "rejected" || !r.value?.success
       ).length;
 
-      console.log(
-        `✅ [NotificationService] Comprehensive check complete: ${totalSuccessful} notifications created, ${totalFailed} checks failed`
-      );
-
       return {
         success: true,
         totalNotifications: totalSuccessful,
@@ -601,10 +537,6 @@ export class NotificationService {
         details: results,
       };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error in comprehensive check:",
-        error
-      );
       return { success: false, error };
     }
   }
@@ -614,23 +546,11 @@ export class NotificationService {
    */
   async getNotificationStats() {
     try {
-      console.log(
-        "📊 [NotificationService] Getting notification statistics..."
-      );
-
       const result = await notificationDb.getNotificationStats();
 
       if (result.success) {
-        console.log(
-          "✅ [NotificationService] Retrieved notification stats:",
-          result.data
-        );
         return result;
       } else {
-        console.warn(
-          "⚠️ [NotificationService] Failed to get stats:",
-          result.error
-        );
         return {
           success: true,
           data: {
@@ -643,7 +563,6 @@ export class NotificationService {
         };
       }
     } catch (error) {
-      console.error("❌ [NotificationService] Error getting stats:", error);
       return {
         success: false,
         error,
@@ -667,15 +586,8 @@ export class NotificationService {
       cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
       // This would need to be implemented in dbHelpers
-      console.log(
-        `🧹 [NotificationService] Cleaning up notifications older than ${daysOld} days`
-      );
       return { success: true };
     } catch (error) {
-      console.error(
-        "❌ [NotificationService] Error cleaning up notifications:",
-        error
-      );
       return { success: false, error };
     }
   }

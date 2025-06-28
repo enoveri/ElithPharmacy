@@ -627,12 +627,30 @@ function POS() {
         cashierId: 1, // TODO: Get from authenticated user
       };
 
-      console.log("💾 [POS] Prepared sale data:", newSale);
+      // PATCH: Only send allowed fields to backend (prevent accidental customer_name etc)
+      const allowedSaleFields = [
+        'transactionNumber',
+        'customerId',
+        'date',
+        'items',
+        'subtotal',
+        'tax',
+        'discount',
+        'totalAmount',
+        'paymentMethod',
+        'status',
+        'cashierId',
+      ];
+      const filteredSale = Object.fromEntries(
+        Object.entries(newSale).filter(([key]) => allowedSaleFields.includes(key))
+      );
+
+      console.log("💾 [POS] Prepared sale data (filtered):", filteredSale);
 
       // Save sale to database
       let savedSale;
       try {
-        savedSale = await dataService.sales.create(newSale);
+        savedSale = await dataService.sales.create(filteredSale);
         console.log("💰 [POS] Sale saved to database:", savedSale);
       } catch (error) {
         console.error("❌ [POS] Error saving sale:", error);

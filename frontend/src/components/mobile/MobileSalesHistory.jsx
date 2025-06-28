@@ -202,8 +202,8 @@ function MobileSalesHistory() {
           <span className="text-xs text-gray-500 flex items-center gap-1">
             <FiCalendar className="inline-block" />
             {saleDate.toLocaleDateString()}
-          </span>
-        </div>
+                </span>
+              </div>
         <div className="flex items-center gap-3">
           <div className="sale-icon">
             <FiShoppingCart size={20} />
@@ -211,16 +211,16 @@ function MobileSalesHistory() {
           <div className="flex-1 min-w-0">
             <div className="font-bold text-base text-gray-900 truncate">
               {getCustomerName(sale.customerId)}
-            </div>
+              </div>
             <div className="text-xs text-gray-500 truncate">
               Sale #{sale.id} • {safeItems} item{safeItems !== 1 ? "s" : ""}
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-lg font-bold gradient-text">
+            <div className="text-right">
+              <div className="text-lg font-bold gradient-text">
               {currency}{safeTotal.toFixed(2)}
-            </div>
-            <div className="text-xs text-gray-500">
+              </div>
+              <div className="text-xs text-gray-500">
               {(sale.paymentMethod || "").toUpperCase()}
             </div>
           </div>
@@ -247,46 +247,46 @@ function MobileSalesHistory() {
             </button>
           </div>
           <div className="p-4 space-y-4">
-            <div>
+              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
-              <div className="flex space-x-2">
-                {["all", "completed", "refunded"].map((status) => (
+                <div className="flex space-x-2">
+                  {["all", "completed", "refunded"].map((status) => (
                   <button
-                    key={status}
-                    onClick={() => setSelectedStatus(status)}
+                      key={status}
+                      onClick={() => setSelectedStatus(status)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium capitalize transition-all ${
-                      selectedStatus === status
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {status}
+                        selectedStatus === status
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
+                      {status}
                   </button>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
+              <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Period</label>
-              <div className="flex space-x-2 flex-wrap">
+                <div className="flex space-x-2 flex-wrap">
                 {["today", "yesterday", "week", "month", "all"].map((period) => (
                   <button
-                    key={period}
-                    onClick={() => setSelectedPeriod(period)}
+                        key={period}
+                        onClick={() => setSelectedPeriod(period)}
                     className={`px-4 py-2 rounded-lg text-sm font-medium capitalize mb-2 transition-all ${
-                      selectedPeriod === period
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-600"
-                    }`}
-                  >
-                    {period === "all" ? "All Time" : period}
+                          selectedPeriod === period
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {period === "all" ? "All Time" : period}
                   </button>
                 ))}
               </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
   );
 
   if (loading) {
@@ -332,7 +332,7 @@ function MobileSalesHistory() {
             minHeight: "60vh",
             textAlign: "center",
           }}
-        >
+          >
           <FiAlertCircle
             size={64}
             style={{ color: "#ef4444", marginBottom: "16px" }}
@@ -366,7 +366,7 @@ function MobileSalesHistory() {
         </div>
       </div>
     );
-  }
+              }
 
   return (
     <div
@@ -374,8 +374,8 @@ function MobileSalesHistory() {
         padding: "12px", // slightly less padding for mobile
         backgroundColor: "var(--color-bg-main)",
         minHeight: "100vh",
-      }}
-    >
+        }}
+      >
       <div style={{ marginBottom: "20px" }}>
         <p style={{ color: "var(--color-text-secondary)", fontSize: "15px" }}>
           View and manage your sales transactions

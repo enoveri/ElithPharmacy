@@ -713,96 +713,89 @@ const MobilePOS = () => {
       {/* Customer Modal */}
       <AnimatePresence>
         {showCustomerModal && (
-          <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCustomerModal(false)}
-              className="fixed inset-0 bg-black bg-opacity-50 z-50"
-            />
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              className="fixed inset-4 bg-white rounded-2xl z-50 overflow-hidden"
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowCustomerModal(false)}
+            className="cart-modal-overlay"
+          >
+            <div
+              className="cart-modal"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="p-4 border-b">
+              <div className="cart-modal-header">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Select Customer
-                  </h2>{" "}
+                  <h2 className="cart-modal-title">Select Customer</h2>
                   <motion.button
                     whileTap={{ scale: 0.9 }}
                     onClick={() => setShowCustomerModal(false)}
-                    className="p-2 rounded-full bg-gray-100"
+                    className="cart-close-button"
                   >
                     <FiXCircle className="w-5 h-5" />
                   </motion.button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-4">
+              <div className="cart-modal-content">
                 {/* Add new customer section */}
-                <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <h3 className="font-semibold text-blue-900 mb-2">
+                <div className="mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                  <h3 className="font-semibold text-blue-900 mb-3 text-center">
                     Add New Customer
                   </h3>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="Enter customer name..."
-                      value={newCustomerName}
-                      onChange={(e) => setNewCustomerName(e.target.value)}
-                      className="flex-1 px-3 py-2 text-sm border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  <div className="flex gap-3">
+                    <div className="relative flex-1">
+                      <FiUser className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                      <input
+                        type="text"
+                        placeholder="Enter customer name..."
+                        value={newCustomerName}
+                        onChange={(e) => setNewCustomerName(e.target.value)}
+                        className="w-full pl-3 pr-10 py-3 text-base border border-blue-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => createNewCustomer(newCustomerName)}
                       disabled={!newCustomerName.trim() || creatingCustomer}
-                      className="px-4 py-2 bg-blue-600 text-white text-sm rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-4 py-3 bg-blue-600 text-white text-base rounded disabled:opacity-50 disabled:cursor-not-allowed min-w-[70px]"
                     >
                       {creatingCustomer ? "Adding..." : "Add"}
                     </motion.button>
                   </div>
                 </div>
 
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => {
-                    setSelectedCustomer(null);
-                    setShowCustomerModal(false);
-                  }}
-                  className="w-full p-3 mb-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600"
-                >
-                  No Customer (Walk-in)
-                </motion.button>
-
+                {/* Customer list */}
                 <div className="space-y-2">
-                  {customers.map((customer) => (
-                    <motion.button
-                      key={customer.id}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => {
-                        setSelectedCustomer(customer);
-                        setShowCustomerModal(false);
-                      }}
-                      className="w-full p-3 bg-gray-50 rounded-lg text-left"
-                    >
-                      <div className="font-semibold text-gray-900">
-                        {customer.first_name || customer.firstName}{" "}
-                        {customer.last_name || customer.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        {customer.phone}
-                      </div>
-                    </motion.button>
-                  ))}
+                  {customers.map((customer) => {
+                    const firstName = customer.first_name || customer.firstName || '';
+                    const lastName = customer.last_name || customer.lastName || '';
+                    const fullName = `${firstName} ${lastName}`.trim();
+                    const initials = fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'CU';
+                    
+                    return (
+                      <motion.button
+                        key={customer.id}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => {
+                          setSelectedCustomer(customer);
+                          setShowCustomerModal(false);
+                        }}
+                        className="w-full p-3 bg-gray-50 rounded-lg text-left flex items-center gap-3 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-white flex items-center justify-center font-bold text-sm">
+                          {initials}
+                        </div>
+                        <div className="font-semibold text-gray-900">
+                          {fullName || "Unnamed Customer"}
+                        </div>
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
-            </motion.div>
-          </>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

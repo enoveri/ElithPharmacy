@@ -334,11 +334,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -365,14 +365,14 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: errors.lastName
-                            ? "1px solid #ef4444"
-                            : "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.lastName
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Enter last name"
@@ -408,11 +408,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -439,14 +439,14 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: errors.email
-                            ? "1px solid #ef4444"
-                            : "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.email
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Enter email address"
@@ -482,11 +482,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -513,14 +513,14 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: errors.phone
-                            ? "1px solid #ef4444"
-                            : "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.phone
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Enter phone number"
@@ -556,11 +556,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -585,12 +585,12 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                 />
@@ -609,11 +609,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -637,12 +637,12 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                 >
@@ -685,11 +685,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -716,14 +716,14 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: errors.address
-                            ? "1px solid #ef4444"
-                            : "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: errors.address
+                      ? "1px solid #ef4444"
+                      : "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Enter street address"
@@ -766,11 +766,11 @@ function EditCustomer() {
                             marginBottom: "8px",
                           }
                         : {
-                            display: "block",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "6px",
                           }
                     }
                   >
@@ -797,14 +797,14 @@ function EditCustomer() {
                             outline: "none",
                           }
                         : {
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: errors.city
-                              ? "1px solid #ef4444"
-                              : "1px solid #e5e7eb",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            backgroundColor: "#ffffff",
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: errors.city
+                        ? "1px solid #ef4444"
+                        : "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                           }
                     }
                     placeholder="Enter city"
@@ -840,11 +840,11 @@ function EditCustomer() {
                             marginBottom: "8px",
                           }
                         : {
-                            display: "block",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "6px",
                           }
                     }
                   >
@@ -871,14 +871,14 @@ function EditCustomer() {
                             outline: "none",
                           }
                         : {
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: errors.state
-                              ? "1px solid #ef4444"
-                              : "1px solid #e5e7eb",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            backgroundColor: "#ffffff",
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: errors.state
+                        ? "1px solid #ef4444"
+                        : "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                           }
                     }
                     placeholder="Enter state"
@@ -914,11 +914,11 @@ function EditCustomer() {
                             marginBottom: "8px",
                           }
                         : {
-                            display: "block",
-                            fontSize: "13px",
-                            fontWeight: "500",
-                            color: "#374151",
-                            marginBottom: "6px",
+                      display: "block",
+                      fontSize: "13px",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "6px",
                           }
                     }
                   >
@@ -943,12 +943,12 @@ function EditCustomer() {
                             outline: "none",
                           }
                         : {
-                            width: "100%",
-                            padding: "10px 12px",
-                            border: "1px solid #e5e7eb",
-                            borderRadius: "6px",
-                            fontSize: "13px",
-                            backgroundColor: "#ffffff",
+                      width: "100%",
+                      padding: "10px 12px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "6px",
+                      fontSize: "13px",
+                      backgroundColor: "#ffffff",
                           }
                     }
                     placeholder="ZIP code"
@@ -989,11 +989,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -1018,12 +1018,12 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Emergency contact name"
@@ -1043,11 +1043,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -1072,12 +1072,12 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                   placeholder="Emergency contact phone"
@@ -1097,11 +1097,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -1125,12 +1125,12 @@ function EditCustomer() {
                           outline: "none",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
                         }
                   }
                 >
@@ -1152,11 +1152,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -1182,13 +1182,13 @@ function EditCustomer() {
                           resize: "vertical",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
-                          resize: "vertical",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                    resize: "vertical",
                         }
                   }
                   placeholder="List any known allergies (comma separated)"
@@ -1208,11 +1208,11 @@ function EditCustomer() {
                           marginBottom: "8px",
                         }
                       : {
-                          display: "block",
-                          fontSize: "13px",
-                          fontWeight: "500",
-                          color: "#374151",
-                          marginBottom: "6px",
+                    display: "block",
+                    fontSize: "13px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
                         }
                   }
                 >
@@ -1238,13 +1238,13 @@ function EditCustomer() {
                           resize: "vertical",
                         }
                       : {
-                          width: "100%",
-                          padding: "10px 12px",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "6px",
-                          fontSize: "13px",
-                          backgroundColor: "#ffffff",
-                          resize: "vertical",
+                    width: "100%",
+                    padding: "10px 12px",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "6px",
+                    fontSize: "13px",
+                    backgroundColor: "#ffffff",
+                    resize: "vertical",
                         }
                   }
                   placeholder="List any medical conditions"

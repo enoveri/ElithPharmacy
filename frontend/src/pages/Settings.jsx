@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiSave,
   FiRefreshCw,
@@ -14,28 +15,24 @@ import {
   FiMail,
   FiPhone,
   FiMapPin,
-  FiEdit3,
+  FiChevronRight,
   FiCheck,
-  FiX,
+  FiXCircle,
   FiDownload,
   FiUpload,
   FiTrash2,
   FiExternalLink,
   FiSettings as FiSettingsIcon,
 } from "react-icons/fi";
+import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { useIsMobile } from "../hooks/useIsMobile";
 import MobileSettings from "../components/mobile/MobileSettings";
 import "../styles/mobile.css";
 
 const Settings = () => {
-  // Mobile detection hook
+  const { user } = useAuth();
   const isMobile = useIsMobile();
-
-  // Get current user from Supabase auth
-  const [user, setUser] = useState(null);
-
-  // State management
   const [settings, setSettings] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -43,29 +40,6 @@ const Settings = () => {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [formSettings, setFormSettings] = useState({});
-
-  // Get current user on mount
-  useEffect(() => {
-    const getUser = async () => {
-      try {
-        console.log("🔄 [Settings] Getting current user...");
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-        console.log("👤 [Settings] User received:", user ? "User found" : "No user");
-      setUser(user);
-        // Set loading to false if no user is found
-        if (!user) {
-          console.log("❌ [Settings] No user found, stopping loading");
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("❌ [Settings] Error getting user:", error);
-        setIsLoading(false);
-      }
-    };
-    getUser();
-  }, []);
 
   // Fetch settings from database
   const fetchSettings = async () => {
@@ -322,7 +296,7 @@ const Settings = () => {
             {message.type === "success" ? (
               <FiCheck style={{ fontSize: "16px" }} />
             ) : (
-              <FiX style={{ fontSize: "16px" }} />
+              <FiXCircle style={{ fontSize: "16px" }} />
             )}
             <span style={{ fontSize: "14px", fontWeight: "500" }}>{message.text}</span>
           </div>

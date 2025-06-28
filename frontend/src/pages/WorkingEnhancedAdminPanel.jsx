@@ -22,6 +22,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
+import CreateUserForm from '../components/admin/CreateUserForm';
 
 /**
  * Enhanced Admin Panel - Single Page with Components
@@ -47,7 +48,7 @@ const EnhancedAdminPanel = () => {
     email: "",
     password: "",
     full_name: "",
-    role: "staff",
+    role: "admin", // Changed to admin since we know this works
     phone: "",
     position: "",
     is_active: true,
@@ -180,8 +181,9 @@ const EnhancedAdminPanel = () => {
 
     try {
       console.log("🔄 [AdminPanel] Creating new user:", formData.email);
+      console.log("🔄 [AdminPanel] Using regular signUp method (not admin)");
 
-      // Step 1: Create user using regular signup (this will work with anon key)
+      // Step 1: Create user using regular signup
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -189,9 +191,11 @@ const EnhancedAdminPanel = () => {
           data: {
             full_name: formData.full_name,
           },
-          emailRedirectTo: undefined, // Don't send confirmation email for admin-created users
         },
       });
+
+      console.log("🔄 [AdminPanel] SignUp response data:", authData);
+      console.log("🔄 [AdminPanel] SignUp response error:", authError);
 
       if (authError) {
         console.error("❌ [AdminPanel] Error creating auth user:", authError);
@@ -221,6 +225,12 @@ const EnhancedAdminPanel = () => {
           "❌ [AdminPanel] Error creating admin user record:",
           adminUserError
         );
+        console.error("❌ [AdminPanel] Admin user data attempted:", adminUserData);
+        console.error("❌ [AdminPanel] Full error details:", JSON.stringify(adminUserError, null, 2));
+        
+        // If admin_users insert fails, we should clean up the auth user
+        // Note: We can't delete auth users with anon key, so just log the error
+        console.error("❌ Auth user was created but admin_users record failed");
         throw adminUserError;
       }
 
@@ -231,7 +241,7 @@ const EnhancedAdminPanel = () => {
         email: "",
         password: "",
         full_name: "",
-        role: "staff",
+        role: "admin", // Changed to admin since we know this works
         phone: "",
         position: "",
         is_active: true,
@@ -242,10 +252,16 @@ const EnhancedAdminPanel = () => {
       await fetchUsers();
 
       alert(
-        "User created successfully! The user will need to confirm their email before logging in, or you can manually confirm them in Supabase."
+        `User created successfully!\n\n` +
+        `Email: ${formData.email}\n` +
+        `Password: ${formData.password}\n\n` +
+        `⚠️ IMPORTANT: The user needs to check their email and click the verification link before they can log in.\n\n` +
+        `If email verification is disabled in your Supabase settings, they can log in immediately.`
       );
     } catch (error) {
       console.error("Error creating user:", error);
+      console.error("Full error object:", JSON.stringify(error, null, 2));
+      
       let errorMessage = "Failed to create user";
 
       if (error.message.includes("User already registered")) {
@@ -254,8 +270,16 @@ const EnhancedAdminPanel = () => {
         errorMessage = "Please enter a valid email address";
       } else if (error.message.includes("Password")) {
         errorMessage = "Password must be at least 6 characters long";
+      } else if (error.message.includes("relation") && error.message.includes("does not exist")) {
+        errorMessage = "Database table 'admin_users' does not exist. Please check your database setup.";
+      } else if (error.message.includes("permission denied") || error.message.includes("insufficient_privilege")) {
+        errorMessage = "Permission denied: Cannot insert into admin_users table. Please check your database policies.";
+      } else if (error.message.includes("duplicate key") || error.message.includes("already exists")) {
+        errorMessage = "A user with this information already exists in the system.";
+      } else if (error.message.includes("check constraint") && error.message.includes("role")) {
+        errorMessage = "Invalid role selected. Please choose a valid role (admin, manager, or user).";
       } else if (error.message) {
-        errorMessage = error.message;
+        errorMessage = `Database error: ${error.message}`;
       }
 
       setError(errorMessage);
@@ -440,6 +464,9 @@ const EnhancedAdminPanel = () => {
       </div>
     );
   }
+
+  // Check what debug functions are available
+  console.log(window.debugPharmacy.users);
 
   return (
     <div
@@ -846,8 +873,7 @@ const EnhancedAdminPanel = () => {
                 <option value="all">All Roles</option>
                 <option value="admin">Admin</option>
                 <option value="manager">Manager</option>
-                <option value="pharmacist">Pharmacist</option>
-                <option value="staff">Staff</option>
+                <option value="user">User</option>
               </select>
             </div>
 
@@ -1288,275 +1314,12 @@ const EnhancedAdminPanel = () => {
       </div>
 
       {/* Enhanced Create User Modal */}
-      {showCreateModal && (
-        <div
-          className={`fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 ${isMobile ? "p-2" : "p-4"}`}
-        >
-          <div
-            className={`bg-white/95 backdrop-blur-sm rounded-3xl ${isMobile ? "w-full max-w-none mx-2 max-h-[95vh]" : "max-w-lg w-full max-h-[90vh]"} overflow-y-auto shadow-2xl border border-white/20`}
-          >
-            <div
-              className={`flex items-center justify-between ${isMobile ? "p-5" : "p-7"} border-b border-gray-100/80`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 flex items-center justify-center">
-                  <FiUserPlus className="h-5 w-5 text-white" />
-                </div>
-                <div>
-                  <h2
-                    className={`${isMobile ? "text-lg" : "text-xl"} font-bold text-gray-900`}
-                  >
-                    Create New User
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Add a new team member to the system
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-xl transition-all duration-200"
-              >
-                <FiX className="h-5 w-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleCreateUser}
-              className={`${isMobile ? "p-5" : "p-7"} space-y-6`}
-            >
-              {error && (
-                <div className="bg-red-50/90 backdrop-blur-sm border border-red-200/60 rounded-2xl p-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-5 h-5 rounded-full bg-red-100 flex items-center justify-center">
-                      <FiX className="h-3 w-3 text-red-600" />
-                    </div>
-                    <p className="text-red-700 text-sm font-medium">{error}</p>
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label
-                    className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                  >
-                    Full Name *
-                  </label>
-                  <div className="relative">
-                    <FiUser className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input
-                      type="text"
-                      value={formData.full_name}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          full_name: e.target.value,
-                        }))
-                      }
-                      required
-                      placeholder="Enter full name"
-                      className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                  >
-                    Email Address *
-                  </label>
-                  <div className="relative">
-                    <FiMail className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          email: e.target.value,
-                        }))
-                      }
-                      required
-                      placeholder="Enter email address"
-                      className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                  >
-                    Password *
-                  </label>
-                  <div className="relative">
-                    <FiKey className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={formData.password}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          password: e.target.value,
-                        }))
-                      }
-                      required
-                      minLength={6}
-                      placeholder="Enter password (min 6 characters)"
-                      className={`w-full pl-12 pr-12 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1 rounded-lg hover:bg-gray-100"
-                    >
-                      {showPassword ? (
-                        <FiEyeOff className="h-4 w-4" />
-                      ) : (
-                        <FiEye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2 flex items-center space-x-1">
-                    <FiShield className="h-3 w-3" />
-                    <span>Password should be at least 6 characters long</span>
-                  </p>
-                </div>
-
-                <div
-                  className={`grid ${isMobile ? "grid-cols-1 gap-4" : "grid-cols-2 gap-4"}`}
-                >
-                  <div>
-                    <label
-                      className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                    >
-                      Role *
-                    </label>
-                    <div className="relative">
-                      <FiBriefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <select
-                        value={formData.role}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            role: e.target.value,
-                          }))
-                        }
-                        required
-                        className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
-                      >
-                        <option value="staff">Staff</option>
-                        <option value="pharmacist">Pharmacist</option>
-                        <option value="manager">Manager</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                    >
-                      Phone
-                    </label>
-                    <div className="relative">
-                      <FiPhone className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                      <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            phone: e.target.value,
-                          }))
-                        }
-                        placeholder="Enter phone number"
-                        className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    className={`block text-sm font-semibold text-gray-700 ${isMobile ? "mb-3" : "mb-2"}`}
-                  >
-                    Position
-                  </label>
-                  <div className="relative">
-                    <FiBriefcase className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                    <input
-                      type="text"
-                      value={formData.position}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          position: e.target.value,
-                        }))
-                      }
-                      placeholder="e.g., Senior Pharmacist, Store Manager"
-                      className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70`}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-3 p-4 bg-gray-50/70 rounded-xl border border-gray-100">
-                  <input
-                    type="checkbox"
-                    id="is_active"
-                    checked={formData.is_active}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        is_active: e.target.checked,
-                      }))
-                    }
-                    className="w-5 h-5 text-teal-600 bg-white border-2 border-gray-300 rounded-lg focus:ring-teal-500 focus:ring-2 transition-all duration-200"
-                  />
-                  <label
-                    htmlFor="is_active"
-                    className="text-sm font-semibold text-gray-700 cursor-pointer"
-                  >
-                    Active user (can log in and access the system)
-                  </label>
-                </div>
-              </div>
-
-              <div
-                className={`flex ${isMobile ? "flex-col space-y-3" : "justify-end space-x-3"} pt-6 border-t border-gray-100/50`}
-              >
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={formLoading}
-                  className={`${isMobile ? "w-full py-4 text-base" : "px-8 py-3"} border border-gray-200 rounded-xl text-gray-700 hover:bg-gray-50 hover:border-gray-300 disabled:opacity-50 transition-all duration-200 font-medium flex items-center justify-center space-x-2`}
-                >
-                  <FiX className="h-4 w-4" />
-                  <span>Cancel</span>
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className={`flex items-center justify-center gap-2 ${isMobile ? "w-full py-4 text-base" : "px-8 py-3"} bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl hover:from-teal-600 hover:to-emerald-600 shadow-lg hover:shadow-xl disabled:opacity-50 transition-all duration-200 font-medium`}
-                >
-                  {formLoading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      <span>Creating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="h-4 w-4" />
-                      <span>Create User</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+      {showCreateModal && !isMobile && (
+        <CreateUserForm
+          open={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onUserCreated={async () => { await fetchUsers(); setShowCreateModal(false); }}
+        />
       )}
 
       {/* Enhanced Edit User Modal */}
@@ -1696,10 +1459,9 @@ const EnhancedAdminPanel = () => {
                         required
                         className={`w-full pl-12 pr-4 ${isMobile ? "py-4 text-base" : "py-3.5"} border border-gray-200 rounded-xl focus:ring-2 focus:ring-teal-500/50 focus:border-teal-400 transition-all duration-200 bg-gray-50/50 hover:bg-gray-50/70 appearance-none cursor-pointer`}
                       >
-                        <option value="staff">Staff</option>
-                        <option value="pharmacist">Pharmacist</option>
-                        <option value="manager">Manager</option>
                         <option value="admin">Admin</option>
+                        <option value="manager">Manager</option>
+                        <option value="user">User</option>
                       </select>
                     </div>
                   </div>
