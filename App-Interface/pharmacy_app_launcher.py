@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
     QPushButton, QLabel, QMessageBox, QProgressBar, QSplashScreen,
     QMenuBar, QMenu, QAction, QStatusBar
 )
-from qtpy.QtCore import Qt, QUrl, QSize, QTimer, Signal, QObject, Slot, QEvent
+from qtpy.QtCore import Qt, QUrl, QSize, QTimer, Signal, QObject, Slot, QEvent, QThread
 from qtpy.QtGui import QIcon, QPixmap, QFont
 from qtpy.QtWebEngineWidgets import QWebEngineView, QWebEngineSettings
 
@@ -31,6 +31,448 @@ APP_URL = "http://localhost:5173"
 SUPABASE_STUDIO_URL = "http://localhost:54322"
 SUPABASE_PORT = 54321
 FRONTEND_PORT = 5173
+
+# QThread class for starting services
+class StartServicesThread(QThread):
+    """QThread for starting services"""
+    status_update = Signal(str)
+    progress_update = Signal(int)
+    service_status = Signal(bool, str)
+    error_occurred = Signal(str)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+    
+    def run(self):
+        """Thread function to start services"""
+        try:
+            # Update progress
+            self.status_update.emit("Checking system resources...")
+            self.progress_update.emit(10)
+            time.sleep(1)  # Give UI time to update
+            
+            # Start Docker if needed
+            self.status_update.emit("Ensuring Docker is running...")
+            self.progress_update.emit(20)
+            try:
+                self._ensure_docker_running()
+            except Exception as e:
+                self.status_update.emit(f"Docker error: {str(e)}")
+                self.error_occurred.emit(f"Error starting Docker: {str(e)}")
+                return
+            
+            # Start Supabase if needed
+            self.status_update.emit("Starting Supabase...")
+            self.progress_update.emit(40)
+            
+            try:
+                supabase_success = self._start_supabase()
+                if not supabase_success:
+                    self.status_update.emit("Failed to start Supabase")
+                    self.error_occurred.emit("Failed to start Supabase. Please check logs.")
+                    return
+            except Exception as e:
+                self.status_update.emit(f"Supabase error: {str(e)}")
+                self.error_occurred.emit(f"Error starting Supabase: {str(e)}")
+                return
+            
+            # Start application containers
+            self.status_update.emit("Starting application services...")
+            self.progress_update.emit(60)
+            
+            try:
+                app_success = self._start_app_containers()
+                if not app_success:
+                    self.status_update.emit("Failed to start application containers")
+                    self.error_occurred.emit("Failed to start application containers. Please check logs.")
+                    return
+            except Exception as e:
+                self.status_update.emit(f"Container error: {str(e)}")
+                self.error_occurred.emit(f"Error starting application containers: {str(e)}")
+                return
+            
+            # Wait for frontend to be available
+            self.status_update.emit("Waiting for frontend to be ready...")
+            self.progress_update.emit(80)
+            
+            max_wait = 45  # Increased maximum wait time in seconds
+            frontend_running = False
+            
+            try:
+                for i in range(max_wait):
+                    if self._is_frontend_running():
+                        frontend_running = True
+                        # Wait additional time for app to fully initialize
+                        self.progress_update.emit(90)
+                        self.status_update.emit("Frontend detected, waiting for full initialization...")
+                        time.sleep(10)  # Give extra time for the app to fully load
+                        break
+                    time.sleep(1)
+            except Exception as e:
+                self.status_update.emit(f"Frontend check error: {str(e)}")
+                # Not critical, continue
+            
+            if not frontend_running:
+                self.status_update.emit("Warning: Frontend may not be fully ready")
+            
+            # Final steps
+            self.progress_update.emit(100)
+            self.status_update.emit("Application started successfully")
+            
+            # Signal success
+            self.service_status.emit(True, "Application started successfully")
+            
+        except Exception as e:
+            self.status_update.emit(f"Error: {str(e)}")
+            self.error_occurred.emit(f"Error starting services: {str(e)}")
+    
+    def _ensure_docker_running(self):
+        """Ensure Docker is running"""
+        # Check if Docker is running
+        result = subprocess.run(
+            "docker info",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        if result.returncode != 0:
+            # Docker is not running, try to start it
+            self.status_update.emit("Docker is not running. Attempting to start Docker...")
+            
+            try:
+                if os.name == 'nt':  # Windows
+                    # Try to start Docker Desktop on Windows
+                    start_cmd = 'start "" "C:\\Program Files\\Docker\\Docker\\Docker Desktop.exe"'
+                    subprocess.run(start_cmd, shell=True)
+                    self.status_update.emit("Docker Desktop start command issued. Waiting for it to initialize...")
+                else:  # Linux
+                    # Try to start Docker service on Linux
+                    start_cmd = "sudo systemctl start docker"
+                    subprocess.run(start_cmd, shell=True, check=True)
+                    self.status_update.emit("Docker service start command issued. Waiting for it to initialize...")
+                
+                # Wait for Docker to start (up to 60 seconds)
+                self.status_update.emit("Waiting for Docker to start...")
+                for i in range(60):
+                    time.sleep(1)
+                    check_result = subprocess.run(
+                        "docker info",
+                        shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE
+                    )
+                    if check_result.returncode == 0:
+                        self.status_update.emit("Docker started successfully")
+                        return
+                
+                # If we get here, Docker didn't start
+                raise Exception("Docker failed to start after waiting 60 seconds")
+            except Exception as e:
+                raise Exception(f"Docker is not running and failed to start: {str(e)}")
+    
+    def _start_supabase(self):
+        """Start Supabase if not running"""
+        if self._is_supabase_running():
+            return True
+        
+        # Find Supabase directory
+        possible_locations = [
+            "./Elith-Supabase",
+            "../Elith-Supabase",
+            os.path.join(str(Path.home()), "Documents", "Elith-Supabase"),
+            os.path.join(str(Path.home()), "Elith-Supabase")
+        ]
+        
+        supabase_dir = None
+        for location in possible_locations:
+            if os.path.exists(location):
+                supabase_dir = location
+                break
+        
+        if not supabase_dir:
+            return False
+        
+        # Save current directory
+        current_dir = os.getcwd()
+        
+        try:
+            # Navigate to Supabase directory
+            os.chdir(supabase_dir)
+            
+            # Try to start Supabase with retry logic
+            max_retries = 50
+            port_binding_error_detected = False
+            
+            for attempt in range(max_retries):
+                self.status_update.emit(f"Starting Supabase (Attempt {attempt+1}/{max_retries})...")
+                
+                # First stop any existing Supabase instance
+                self.status_update.emit(f"Stopping any existing Supabase instances...")
+                stop_result = subprocess.run(
+                    "npx supabase stop",
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                # Give it a moment to fully stop
+                time.sleep(3)
+                
+                # If we detected a port binding error in a previous attempt and we're on Windows,
+                # try to restart the HNS service
+                if port_binding_error_detected and os.name == 'nt' and attempt > 0:
+                    self.status_update.emit("Port binding error detected. Attempting to restart HNS service...")
+                    
+                    try:
+                        hns_result = self._restart_hns_service()
+                        if hns_result:
+                            self.status_update.emit("HNS service restarted successfully. Retrying Supabase start attempt...")
+                            time.sleep(3)  # Give additional time after HNS restart
+                        else:
+                            self.status_update.emit("Could not restart HNS service. Continuing with Supabase start attempt...")
+                    except Exception as e:
+                        self.status_update.emit(f"Error restarting HNS service: {str(e)}")
+                
+                # Now try to start Supabase
+                self.status_update.emit(f"Attempting to start Supabase (Attempt {attempt+1}/{max_retries})...")
+                result = subprocess.run(
+                    "npx supabase start",
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                # Check for success
+                if "Started supabase local development setup" in result.stdout or "Started supabase local development setup" in result.stderr:
+                    return True
+                
+                # Check for port binding error
+                error_output = result.stderr + result.stdout
+                if "Ports are not available" in error_output or "bind: An attempt was made to access a socket in a way forbidden by its access permissions" in error_output:
+                    port_binding_error_detected = True
+                    self.status_update.emit("Port binding error detected. Will try to resolve before next attempt.")
+                
+                if attempt < max_retries - 1:
+                    self.status_update.emit("Supabase start failed, will retry after delay...")
+                    time.sleep(5)
+            
+            return False
+            
+        finally:
+            # Return to original directory
+            os.chdir(current_dir)
+    
+    def _start_app_containers(self):
+        """Start application containers using docker-compose"""
+        result = subprocess.run(
+            "docker-compose up -d",
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        
+        return result.returncode == 0
+    
+    def _is_supabase_running(self):
+        """Check if Supabase is running"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', SUPABASE_PORT))
+            sock.close()
+            return result == 0
+        except:
+            return False
+    
+    def _is_frontend_running(self):
+        """Check if frontend is running"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', FRONTEND_PORT))
+            sock.close()
+            return result == 0
+        except:
+            return False
+    
+    def _restart_hns_service(self):
+        """Restart the Windows Host Network Service (HNS) to fix port binding issues"""
+        if os.name != 'nt':  # Not Windows
+            self.status_update.emit("HNS service restart only applicable on Windows")
+            return True
+            
+        if not self._check_admin_privileges():
+            self.status_update.emit("Administrator privileges required to restart HNS service")
+            QMessageBox.warning(
+                self,
+                "Administrator Privileges Required",
+                "Port binding issues detected. Please restart the application as administrator to fix this issue.\n\n"
+                "Right-click the application icon and select 'Run as administrator'."
+            )
+            return False
+            
+        try:
+            self.status_update.emit("Restarting Windows Host Network Service (HNS)...")
+            
+            # Stop HNS service
+            stop_result = subprocess.run(
+                "net stop hns",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if stop_result.returncode != 0:
+                self.status_update.emit(f"Failed to stop HNS service: {stop_result.stderr}")
+                return False
+                
+            # Give it a moment
+            time.sleep(2)
+            
+            # Start HNS service
+            start_result = subprocess.run(
+                "net start hns",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            if start_result.returncode != 0:
+                self.status_update.emit(f"Failed to start HNS service: {start_result.stderr}")
+                return False
+                
+            self.status_update.emit("Successfully restarted HNS service")
+            return True
+            
+        except Exception as e:
+            self.status_update.emit(f"Error restarting HNS service: {str(e)}")
+            return False
+    
+    def _check_admin_privileges(self):
+        """Check if the application is running with administrator privileges"""
+        try:
+            if os.name == 'nt':  # Windows
+                import ctypes
+                return ctypes.windll.shell32.IsUserAnAdmin() != 0
+            else:  # Unix-based systems
+                return os.geteuid() == 0
+        except:
+            return False
+
+# QThread class for stopping services
+class StopServicesThread(QThread):
+    """QThread for stopping services"""
+    status_update = Signal(str)
+    progress_update = Signal(int)
+    service_status = Signal(bool, str)
+    error_occurred = Signal(str)
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+    
+    def run(self):
+        """Thread function to stop services"""
+        try:
+            # Stop Docker containers
+            self.status_update.emit("Stopping application containers...")
+            self.progress_update.emit(20)
+            
+            result = subprocess.run(
+                "docker-compose stop",
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Stop Supabase
+            self.status_update.emit("Stopping Supabase...")
+            self.progress_update.emit(60)
+            
+            self._stop_supabase()
+            
+            # Final steps
+            self.progress_update.emit(100)
+            self.status_update.emit("Services stopped successfully")
+            
+            # Signal success
+            self.service_status.emit(False, "Services stopped successfully")
+            
+        except Exception as e:
+            self.status_update.emit(f"Error: {str(e)}")
+            self.error_occurred.emit(f"Error stopping services: {str(e)}")
+    
+    def _stop_supabase(self):
+        """Stop Supabase if running"""
+        if not self._is_supabase_running():
+            return True
+        
+        # Find Supabase directory
+        possible_locations = [
+            "./Elith-Supabase",
+            "../Elith-Supabase",
+            os.path.join(str(Path.home()), "Documents", "Elith-Supabase"),
+            os.path.join(str(Path.home()), "Elith-Supabase")
+        ]
+        
+        supabase_dir = None
+        for location in possible_locations:
+            if os.path.exists(location):
+                supabase_dir = location
+                break
+        
+        if not supabase_dir:
+            return False
+        
+        # Save current directory
+        current_dir = os.getcwd()
+        
+        try:
+            # Navigate to Supabase directory
+            os.chdir(supabase_dir)
+            
+            # Try to stop Supabase with retry logic
+            max_retries = 3
+            for attempt in range(max_retries):
+                self.status_update.emit(f"Stopping Supabase (Attempt {attempt+1}/{max_retries})...")
+                
+                result = subprocess.run(
+                    "npx supabase stop",
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True
+                )
+                
+                if "Stopped supabase local development setup" in result.stdout or "Stopped supabase local development setup" in result.stderr:
+                    return True
+                
+                if attempt < max_retries - 1:
+                    time.sleep(5)
+            
+            return False
+            
+        finally:
+            # Return to original directory
+            os.chdir(current_dir)
+    
+    def _is_supabase_running(self):
+        """Check if Supabase is running"""
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(1)
+            result = sock.connect_ex(('127.0.0.1', SUPABASE_PORT))
+            sock.close()
+            return result == 0
+        except:
+            return False
 
 class PharmacyAppLauncher(QMainWindow):
     """Main application launcher window with integrated browser"""
@@ -105,6 +547,10 @@ class PharmacyAppLauncher(QMainWindow):
         
         # Create loading overlay
         self.loading_thread = None
+        
+        # Create service threads
+        self.start_services_thread = None
+        self.stop_services_thread = None
         
         # Connect signals
         self.status_update.connect(self.update_status)
@@ -549,6 +995,10 @@ class PharmacyAppLauncher(QMainWindow):
     def update_status(self, message):
         """Update status bar with message"""
         self.statusBar.showMessage(message)
+        
+        # Update loading overlay status if active
+        if self.loading_thread:
+            self.loading_thread.set_status(message)
     
     def start_services(self):
         """Start the pharmacy application services"""
@@ -560,241 +1010,16 @@ class PharmacyAppLauncher(QMainWindow):
         self.progress_bar.setVisible(True)
         
         # Show loading overlay
-        self.loading_thread = LoadingOverlayThread(self, "Starting Services")
-        self.loading_thread.status_changed.connect(self.update_loading_status)
+        self.loading_thread = LoadingOverlayThread(loading_text="Starting Services")
         self.loading_thread.start()
         
-        # Start services in a separate thread
-        threading.Thread(target=self._start_services_thread, daemon=True).start()
-    
-    def _start_services_thread(self):
-        """Thread function to start services"""
-        try:
-            # Update progress
-            self.status_update.emit("Checking system resources...")
-            self.update_progress(10)
-            self.loading_thread.set_status("Checking system resources...")
-            time.sleep(1)  # Give UI time to update
-            
-            # Start Docker if needed
-            self.status_update.emit("Ensuring Docker is running...")
-            self.update_progress(20)
-            self.loading_thread.set_status("Starting Docker...")
-            try:
-                self._ensure_docker_running()
-            except Exception as e:
-                self.status_update.emit(f"Docker error: {str(e)}")
-                self._show_error_and_cleanup(f"Error starting Docker: {str(e)}")
-                return
-            
-            # Start Supabase if needed
-            self.status_update.emit("Starting Supabase...")
-            self.update_progress(40)
-            self.loading_thread.set_status("Starting Supabase...")
-            
-            try:
-                supabase_success = self._start_supabase()
-                if not supabase_success:
-                    self.status_update.emit("Failed to start Supabase")
-                    self.loading_thread.set_status("Failed to start Supabase")
-                    self._show_error_and_cleanup("Failed to start Supabase. Please check logs.")
-                    return
-            except Exception as e:
-                self.status_update.emit(f"Supabase error: {str(e)}")
-                self._show_error_and_cleanup(f"Error starting Supabase: {str(e)}")
-                return
-            
-            # Start application containers
-            self.status_update.emit("Starting application services...")
-            self.update_progress(60)
-            self.loading_thread.set_status("Starting application containers...")
-            
-            try:
-                app_success = self._start_app_containers()
-                if not app_success:
-                    self.status_update.emit("Failed to start application containers")
-                    self.loading_thread.set_status("Failed to start application containers")
-                    self._show_error_and_cleanup("Failed to start application containers. Please check logs.")
-                    return
-            except Exception as e:
-                self.status_update.emit(f"Container error: {str(e)}")
-                self._show_error_and_cleanup(f"Error starting application containers: {str(e)}")
-                return
-            
-            # Wait for frontend to be available
-            self.status_update.emit("Waiting for frontend to be ready...")
-            self.update_progress(80)
-            self.loading_thread.set_status("Waiting for frontend...")
-            
-            max_wait = 45  # Increased maximum wait time in seconds
-            frontend_running = False
-            
-            try:
-                for i in range(max_wait):
-                    if self.is_frontend_running():
-                        frontend_running = True
-                        # Wait additional time for app to fully initialize
-                        self.update_progress(90)
-                        self.status_update.emit("Frontend detected, waiting for full initialization...")
-                        self.loading_thread.set_status("Waiting for app to initialize...")
-                        time.sleep(10)  # Give extra time for the app to fully load
-                        break
-                    time.sleep(1)
-            except Exception as e:
-                self.status_update.emit(f"Frontend check error: {str(e)}")
-                # Not critical, continue
-            
-            if not frontend_running:
-                self.status_update.emit("Warning: Frontend may not be fully ready")
-            
-            # Final steps
-            self.update_progress(100)
-            self.status_update.emit("Application started successfully")
-            
-            # Update UI on main thread
-            QApplication.instance().postEvent(
-                self,
-                ServiceStatusEvent(True, "Application started successfully")
-            )
-            
-        except Exception as e:
-            self.status_update.emit(f"Error: {str(e)}")
-            self._show_error_and_cleanup(f"Error starting services: {str(e)}")
-        finally:
-            # Stop the loading overlay
-            if self.loading_thread and self.loading_thread.is_running:
-                try:
-                    self.loading_thread.stop()
-                except Exception as e:
-                    print(f"Error stopping loading thread: {str(e)}")
-            
-            # Hide progress bar after completion
-            QApplication.instance().postEvent(
-                self,
-                ProgressBarVisibilityEvent(False)
-            )
-    
-    def _ensure_docker_running(self):
-        """Ensure Docker is running"""
-        # Check if Docker is running
-        result = subprocess.run(
-            "docker info",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        
-        if result.returncode != 0:
-            # Docker is not running
-            raise Exception("Docker is not running. Please start Docker Desktop first.")
-    
-    def _start_supabase(self):
-        """Start Supabase if not running"""
-        if self.is_supabase_running():
-            return True
-        
-        # Find Supabase directory
-        possible_locations = [
-            "./Elith-Supabase",
-            "../Elith-Supabase",
-            os.path.join(str(Path.home()), "Documents", "Elith-Supabase"),
-            os.path.join(str(Path.home()), "Elith-Supabase")
-        ]
-        
-        supabase_dir = None
-        for location in possible_locations:
-            if os.path.exists(location):
-                supabase_dir = location
-                break
-        
-        if not supabase_dir:
-            return False
-        
-        # Save current directory
-        current_dir = os.getcwd()
-        
-        try:
-            # Navigate to Supabase directory
-            os.chdir(supabase_dir)
-            
-            # Try to start Supabase with retry logic
-            max_retries = 50
-            port_binding_error_detected = False
-            
-            for attempt in range(max_retries):
-                self.loading_thread.set_status(f"Starting Supabase (Attempt {attempt+1}/{max_retries})...")
-                
-                # First stop any existing Supabase instance
-                self.status_update.emit(f"Stopping any existing Supabase instances...")
-                stop_result = subprocess.run(
-                    "npx supabase stop",
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                
-                # Give it a moment to fully stop
-                time.sleep(3)
-                
-                # If we detected a port binding error in a previous attempt and we're on Windows,
-                # try to restart the HNS service
-                if port_binding_error_detected and os.name == 'nt' and attempt > 0:
-                    self.status_update.emit("Port binding error detected. Attempting to restart HNS service...")
-                    self.loading_thread.set_status("Restarting HNS service...")
-                    
-                    try:
-                        hns_result = self._restart_hns_service()
-                        if hns_result:
-                            self.status_update.emit("HNS service restarted successfully. Retrying Supabase start...")
-                            time.sleep(3)  # Give additional time after HNS restart
-                        else:
-                            self.status_update.emit("Could not restart HNS service. Continuing with Supabase start attempt...")
-                    except Exception as e:
-                        self.status_update.emit(f"Error restarting HNS service: {str(e)}")
-                
-                # Now try to start Supabase
-                self.status_update.emit(f"Attempting to start Supabase (Attempt {attempt+1}/{max_retries})...")
-                result = subprocess.run(
-                    "npx supabase start",
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                
-                # Check for success
-                if "Started supabase local development setup" in result.stdout or "Started supabase local development setup" in result.stderr:
-                    return True
-                
-                # Check for port binding error
-                error_output = result.stderr + result.stdout
-                if "Ports are not available" in error_output or "bind: An attempt was made to access a socket in a way forbidden by its access permissions" in error_output:
-                    port_binding_error_detected = True
-                    self.status_update.emit("Port binding error detected. Will try to resolve before next attempt.")
-                
-                if attempt < max_retries - 1:
-                    self.status_update.emit("Supabase start failed, will retry after delay...")
-                    time.sleep(5)
-            
-            return False
-            
-        finally:
-            # Return to original directory
-            os.chdir(current_dir)
-    
-    def _start_app_containers(self):
-        """Start application containers using docker-compose"""
-        result = subprocess.run(
-            "docker-compose up -d",
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
-        )
-        
-        return result.returncode == 0
+        # Create and start the services thread
+        self.start_services_thread = StartServicesThread(self)
+        self.start_services_thread.status_update.connect(self.update_status)
+        self.start_services_thread.progress_update.connect(self.update_progress)
+        self.start_services_thread.service_status.connect(self.handle_service_status)
+        self.start_services_thread.error_occurred.connect(self.handle_error)
+        self.start_services_thread.start()
     
     def stop_services(self):
         """Stop the pharmacy application services"""
@@ -805,121 +1030,70 @@ class PharmacyAppLauncher(QMainWindow):
         self.progress_bar.setVisible(True)
         
         # Show loading overlay
-        self.loading_thread = LoadingOverlayThread(self, "Stopping Services")
-        self.loading_thread.status_changed.connect(self.update_loading_status)
+        self.loading_thread = LoadingOverlayThread(loading_text="Stopping Services")
         self.loading_thread.start()
         
-        # Stop services in a separate thread
-        threading.Thread(target=self._stop_services_thread, daemon=True).start()
+        # Create and start the services thread
+        self.stop_services_thread = StopServicesThread(self)
+        self.stop_services_thread.status_update.connect(self.update_status)
+        self.stop_services_thread.progress_update.connect(self.update_progress)
+        self.stop_services_thread.service_status.connect(self.handle_service_status)
+        self.stop_services_thread.error_occurred.connect(self.handle_error)
+        self.stop_services_thread.start()
     
-    def _stop_services_thread(self):
-        """Thread function to stop services"""
-        try:
-            # Stop Docker containers
-            self.status_update.emit("Stopping application containers...")
-            self.update_progress(20)
-            self.loading_thread.set_status("Stopping containers...")
-            
-            result = subprocess.run(
-                "docker-compose stop",
-                shell=True,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
-            )
-            
-            # Stop Supabase
-            self.status_update.emit("Stopping Supabase...")
-            self.update_progress(60)
-            self.loading_thread.set_status("Stopping Supabase...")
-            
-            self._stop_supabase()
-            
-            # Final steps
-            self.update_progress(100)
-            self.status_update.emit("Services stopped successfully")
-            
-            # Update UI on main thread
-            QApplication.instance().postEvent(
-                self,
-                ServiceStatusEvent(False, "Services stopped successfully")
-            )
-            
-        except Exception as e:
-            self.status_update.emit(f"Error: {str(e)}")
-            QMessageBox.critical(self, "Error", f"Error stopping services: {str(e)}")
-        finally:
-            # Stop the loading overlay
-            if self.loading_thread and self.loading_thread.is_running:
+    def handle_service_status(self, is_running, message):
+        """Handle service status updates"""
+        # Stop the loading overlay
+        if self.loading_thread:
+            try:
                 self.loading_thread.stop()
-            
-            # Hide progress bar after completion
-            QApplication.instance().postEvent(
-                self,
-                ProgressBarVisibilityEvent(False)
-            )
+                self.loading_thread = None
+            except Exception as e:
+                print(f"Error stopping loading thread: {str(e)}")
+        
+        # Hide progress bar
+        self.progress_bar.setVisible(False)
+        
+        # Update UI based on service status
+        if is_running:
+            self.update_ui_for_running_services()
+            self.browser.setUrl(QUrl(APP_URL))
+        else:
+            self.update_ui_for_stopped_services()
+        
+        # Update status
+        self.status_update.emit(message)
     
-    def _stop_supabase(self):
-        """Stop Supabase if running"""
-        if not self.is_supabase_running():
-            return True
-        
-        # Find Supabase directory
-        possible_locations = [
-            "./Elith-Supabase",
-            "../Elith-Supabase",
-            os.path.join(str(Path.home()), "Documents", "Elith-Supabase"),
-            os.path.join(str(Path.home()), "Elith-Supabase")
-        ]
-        
-        supabase_dir = None
-        for location in possible_locations:
-            if os.path.exists(location):
-                supabase_dir = location
-                break
-        
-        if not supabase_dir:
-            return False
-        
-        # Save current directory
-        current_dir = os.getcwd()
-        
-        try:
-            # Navigate to Supabase directory
-            os.chdir(supabase_dir)
+    def handle_error(self, message):
+        """Handle error messages"""
+        # Make sure loading overlay is stopped
+        if self.loading_thread:
+            try:
+                self.loading_thread.stop()
+                self.loading_thread = None
+            except Exception as e:
+                print(f"Error stopping loading thread: {str(e)}")
             
-            # Try to stop Supabase with retry logic
-            max_retries = 3
-            for attempt in range(max_retries):
-                self.loading_thread.set_status(f"Stopping Supabase (Attempt {attempt+1}/{max_retries})...")
-                
-                result = subprocess.run(
-                    "npx supabase stop",
-                    shell=True,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    text=True
-                )
-                
-                if "Stopped supabase local development setup" in result.stdout or "Stopped supabase local development setup" in result.stderr:
-                    return True
-                
-                if attempt < max_retries - 1:
-                    time.sleep(5)
-            
-            return False
-            
-        finally:
-            # Return to original directory
-            os.chdir(current_dir)
+        # Hide progress bar
+        self.progress_bar.setVisible(False)
+        
+        # Show error message
+        QMessageBox.critical(self, "Error", message)
+        
+        # Update UI state
+        self.update_ui_for_stopped_services()
+        
+        # Re-enable start action
+        self.start_action.setEnabled(True)
     
     def update_progress(self, value):
         """Update progress bar value"""
         self.progress_bar.setValue(value)
-    
-    def update_loading_status(self, status):
-        """Update loading overlay status"""
-        self.status_update.emit(status)
+        
+        # Update loading overlay with progress information
+        if self.loading_thread:
+            progress_text = f"Progress: {value}%"
+            self.loading_thread.set_status(progress_text)
     
     def update_ui_for_running_services(self):
         """Update UI elements when services are running"""
@@ -943,32 +1117,6 @@ class PharmacyAppLauncher(QMainWindow):
         """Refresh the browser content"""
         self.browser.reload()
     
-    def _show_error_and_cleanup(self, message):
-        """Show error message and clean up UI"""
-        # Post events to the main thread to update UI safely
-        QApplication.instance().postEvent(
-            self,
-            ErrorCleanupEvent(message)
-        )
-    
-    def _handle_error_cleanup(self, message):
-        """Handle error cleanup on the main thread"""
-        # Make sure loading overlay is stopped
-        if self.loading_thread and self.loading_thread.is_running:
-            self.loading_thread.stop()
-            
-        # Hide progress bar
-        self.progress_bar.setVisible(False)
-        
-        # Show error message
-        QMessageBox.critical(self, "Error", message)
-        
-        # Update UI state
-        self.update_ui_for_stopped_services()
-        
-        # Re-enable start action
-        self.start_action.setEnabled(True)
-    
     def closeEvent(self, event):
         """Handle window close event"""
         # Check if services are running and automatically stop them
@@ -977,8 +1125,12 @@ class PharmacyAppLauncher(QMainWindow):
             self._launch_shutdown_process()
         
         # Clean up
-        if self.loading_thread and self.loading_thread.is_running:
-            self.loading_thread.stop()
+        if self.loading_thread:
+            try:
+                self.loading_thread.stop()
+                self.loading_thread = None
+            except Exception as e:
+                print(f"Error stopping loading thread: {str(e)}")
         
         # Accept the close event
         event.accept()
@@ -1072,7 +1224,6 @@ class PharmacyAppLauncher(QMainWindow):
             
         try:
             self.status_update.emit("Restarting Windows Host Network Service (HNS)...")
-            self.loading_thread.set_status("Restarting HNS service...")
             
             # Stop HNS service
             stop_result = subprocess.run(
@@ -1110,6 +1261,23 @@ class PharmacyAppLauncher(QMainWindow):
             self.status_update.emit(f"Error restarting HNS service: {str(e)}")
             return False
 
+    def event(self, event):
+        """Override event handling to handle custom events"""
+        if event.type() == ServiceStatusEvent.EVENT_TYPE:
+            if event.is_running:
+                self.update_ui_for_running_services()
+                self.browser.setUrl(QUrl(APP_URL))
+            else:
+                self.update_ui_for_stopped_services()
+            return True
+        elif event.type() == ProgressBarVisibilityEvent.EVENT_TYPE:
+            self.progress_bar.setVisible(event.is_visible)
+            return True
+        elif event.type() == ErrorCleanupEvent.EVENT_TYPE:
+            self.handle_error(event.message)
+            return True
+        return super(PharmacyAppLauncher, self).event(event)
+
 # Custom event for service status updates
 class ServiceStatusEvent(QEvent):
     """Custom event for service status updates"""
@@ -1140,26 +1308,6 @@ class ErrorCleanupEvent(QEvent):
     def __init__(self, message):
         super().__init__(ErrorCleanupEvent.EVENT_TYPE)
         self.message = message
-
-# Override event handling to handle custom events
-def event(self, event):
-    if event.type() == ServiceStatusEvent.EVENT_TYPE:
-        if event.is_running:
-            self.update_ui_for_running_services()
-            self.browser.setUrl(QUrl(APP_URL))
-        else:
-            self.update_ui_for_stopped_services()
-        return True
-    elif event.type() == ProgressBarVisibilityEvent.EVENT_TYPE:
-        self.progress_bar.setVisible(event.is_visible)
-        return True
-    elif event.type() == ErrorCleanupEvent.EVENT_TYPE:
-        self._handle_error_cleanup(event.message)
-        return True
-    return super(PharmacyAppLauncher, self).event(event)
-
-# Add the event method to the class
-PharmacyAppLauncher.event = event
 
 def main():
     """Main application entry point"""

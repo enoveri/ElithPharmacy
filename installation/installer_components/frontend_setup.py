@@ -30,6 +30,13 @@ class FrontendSetupWorker(QThread):
         
     def run(self):
         try:
+            # Check if Docker is installed first
+            self.update_progress.emit(5, "Verifying Docker installation...")
+            if not self.check_docker():
+                self.update_log.emit("ERROR: Docker is not installed or not running")
+                self.setup_complete.emit(False, "Docker must be installed and running before setting up the frontend")
+                return
+            
             # Check if npm is installed
             self.update_progress.emit(10, "Checking npm installation...")
             
@@ -74,6 +81,35 @@ class FrontendSetupWorker(QThread):
         except Exception as e:
             self.update_log.emit(f"ERROR: {str(e)}")
             self.setup_complete.emit(False, f"Setup failed: {str(e)}")
+    
+    def check_docker(self):
+        """Check if Docker is installed and running"""
+        try:
+            self.update_log.emit("Checking Docker installation...")
+            if platform.system() == "Windows":
+                # Check Docker Desktop on Windows
+                result = subprocess.run(["docker", "info"], 
+                                       stdout=subprocess.PIPE, 
+                                       stderr=subprocess.PIPE,
+                                       text=True,
+                                       check=False)
+            else:
+                # Check Docker on Linux/macOS
+                result = subprocess.run(["docker", "info"], 
+                                       stdout=subprocess.PIPE, 
+                                       stderr=subprocess.PIPE,
+                                       text=True,
+                                       check=False)
+            
+            if result.returncode == 0:
+                self.update_log.emit("Docker is installed and running")
+                return True
+            else:
+                self.update_log.emit("Docker is not running or not installed properly")
+                return False
+        except Exception as e:
+            self.update_log.emit(f"Docker check error: {str(e)}")
+            return False
     
     def check_npm(self):
         """Check if npm is installed"""
@@ -133,7 +169,8 @@ class FrontendSetupWidget(QWidget):
         title = create_title_label("Frontend Setup")
         description = create_description_label(
             f"This step will set up the frontend components for {APP_NAME}. "
-            f"It will install npm dependencies and prepare the frontend for use."
+            f"It will install npm dependencies and prepare the frontend for use. "
+            f"Docker must be installed and running before proceeding with this step."
         )
         
         # Progress section

@@ -216,7 +216,5 @@ local/
 .temp/
 *.txt
 
-db_password.txt
-local_supabase_spin.md
-supabase_link_stdout.txt
+other/
 docker-compose.yml

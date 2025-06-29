@@ -16,7 +16,7 @@ class LoadingOverlay(QMainWindow):
         self.setWindowFlags(Qt.Window | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         
         # Enable transparency for the window
-        self.setAttribute(Qt.WA_TranslucentBackground)
+        # self.setAttribute(Qt.WA_TranslucentBackground)
         
         # Set stylesheet for overlay
         self.setStyleSheet("""
@@ -78,7 +78,16 @@ class LoadingOverlay(QMainWindow):
         self.text_timer.start(800)  # Update every 800ms
         
         self.dot_count = 0
-        
+
+    def start(self):
+        self.show() 
+
+    def stop(self):
+        self.hide()
+
+    def is_running(self):
+        return self.isVisible()
+
     def update_loading_text(self):
         """Animate the loading text with dots"""
         self.dot_count = (self.dot_count + 1) % 4
@@ -210,7 +219,7 @@ class LoadingOverlayThread(QThread):
         # Connect signals
         self.status_changed.connect(self._update_status)
         self.loading_text_changed.connect(self._update_loading_text)
-        
+
     def run(self):
         """
         Show the loading overlay in a separate thread

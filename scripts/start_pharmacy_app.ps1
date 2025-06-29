@@ -1,7 +1,7 @@
 # Elith Pharmacy Application Startup Script
 # This script implements the startup flow for the Elith Pharmacy application using Docker
 
-# Define application settings
+# Define application setting
 $appName = "Elith Pharmacy"
 $appUrl = "http://localhost:5173"  # The URL where the app is hosted
 $supabasePort = "54321"  # Default Supabase port

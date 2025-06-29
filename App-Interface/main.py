@@ -5,18 +5,11 @@ This script launches the Qt-based GUI for the Elith Pharmacy application
 """
 
 import os
+# set qt to use pyside6
+os.environ['QT_API'] = 'pyside6'
+
 import sys
 import platform
-
-# Check for required dependencies
-try:
-    from qtpy import QtWidgets, QtCore
-except ImportError:
-    print("Error: qtpy package not found. Installing required packages...")
-    import subprocess
-    subprocess.run([sys.executable, "-m", "pip", "install", "qtpy", "PyQt5", "PyQtWebEngine"], check=True)
-    print("Packages installed. Please restart the application.")
-    sys.exit(1)
 
 from pharmacy_app_launcher import main as launch_app
 
@@ -51,12 +44,12 @@ def main():
     print(f"Starting {os.path.basename(__file__)}...")
     
     # Check environment
-    if not check_environment():
-        print("Environment check failed. The application may not function correctly.")
-        response = input("Do you want to continue anyway? (y/n): ")
-        if response.lower() != 'y':
-            print("Exiting...")
-            sys.exit(1)
+    # if not check_environment():
+    #     print("Environment check failed. The application may not function correctly.")
+    #     response = input("Do you want to continue anyway? (y/n): ")
+    #     if response.lower() != 'y':
+    #         print("Exiting...")
+    #         sys.exit(1)
     
     # Launch the application
     launch_app()

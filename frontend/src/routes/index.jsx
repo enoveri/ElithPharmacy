@@ -27,6 +27,7 @@ import CustomerSales from "../pages/CustomerSales";
 import ViewProduct from "../pages/ViewProduct";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
+import NotFound from "../pages/NotFound";
 
 import AdminSetup from "../pages/AdminSetup";
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
@@ -137,5 +138,9 @@ export const router = createBrowserRouter([
   {
     path: "/admin-setup",
     element: <AdminSetup />,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
   },
 ]);
