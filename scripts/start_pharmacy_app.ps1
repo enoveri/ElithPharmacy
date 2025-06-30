@@ -117,7 +117,7 @@ function Update-FromGit {
         # If configuration doesn't exist, prompt for it
         if (-not $ForceUpdate) {
             Write-Log "Git configuration not found. Skipping update check." -level "WARNING"
-            return $true  # Continue with startup
+            return $false  # No update performed
         }
         
         Write-Log "Git configuration not found. Please set up git configuration first." -level "ERROR"
@@ -189,7 +189,7 @@ function Update-FromGit {
             $needsUpdate = $true
         } elseif ($status -match "Your branch is up to date") {
             Write-Log "Repository is up to date with origin/$branch" -level "SUCCESS"
-            return $true
+            return $false  # No update needed
         } else {
             # Force update if status is unclear or if explicitly requested
             $needsUpdate = $ForceUpdate
@@ -229,7 +229,7 @@ function Update-FromGit {
             return $true
         }
         
-        return $true
+        return $false  # No update performed
     } catch {
         Write-Log "Error during git update: $_" -level "ERROR"
         return $false
@@ -700,8 +700,8 @@ Write-Log "Starting $appName application..." -level "INFO"
 
 # Step 0: Check for updates from git repository
 Write-Log "Step 0: Checking for updates from git repository..."
-$updateResult = Update-FromGit
-if ($updateResult) {
+$updatePerformed = Update-FromGit
+if ($updatePerformed -eq $true) {
     # Check if we need to rebuild Docker containers
     $config = Get-GitConfig
     if ($null -ne $config -and (Test-Path -Path "$($config.WorkingDir)\docker-compose.yml")) {
@@ -715,7 +715,7 @@ Write-Log "Step 1: Checking if application is already running..."
 $appRunning = Test-AppRunning
 if ($appRunning) {
     Write-Log "$appName is already running. Opening in browser..." -level "INFO"
-    Open-AppInChrome
+    # Open-AppInChrome
     exit 0
 }
 

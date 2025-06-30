@@ -9,6 +9,7 @@ APP_URL="http://localhost:5173"  # The URL where the app is hosted
 SUPABASE_PORT="54321"  # Default Supabase port
 LOG_FILE="$HOME/ElithPharmacy/app_startup.log"
 FRONTEND_PORT=5173
+GIT_CONFIG_FILE="$HOME/ElithPharmacy/git_config.json"  # File to store git configuration
 
 # Create log directory if it doesn't exist
 LOG_DIR=$(dirname "$LOG_FILE")
@@ -32,6 +33,278 @@ write_log() {
         echo -e "\e[32m$log_message\e[0m"  # Green
     else
         echo "$log_message"
+    fi
+}
+
+# Function to check if git is installed
+test_git_installed() {
+    if command -v git > /dev/null; then
+        GIT_VERSION=$(git --version)
+        write_log "Git is installed: $GIT_VERSION" "SUCCESS"
+        return 0  # true in bash
+    else
+        write_log "Git is not installed" "ERROR"
+        return 1  # false in bash
+    fi
+}
+
+# Function to load git configuration
+get_git_config() {
+    if [ -f "$GIT_CONFIG_FILE" ]; then
+        if command -v jq > /dev/null; then
+            # Use jq if available
+            REPO_URL=$(jq -r '.RepoUrl // empty' "$GIT_CONFIG_FILE")
+            BRANCH=$(jq -r '.Branch // empty' "$GIT_CONFIG_FILE")
+            TOKEN=$(jq -r '.Token // empty' "$GIT_CONFIG_FILE")
+            WORKING_DIR=$(jq -r '.WorkingDir // empty' "$GIT_CONFIG_FILE")
+            
+            if [ -n "$REPO_URL" ] && [ -n "$BRANCH" ] && [ -n "$WORKING_DIR" ]; then
+                return 0  # true in bash
+            else
+                write_log "Invalid git configuration in $GIT_CONFIG_FILE" "ERROR"
+                return 1  # false in bash
+            fi
+        else
+            # Fallback to grep/sed if jq is not available
+            write_log "jq is not installed. Using basic parsing for git config." "WARNING"
+            REPO_URL=$(grep -o '"RepoUrl"[[:space:]]*:[[:space:]]*"[^"]*"' "$GIT_CONFIG_FILE" | sed 's/"RepoUrl"[[:space:]]*:[[:space:]]*"\(.*\)"/\1/')
+            BRANCH=$(grep -o '"Branch"[[:space:]]*:[[:space:]]*"[^"]*"' "$GIT_CONFIG_FILE" | sed 's/"Branch"[[:space:]]*:[[:space:]]*"\(.*\)"/\1/')
+            TOKEN=$(grep -o '"Token"[[:space:]]*:[[:space:]]*"[^"]*"' "$GIT_CONFIG_FILE" | sed 's/"Token"[[:space:]]*:[[:space:]]*"\(.*\)"/\1/')
+            WORKING_DIR=$(grep -o '"WorkingDir"[[:space:]]*:[[:space:]]*"[^"]*"' "$GIT_CONFIG_FILE" | sed 's/"WorkingDir"[[:space:]]*:[[:space:]]*"\(.*\)"/\1/')
+            
+            if [ -n "$REPO_URL" ] && [ -n "$BRANCH" ] && [ -n "$WORKING_DIR" ]; then
+                return 0  # true in bash
+            else
+                write_log "Invalid git configuration in $GIT_CONFIG_FILE" "ERROR"
+                return 1  # false in bash
+            fi
+        fi
+    else
+        write_log "Git configuration file not found at: $GIT_CONFIG_FILE" "WARNING"
+        return 1  # false in bash
+    fi
+}
+
+# Function to save git configuration
+save_git_config() {
+    local repo_url="$1"
+    local branch="$2"
+    local token="$3"
+    local working_dir="$4"
+    
+    # Create JSON content
+    local last_updated=$(date "+%Y-%m-%d %H:%M:%S")
+    local json_content="{
+  \"RepoUrl\": \"$repo_url\",
+  \"Branch\": \"$branch\",
+  \"Token\": \"$token\",
+  \"WorkingDir\": \"$working_dir\",
+  \"LastUpdated\": \"$last_updated\"
+}"
+    
+    # Save to file
+    echo "$json_content" > "$GIT_CONFIG_FILE"
+    
+    if [ $? -eq 0 ]; then
+        write_log "Git configuration saved successfully" "SUCCESS"
+        return 0  # true in bash
+    else
+        write_log "Error saving git configuration" "ERROR"
+        return 1  # false in bash
+    fi
+}
+
+# Function to check for updates and pull from git
+update_from_git() {
+    local force_update=${1:-false}
+    
+    # Check if git is installed
+    if ! test_git_installed; then
+        write_log "Git is required for update functionality" "ERROR"
+        return 1  # false in bash
+    fi
+    
+    # Load git configuration
+    if ! get_git_config; then
+        # If configuration doesn't exist, skip update check unless forced
+        if [ "$force_update" = false ]; then
+            write_log "Git configuration not found. Skipping update check." "WARNING"
+            return 1  # false in bash, no update performed
+        fi
+        
+        write_log "Git configuration not found. Please set up git configuration first." "ERROR"
+        return 1  # false in bash
+    fi
+    
+    # Check if working directory exists
+    if [ ! -d "$WORKING_DIR" ]; then
+        write_log "Working directory does not exist: $WORKING_DIR" "ERROR"
+        return 1  # false in bash
+    fi
+    
+    # Navigate to working directory
+    pushd "$WORKING_DIR" > /dev/null
+    
+    # Check if this is a git repository
+    if ! git rev-parse --is-inside-work-tree > /dev/null 2>&1; then
+        write_log "The directory is not a git repository: $WORKING_DIR" "ERROR"
+        popd > /dev/null
+        return 1  # false in bash
+    fi
+    
+    write_log "Checking for updates in repository: $REPO_URL (branch: $BRANCH)" "INFO"
+    
+    # Construct the remote URL with token
+    REPO_URL_WITH_TOKEN="$REPO_URL"
+    if [ -n "$TOKEN" ]; then
+        # Extract protocol, domain, and path from URL
+        if [[ "$REPO_URL" =~ ^(https?://)([^/]+)(.*) ]]; then
+            PROTOCOL="${BASH_REMATCH[1]}"
+            DOMAIN="${BASH_REMATCH[2]}"
+            PATH_PART="${BASH_REMATCH[3]}"
+            REPO_URL_WITH_TOKEN="${PROTOCOL}oauth2:${TOKEN}@${DOMAIN}${PATH_PART}"
+        else
+            write_log "Invalid repository URL format" "ERROR"
+            popd > /dev/null
+            return 1  # false in bash
+        fi
+    fi
+    
+    # Update the remote URL if using token
+    if [ -n "$TOKEN" ]; then
+        git remote set-url origin "$REPO_URL_WITH_TOKEN" > /dev/null 2>&1
+    fi
+    
+    # Fetch the latest changes
+    write_log "Fetching latest changes..." "INFO"
+    if ! git fetch origin "$BRANCH" > /dev/null 2>&1; then
+        write_log "Failed to fetch from remote repository" "ERROR"
+        popd > /dev/null
+        return 1  # false in bash
+    fi
+    
+    # Check if we're behind the remote
+    STATUS=$(git status -uno)
+    NEEDS_UPDATE=false
+    
+    if echo "$STATUS" | grep -q "Your branch is behind"; then
+        # Extract number of commits behind using regex
+        if [[ "$STATUS" =~ Your\ branch\ is\ behind\ \'origin/$BRANCH\'\ by\ ([0-9]+)\ commit ]]; then
+            COMMITS_BEHIND="${BASH_REMATCH[1]}"
+            write_log "Repository is behind by $COMMITS_BEHIND commits" "WARNING"
+            NEEDS_UPDATE=true
+        fi
+    elif echo "$STATUS" | grep -q "Your branch is up to date"; then
+        write_log "Repository is up to date with origin/$BRANCH" "SUCCESS"
+        popd > /dev/null
+        return 1  # false in bash, no update needed
+    else
+        # Force update if status is unclear or if explicitly requested
+        if [ "$force_update" = true ]; then
+            NEEDS_UPDATE=true
+            write_log "Unable to determine update status. Will proceed with update." "WARNING"
+        else
+            write_log "Unable to determine update status. Skipping update." "WARNING"
+            popd > /dev/null
+            return 1  # false in bash, no update performed
+        fi
+    fi
+    
+    if [ "$NEEDS_UPDATE" = true ] || [ "$force_update" = true ]; then
+        # Stash any local changes
+        write_log "Stashing local changes..." "INFO"
+        git stash > /dev/null 2>&1
+        
+        # Pull the latest changes
+        write_log "Pulling latest changes from origin/$BRANCH..." "INFO"
+        if ! git pull origin "$BRANCH" > /dev/null 2>&1; then
+            write_log "Failed to pull latest changes" "ERROR"
+            
+            # Try to recover by resetting to origin
+            write_log "Attempting to recover by hard reset..." "WARNING"
+            if ! git reset --hard "origin/$BRANCH" > /dev/null 2>&1; then
+                write_log "Failed to reset to origin/$BRANCH" "ERROR"
+                popd > /dev/null
+                return 1  # false in bash
+            else
+                write_log "Successfully reset to origin/$BRANCH" "SUCCESS"
+            fi
+        else
+            write_log "Successfully pulled latest changes" "SUCCESS"
+        fi
+        
+        # Update last updated timestamp
+        save_git_config "$REPO_URL" "$BRANCH" "$TOKEN" "$WORKING_DIR"
+        
+        # Return to original directory
+        popd > /dev/null
+        
+        # Return true to indicate that an update was performed
+        return 0  # true in bash
+    fi
+    
+    # Return to original directory
+    popd > /dev/null
+    
+    return 1  # false in bash, no update performed
+}
+
+# Function to rebuild Docker containers after update
+rebuild_docker_containers() {
+    write_log "Rebuilding Docker containers..." "INFO"
+    
+    # Stop existing containers
+    docker-compose down
+    
+    if [ $? -ne 0 ]; then
+        write_log "Warning: Failed to stop existing containers" "WARNING"
+        # Continue anyway as this might be the first run
+    fi
+    
+    # Rebuild and start containers
+    docker-compose up -d --build
+    
+    if [ $? -ne 0 ]; then
+        write_log "Failed to rebuild Docker containers" "ERROR"
+        return 1  # false in bash
+    fi
+    
+    write_log "Docker containers rebuilt successfully" "SUCCESS"
+    return 0  # true in bash
+}
+
+# Function to set up git configuration interactively
+set_git_config() {
+    echo -e "\nGit Configuration Setup"
+    echo "======================"
+    
+    # Get current directory as default working directory
+    DEFAULT_WORKING_DIR=$(pwd)
+    
+    # Get configuration values from user
+    read -p "Enter the git repository URL (e.g., https://github.com/username/repo.git): " REPO_URL
+    read -p "Enter the branch name to track (e.g., main): " BRANCH
+    read -p "Enter your git access token (leave empty if not required): " TOKEN
+    read -p "Enter the working directory path (default: $DEFAULT_WORKING_DIR): " WORKING_DIR
+    
+    # Use default if working directory is empty
+    if [ -z "$WORKING_DIR" ]; then
+        WORKING_DIR="$DEFAULT_WORKING_DIR"
+    fi
+    
+    # Validate inputs
+    if [ -z "$REPO_URL" ] || [ -z "$BRANCH" ]; then
+        write_log "Repository URL and branch name are required" "ERROR"
+        return 1  # false in bash
+    fi
+    
+    # Save configuration
+    if save_git_config "$REPO_URL" "$BRANCH" "$TOKEN" "$WORKING_DIR"; then
+        echo -e "\e[32mGit configuration saved successfully\e[0m"
+        return 0  # true in bash
+    else
+        echo -e "\e[31mFailed to save git configuration\e[0m"
+        return 1  # false in bash
     fi
 }
 
@@ -306,14 +579,42 @@ open_app_in_browser() {
     return 0  # true
 }
 
+# Check for command line arguments
+if [ "$1" = "-config" ]; then
+    # Run git configuration setup
+    set_git_config
+    exit
+fi
+
+if [ "$1" = "-update" ]; then
+    # Force update from git repository
+    update_from_git true
+    exit
+fi
+
 # Main script execution
 write_log "Starting $APP_NAME application..." "INFO"
+
+# Step 0: Check for updates from git repository
+write_log "Step 0: Checking for updates from git repository..."
+update_from_git
+update_performed=$?
+# Only rebuild if update was actually performed (return 0 = true when update happened)
+if [ $update_performed -eq 0 ] && get_git_config; then
+    # Check if we need to rebuild Docker containers
+    if [ -f "$WORKING_DIR/docker-compose.yml" ]; then
+        write_log "Rebuilding Docker containers after update..." "INFO"
+        pushd "$WORKING_DIR" > /dev/null
+        rebuild_docker_containers
+        popd > /dev/null
+    fi
+fi
 
 # Step 1: Check if app is already running
 write_log "Step 1: Checking if application is already running..."
 if test_app_running; then
     write_log "$APP_NAME is already running. Opening in browser..." "INFO"
-    open_app_in_browser
+    # open_app_in_browser
     exit 0
 fi
 
@@ -355,7 +656,7 @@ fi
 
 write_log "$APP_NAME started successfully!" "SUCCESS"
 write_log "You can access the application at $APP_URL" "INFO"
-write_log "Supabase Studio is available at http://localhost:54323" "INFO"
+write_log "Supabase Studio is available at http://localhost:54322" "INFO"
 
 # Display container status
 echo -e "\nContainer Status:"
