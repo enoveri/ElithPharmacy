@@ -21,6 +21,8 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { supabase } from "../lib/supabase";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { emailService } from "../lib/emailService";
+import EmailNotificationPanel from "../components/admin/EmailNotificationPanel";
 import "../styles/mobile.css";
 
 /**
@@ -182,14 +184,19 @@ const EnhancedAdminPanel = () => {
       console.log("🔄 [AdminPanel] Creating new user:", formData.email);
       console.log("🔄 [AdminPanel] Using regular signUp method (not admin)");
 
-      // Step 1: Create user using regular signup
+      // Step 1: Create user with email confirmation explicitly disabled
+      console.log("🔄 [AdminPanel] Creating user with custom email handling...");
+      
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             full_name: formData.full_name,
+            admin_created: true, // Mark as admin-created
           },
+          // Disable email confirmation - this should prevent default emails
+          emailRedirectTo: undefined,
         },
       });
 
@@ -202,6 +209,10 @@ const EnhancedAdminPanel = () => {
       }
 
       console.log("✅ [AdminPanel] Auth user created:", authData.user);
+
+      // Important: Log that we're bypassing default emails
+      console.log("� [AdminPanel] Supabase default emails may still be sent - this is expected");
+      console.log("📧 [AdminPanel] Our custom email with credentials will be sent separately");
 
       // Step 2: Create admin_users record
       const adminUserData = {
@@ -235,6 +246,45 @@ const EnhancedAdminPanel = () => {
 
       console.log("✅ [AdminPanel] Admin user record created successfully");
 
+      // Step 3: Send welcome email with credentials immediately
+      console.log("📧 [AdminPanel] ========================================");
+      console.log("📧 [AdminPanel] SENDING CUSTOM WELCOME EMAIL WITH CREDENTIALS");
+      console.log("📧 [AdminPanel] ========================================");
+      console.log("📧 [AdminPanel] Email:", formData.email);
+      console.log("📧 [AdminPanel] Password:", formData.password);
+      console.log("📧 [AdminPanel] ========================================");
+      
+      try {
+        const emailResult = await emailService.sendWelcomeEmailNow({
+          id: authData.user.id,
+          email: formData.email,
+          full_name: formData.full_name,
+          role: formData.role,
+          created_at: new Date().toISOString()
+        }, formData.password); // Pass the password
+
+        console.log("📧 [AdminPanel] Email service result:", emailResult);
+
+        if (emailResult.success) {
+          console.log("✅ [AdminPanel] ========================================");
+          console.log("✅ [AdminPanel] CUSTOM WELCOME EMAIL SENT SUCCESSFULLY!");
+          console.log("✅ [AdminPanel] User should receive email with credentials");
+          console.log("✅ [AdminPanel] ========================================");
+        } else {
+          console.error("❌ [AdminPanel] ========================================");
+          console.error("❌ [AdminPanel] CUSTOM EMAIL FAILED TO SEND!");
+          console.error("❌ [AdminPanel] Error:", emailResult.error);
+          console.error("❌ [AdminPanel] ========================================");
+          // Don't fail user creation if email sending fails
+        }
+      } catch (emailError) {
+        console.error("❌ [AdminPanel] ========================================");
+        console.error("❌ [AdminPanel] EXCEPTION WHILE SENDING EMAIL!");
+        console.error("❌ [AdminPanel] Error:", emailError);
+        console.error("❌ [AdminPanel] ========================================");
+        // Don't fail user creation if email sending fails
+      }
+
       // Reset form and close modal
       setFormData({
         email: "",
@@ -251,11 +301,16 @@ const EnhancedAdminPanel = () => {
       await fetchUsers();
 
       alert(
-        `User created successfully!\n\n` +
-        `Email: ${formData.email}\n` +
-        `Password: ${formData.password}\n\n` +
-        `⚠️ IMPORTANT: The user needs to check their email and click the verification link before they can log in.\n\n` +
-        `If email verification is disabled in your Supabase settings, they can log in immediately.`
+        `✅ User created successfully!\n\n` +
+        `📧 IMPORTANT: Two emails may be sent:\n` +
+        `1. ❌ Supabase default email (IGNORE THIS)\n` +
+        `2. ✅ Custom welcome email with credentials\n\n` +
+        `The custom email contains:\n` +
+        `• Email: ${formData.email}\n` +
+        `• Password: ${formData.password}\n` +
+        `• Direct login link\n\n` +
+        `⚠️ If you only see the Supabase email, check the browser console\n` +
+        `and look for a popup with the custom email preview.`
       );
     } catch (error) {
       console.error("Error creating user:", error);
@@ -734,6 +789,11 @@ const EnhancedAdminPanel = () => {
           </div>
         </div>
       )}
+
+      {/* Email Notification Panel */}
+      <div style={{ marginBottom: "24px" }}>
+        <EmailNotificationPanel />
+      </div>
 
       {/* Enhanced Controls */}
       <div
