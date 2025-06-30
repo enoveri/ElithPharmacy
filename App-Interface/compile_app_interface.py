@@ -42,6 +42,10 @@ def compile_application():
     # Fix path for Windows - replace backslashes with forward slashes
     current_dir_fixed = current_dir.replace("\\", "/")
     
+    # Determine platform-specific settings
+    is_windows = platform.system() == "Windows"
+    executable_extension = ".exe" if is_windows else ""
+    
     # Create the spec file content
     spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
 
@@ -81,6 +85,7 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=None,
 )
 
 coll = COLLECT(
@@ -100,20 +105,20 @@ coll = COLLECT(
     with open(spec_file, "w") as f:
         f.write(spec_content)
     
-    # Run PyInstaller
-    pyinstaller_cmd = [
-        "pyinstaller",
-        "--noconfirm",
-        "--clean",
-        "ElithPharmacy.spec"
-    ]
+    # Run PyInstaller using Python module directly instead of command line
+    print("Running PyInstaller through Python module...")
+    pyinstaller_args = ["--noconfirm", "--clean", "ElithPharmacy.spec"]
     
-    print(f"Running: {' '.join(pyinstaller_cmd)}")
-    result = subprocess.run(pyinstaller_cmd, capture_output=True, text=True)
+    try:
+        # Use the Python module directly
+        from PyInstaller.__main__ import run as pyinstaller_run
+        pyinstaller_run(pyinstaller_args)
+        compilation_success = True
+    except Exception as e:
+        print(f"Error during compilation: {e}")
+        compilation_success = False
     
-    if result.returncode != 0:
-        print("Error during compilation:")
-        print(result.stderr)
+    if not compilation_success:
         return False
     
     print("Compilation successful!")
@@ -122,7 +127,21 @@ coll = COLLECT(
     if os.path.exists(spec_file):
         os.remove(spec_file)
     
-    print(f"\nExecutable created at: {os.path.abspath(os.path.join('dist', 'ElithPharmacy'))}")
+    # Get the correct path to the executable based on platform
+    if is_windows:
+        executable_path = os.path.abspath(os.path.join('dist', 'ElithPharmacy', f'ElithPharmacy{executable_extension}'))
+    else:
+        executable_path = os.path.abspath(os.path.join('dist', 'ElithPharmacy', 'ElithPharmacy'))
+    
+    print(f"\nExecutable created at: {os.path.dirname(executable_path)}")
+    print(f"Executable name: {os.path.basename(executable_path)}")
+    
+    # Check if executable exists
+    if not os.path.exists(executable_path):
+        print(f"Warning: Expected executable not found at {executable_path}")
+        print("The compilation may have succeeded but the executable is in a different location.")
+        print(f"Please check the 'dist/ElithPharmacy' directory.")
+    
     return True
 
 def main():
@@ -130,6 +149,7 @@ def main():
     print("=" * 60)
     print("Elith Pharmacy App Interface - Compilation Script")
     print("=" * 60)
+    print(f"Detected platform: {platform.system()}")
     
     # Check if we're in the right directory
     if not os.path.exists("main.py") or not os.path.exists("pharmacy_app_launcher.py"):

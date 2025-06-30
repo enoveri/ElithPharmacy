@@ -130,7 +130,8 @@ class PharmacyDatabaseSync:
                 logger.success(f"Successfully synced {len(local_records)} records from {table}")
             
             except Exception as e:
-                logger.error(f"Error syncing {table}: {e}")
+                urls = f"LOCAL_SUPABASE_URL: {LOCAL_SUPABASE_URL}\nREMOTE_SUPABASE_URL: {REMOTE_SUPABASE_URL}"
+                logger.error(f"Error syncing {table}: {e} \n{urls}")
                 self.is_healthy = False
                 self.health_status = f"Error syncing {table}: {str(e)}"
 
@@ -178,7 +179,8 @@ class PharmacyDatabaseSync:
                 logger.success(f"Successfully synced {len(remote_records)} records to {table}")
             
             except Exception as e:
-                logger.error(f"Error syncing {table} from remote: {e}")
+                urls = f"LOCAL_SUPABASE_URL: {LOCAL_SUPABASE_URL}\nREMOTE_SUPABASE_URL: {REMOTE_SUPABASE_URL}"
+                logger.error(f"Error syncing {table} from remote: {e} \n{urls}")
                 self.is_healthy = False
                 self.health_status = f"Error syncing {table} from remote: {str(e)}"
 

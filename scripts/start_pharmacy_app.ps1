@@ -7,6 +7,7 @@ $appUrl = "http://localhost:5173"  # The URL where the app is hosted
 $supabasePort = "54321"  # Default Supabase port
 $logFile = "$env:USERPROFILE\ElithPharmacy\app_startup.log"
 $frontendPort = 5173  # Added frontendPort variable
+$gitConfigFile = "$env:USERPROFILE\ElithPharmacy\git_config.json"  # File to store git configuration
 
 # Create log directory if it doesn't exist
 $logDir = Split-Path -Parent $logFile
@@ -34,6 +35,273 @@ function Write-Log {
         Write-Host $logMessage -ForegroundColor Green
     } else {
         Write-Host $logMessage
+    }
+}
+
+# Function to check if git is installed
+function Test-GitInstalled {
+    try {
+        $gitVersion = git --version
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "Git is installed: $gitVersion" -level "SUCCESS"
+            return $true
+        } else {
+            Write-Log "Git command failed with exit code: $LASTEXITCODE" -level "ERROR"
+            return $false
+        }
+    } catch {
+        Write-Log "Git is not installed or not in PATH" -level "ERROR"
+        return $false
+    }
+}
+
+# Function to load git configuration
+function Get-GitConfig {
+    if (Test-Path -Path $gitConfigFile) {
+        try {
+            $config = Get-Content -Path $gitConfigFile -Raw | ConvertFrom-Json
+            return $config
+        } catch {
+            Write-Log "Error reading git configuration file: $_" -level "ERROR"
+            return $null
+        }
+    } else {
+        Write-Log "Git configuration file not found at: $gitConfigFile" -level "WARNING"
+        return $null
+    }
+}
+
+# Function to save git configuration
+function Save-GitConfig {
+    param (
+        [string]$repoUrl,
+        [string]$branch,
+        [string]$token,
+        [string]$workingDir
+    )
+    
+    $config = @{
+        RepoUrl = $repoUrl
+        Branch = $branch
+        Token = $token
+        WorkingDir = $workingDir
+        LastUpdated = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    }
+    
+    try {
+        $config | ConvertTo-Json | Out-File -FilePath $gitConfigFile -Force
+        Write-Log "Git configuration saved successfully" -level "SUCCESS"
+        return $true
+    } catch {
+        Write-Log "Error saving git configuration: $_" -level "ERROR"
+        return $false
+    }
+}
+
+# Function to check for updates and pull from git
+function Update-FromGit {
+    param (
+        [Parameter(Mandatory=$false)]
+        [switch]$ForceUpdate
+    )
+    
+    # Check if git is installed
+    if (-not (Test-GitInstalled)) {
+        Write-Log "Git is required for update functionality" -level "ERROR"
+        return $false
+    }
+    
+    # Load git configuration
+    $config = Get-GitConfig
+    if ($null -eq $config) {
+        # If configuration doesn't exist, prompt for it
+        if (-not $ForceUpdate) {
+            Write-Log "Git configuration not found. Skipping update check." -level "WARNING"
+            return $true  # Continue with startup
+        }
+        
+        Write-Log "Git configuration not found. Please set up git configuration first." -level "ERROR"
+        return $false
+    }
+    
+    # Extract configuration values
+    $repoUrl = $config.RepoUrl
+    $branch = $config.Branch
+    $token = $config.Token
+    $workingDir = $config.WorkingDir
+    
+    # Validate configuration
+    if ([string]::IsNullOrEmpty($repoUrl) -or [string]::IsNullOrEmpty($branch) -or [string]::IsNullOrEmpty($workingDir)) {
+        Write-Log "Invalid git configuration. Missing required values." -level "ERROR"
+        return $false
+    }
+    
+    # Check if working directory exists
+    if (-not (Test-Path -Path $workingDir)) {
+        Write-Log "Working directory does not exist: $workingDir" -level "ERROR"
+        return $false
+    }
+    
+    # Navigate to working directory
+    Push-Location $workingDir
+    
+    try {
+        Write-Log "Checking for updates in repository: $repoUrl (branch: $branch)" -level "INFO"
+        
+        # Check if this is a git repository
+        $isGitRepo = git rev-parse --is-inside-work-tree 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "The directory is not a git repository: $workingDir" -level "ERROR"
+            return $false
+        }
+        
+        # Construct the remote URL with token
+        $repoUrlWithToken = $repoUrl
+        if (-not [string]::IsNullOrEmpty($token)) {
+            # Extract protocol, domain, and path from URL
+            if ($repoUrl -match "^(https?://)([^/]+)(.*)$") {
+                $protocol = $matches[1]
+                $domain = $matches[2]
+                $path = $matches[3]
+                $repoUrlWithToken = "${protocol}oauth2:${token}@${domain}${path}"
+            } else {
+                Write-Log "Invalid repository URL format" -level "ERROR"
+                return $false
+            }
+        }
+        
+        # Fetch the latest changes
+        Write-Log "Fetching latest changes..." -level "INFO"
+        $fetchOutput = git fetch origin $branch 2>&1
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "Failed to fetch from remote repository: $fetchOutput" -level "ERROR"
+            return $false
+        }
+        
+        # Check if we're behind the remote
+        $status = git status -uno 2>&1
+        $behindPattern = "Your branch is behind 'origin/$branch' by (\d+) commit"
+        $needsUpdate = $false
+        
+        if ($status -match $behindPattern) {
+            $commitsBehind = $matches[1]
+            Write-Log "Repository is behind by $commitsBehind commits" -level "WARNING"
+            $needsUpdate = $true
+        } elseif ($status -match "Your branch is up to date") {
+            Write-Log "Repository is up to date with origin/$branch" -level "SUCCESS"
+            return $true
+        } else {
+            # Force update if status is unclear or if explicitly requested
+            $needsUpdate = $ForceUpdate
+            Write-Log "Unable to determine update status. Will proceed with update: $needsUpdate" -level "WARNING"
+        }
+        
+        if ($needsUpdate -or $ForceUpdate) {
+            # Stash any local changes
+            Write-Log "Stashing local changes..." -level "INFO"
+            git stash 2>&1 | Out-Null
+            
+            # Pull the latest changes
+            Write-Log "Pulling latest changes from origin/$branch..." -level "INFO"
+            $pullOutput = git pull origin $branch 2>&1
+            if ($LASTEXITCODE -ne 0) {
+                Write-Log "Failed to pull latest changes: $pullOutput" -level "ERROR"
+                
+                # Try to recover by resetting to origin
+                Write-Log "Attempting to recover by hard reset..." -level "WARNING"
+                git reset --hard origin/$branch 2>&1 | Out-Null
+                
+                if ($LASTEXITCODE -ne 0) {
+                    Write-Log "Failed to reset to origin/$branch" -level "ERROR"
+                    return $false
+                } else {
+                    Write-Log "Successfully reset to origin/$branch" -level "SUCCESS"
+                }
+            } else {
+                Write-Log "Successfully pulled latest changes" -level "SUCCESS"
+            }
+            
+            # Update last updated timestamp
+            $config.LastUpdated = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+            $config | ConvertTo-Json | Out-File -FilePath $gitConfigFile -Force
+            
+            # Return true to indicate that an update was performed
+            return $true
+        }
+        
+        return $true
+    } catch {
+        Write-Log "Error during git update: $_" -level "ERROR"
+        return $false
+    } finally {
+        # Return to original directory
+        Pop-Location
+    }
+}
+
+# Function to rebuild Docker containers after update
+function Rebuild-DockerContainers {
+    try {
+        Write-Log "Rebuilding Docker containers..." -level "INFO"
+        
+        # Stop existing containers
+        docker-compose down
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "Warning: Failed to stop existing containers" -level "WARNING"
+            # Continue anyway as this might be the first run
+        }
+        
+        # Rebuild and start containers
+        docker-compose up -d --build
+        
+        if ($LASTEXITCODE -ne 0) {
+            Write-Log "Failed to rebuild Docker containers" -level "ERROR"
+            return $false
+        }
+        
+        Write-Log "Docker containers rebuilt successfully" -level "SUCCESS"
+        return $true
+    } catch {
+        Write-Log "Error rebuilding Docker containers: $_" -level "ERROR"
+        return $false
+    }
+}
+
+# Function to set up git configuration interactively
+function Set-GitConfig {
+    Write-Host "`nGit Configuration Setup" -ForegroundColor Cyan
+    Write-Host "======================" -ForegroundColor Cyan
+    
+    # Get current directory as default working directory
+    $defaultWorkingDir = Get-Location
+    
+    # Get configuration values from user
+    $repoUrl = Read-Host "Enter the git repository URL (e.g., https://github.com/username/repo.git)"
+    $branch = Read-Host "Enter the branch name to track (e.g., main)"
+    $token = Read-Host "Enter your git access token (leave empty if not required)"
+    $workingDir = Read-Host "Enter the working directory path (default: $defaultWorkingDir)"
+    
+    # Use default if working directory is empty
+    if ([string]::IsNullOrEmpty($workingDir)) {
+        $workingDir = $defaultWorkingDir
+    }
+    
+    # Validate inputs
+    if ([string]::IsNullOrEmpty($repoUrl) -or [string]::IsNullOrEmpty($branch)) {
+        Write-Log "Repository URL and branch name are required" -level "ERROR"
+        return $false
+    }
+    
+    # Save configuration
+    $saved = Save-GitConfig -repoUrl $repoUrl -branch $branch -token $token -workingDir $workingDir
+    
+    if ($saved) {
+        Write-Host "Git configuration saved successfully" -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "Failed to save git configuration" -ForegroundColor Red
+        return $false
     }
 }
 
@@ -172,6 +440,25 @@ function Test-SupabaseRunning {
     }
 }
 
+# Function to check internet connectivity
+function Test-InternetConnectivity {
+    try {
+        $result = Test-NetConnection -ComputerName 8.8.8.8 -Port 53 -WarningAction SilentlyContinue -InformationLevel Quiet
+        
+        if ($result.TcpTestSucceeded) {
+            Write-Log "Internet connectivity check passed" -level "SUCCESS"
+            return $true
+        } else {
+            Write-Log "No internet connectivity detected" -level "WARNING"
+            return $false
+        }
+    }
+    catch {
+        Write-Log "Error checking internet connectivity: $_" -level "WARNING"
+        return $false
+    }
+}
+
 # Function to find and start Supabase
 function Start-Supabase {
     # Define possible locations for Elith-Supabase directory
@@ -207,6 +494,7 @@ function Start-Supabase {
         $retryCount = 0
         $success = $false
         $portBindingErrorDetected = $false
+        $denoErrorDetected = $false
         
         while (-not $success -and $retryCount -lt $maxRetries) {
             $retryCount++
@@ -239,8 +527,25 @@ function Start-Supabase {
                 $success = $true
                 Write-Log "Supabase started successfully" -level "SUCCESS"
             } else {
-                # Check for port binding error
+                # Check for specific deno.land error
                 $errorOutput = $output -join "`n"
+                if ($errorOutput -match "error sending request for url" -and $errorOutput -match "deno.land") {
+                    $denoErrorDetected = $true
+                    Write-Log "Detected Supabase edge runtime download error" -level "WARNING"
+                    
+                    # Check internet connectivity since this is likely the issue
+                    if (-not (Test-InternetConnectivity)) {
+                        Write-Log "Internet connectivity issue detected" -level "ERROR"
+                        Write-Log "Supabase edge runtime cannot download required dependencies" -level "ERROR"
+                        Write-Log "Please connect to the internet and try again" -level "ERROR"
+                        return $false
+                    } else {
+                        Write-Log "Internet seems to be working, but Supabase still can't download dependencies" -level "WARNING"
+                        Write-Log "This might be due to a temporary network issue or firewall restriction" -level "WARNING"
+                    }
+                }
+                
+                # Check for port binding error
                 if ($errorOutput -match "Ports are not available" -or $errorOutput -match "bind: An attempt was made to access a socket in a way forbidden by its access permissions") {
                     $portBindingErrorDetected = $true
                     Write-Log "Port binding error detected. Will try to resolve before next attempt." -level "WARNING"
@@ -256,6 +561,10 @@ function Start-Supabase {
         
         if (-not $success) {
             Write-Log "Failed to start Supabase after $maxRetries attempts" -level "ERROR"
+            if ($denoErrorDetected) {
+                Write-Log "The error appears to be related to downloading dependencies from deno.land" -level "ERROR"
+                Write-Log "Please ensure you have a stable internet connection and try again" -level "ERROR"
+            }
             return $false
         }
         
@@ -373,8 +682,33 @@ function Restart-HNSService {
     }
 }
 
+# Check for command line arguments
+if ($args.Contains("-config")) {
+    # Run git configuration setup
+    Set-GitConfig
+    exit
+}
+
+if ($args.Contains("-update")) {
+    # Force update from git repository
+    Update-FromGit -ForceUpdate
+    exit
+}
+
 # Main script execution
 Write-Log "Starting $appName application..." -level "INFO"
+
+# Step 0: Check for updates from git repository
+Write-Log "Step 0: Checking for updates from git repository..."
+$updateResult = Update-FromGit
+if ($updateResult) {
+    # Check if we need to rebuild Docker containers
+    $config = Get-GitConfig
+    if ($null -ne $config -and (Test-Path -Path "$($config.WorkingDir)\docker-compose.yml")) {
+        Write-Log "Rebuilding Docker containers after update..." -level "INFO"
+        Rebuild-DockerContainers
+    }
+}
 
 # Step 1: Check if app is already running
 Write-Log "Step 1: Checking if application is already running..."

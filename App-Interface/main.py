@@ -5,8 +5,6 @@ This script launches the Qt-based GUI for the Elith Pharmacy application
 """
 
 import os
-# set qt to use pyside6
-os.environ['QT_API'] = 'pyside6'
 
 import sys
 import platform

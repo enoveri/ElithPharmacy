@@ -204,6 +204,7 @@ class StartServicesThread(QThread):
             # Try to start Supabase with retry logic
             max_retries = 50
             port_binding_error_detected = False
+            deno_error_detected = False
             
             for attempt in range(max_retries):
                 self.status_update.emit(f"Starting Supabase (Attempt {attempt+1}/{max_retries})...")
@@ -250,8 +251,24 @@ class StartServicesThread(QThread):
                 if "Started supabase local development setup" in result.stdout or "Started supabase local development setup" in result.stderr:
                     return True
                 
-                # Check for port binding error
+                # Check for deno.land download error
                 error_output = result.stderr + result.stdout
+                if "error sending request for url" in error_output and "deno.land" in error_output:
+                    deno_error_detected = True
+                    self.status_update.emit("Detected Supabase edge runtime download error")
+                    
+                    # Check internet connectivity
+                    if not self._check_internet_connectivity():
+                        self.status_update.emit("Internet connectivity issue detected")
+                        self.status_update.emit("Supabase edge runtime cannot download required dependencies")
+                        self.status_update.emit("Please connect to the internet and try again")
+                        self._show_deno_error_message(has_internet=False)
+                        return False
+                    else:
+                        self.status_update.emit("Internet seems to be working, but Supabase still can't download dependencies")
+                        self.status_update.emit("This might be due to a temporary network issue or firewall restriction")
+                
+                # Check for port binding error
                 if "Ports are not available" in error_output or "bind: An attempt was made to access a socket in a way forbidden by its access permissions" in error_output:
                     port_binding_error_detected = True
                     self.status_update.emit("Port binding error detected. Will try to resolve before next attempt.")
@@ -260,11 +277,33 @@ class StartServicesThread(QThread):
                     self.status_update.emit("Supabase start failed, will retry after delay...")
                     time.sleep(5)
             
+            if deno_error_detected:
+                self._show_deno_error_message(has_internet=True)
+            
             return False
             
         finally:
             # Return to original directory
             os.chdir(current_dir)
+    
+    def _check_internet_connectivity(self):
+        """Check if the system has internet connectivity"""
+        try:
+            # Try to connect to Google's DNS server
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.settimeout(3)
+            result = sock.connect_ex(('8.8.8.8', 53))
+            sock.close()
+            
+            if result == 0:
+                self.status_update.emit("Internet connectivity check passed")
+                return True
+            else:
+                self.status_update.emit("No internet connectivity detected")
+                return False
+        except Exception as e:
+            self.status_update.emit(f"Error checking internet connectivity: {str(e)}")
+            return False
     
     def _start_app_containers(self):
         """Start application containers using docker-compose"""
@@ -365,6 +404,29 @@ class StartServicesThread(QThread):
                 return os.geteuid() == 0
         except:
             return False
+    
+    def _show_deno_error_message(self, has_internet=True):
+        """Show a user-friendly error message for deno.land download errors"""
+        if has_internet:
+            error_message = (
+                "Supabase failed to start: Could not download dependencies from deno.land.\n\n"
+                "Although your internet connection appears to be working, Supabase cannot "
+                "download required dependencies. This might be due to:\n\n"
+                "1. A temporary network issue\n"
+                "2. A firewall blocking connections to deno.land\n"
+                "3. DNS resolution problems\n\n"
+                "Please check your internet connection, firewall settings, and try again."
+            )
+        else:
+            error_message = (
+                "Supabase failed to start: No internet connection detected.\n\n"
+                "Supabase requires internet connectivity to download dependencies from deno.land "
+                "during startup. Please connect to the internet and try again.\n\n"
+                "Note: Once Supabase is successfully started, internet connectivity is not "
+                "required for normal operation."
+            )
+        
+        self.error_occurred.emit(error_message)
 
 # QThread class for stopping services
 class StopServicesThread(QThread):
@@ -451,13 +513,31 @@ class StopServicesThread(QThread):
                     text=True
                 )
                 
+                # Check for success
                 if "Stopped supabase local development setup" in result.stdout or "Stopped supabase local development setup" in result.stderr:
                     return True
                 
+                # Check for errors
+                error_output = result.stderr + result.stdout
+                if "error sending request for url" in error_output and "deno.land" in error_output:
+                    self.status_update.emit("Network error detected when stopping Supabase")
+                    self.status_update.emit("This is not critical - will continue with shutdown")
+                    # Even with the error, we consider this a successful stop since the containers will be stopped
+                    return True
+                
                 if attempt < max_retries - 1:
+                    self.status_update.emit("Supabase stop failed, will retry after delay...")
                     time.sleep(5)
             
-            return False
+            # Even if we couldn't properly stop Supabase, we'll continue
+            # as the Docker containers will be stopped anyway
+            self.status_update.emit("Could not cleanly stop Supabase, but will continue with shutdown")
+            return True
+            
+        except Exception as e:
+            self.status_update.emit(f"Error stopping Supabase: {str(e)}")
+            # Even with errors, we continue with the shutdown process
+            return True
             
         finally:
             # Return to original directory
@@ -1077,8 +1157,15 @@ class PharmacyAppLauncher(QMainWindow):
         # Hide progress bar
         self.progress_bar.setVisible(False)
         
-        # Show error message
-        QMessageBox.critical(self, "Error", message)
+        # Check for specific error types
+        if "deno.land" in message and ("No internet connection" in message or "Could not download dependencies" in message):
+            self._show_detailed_error_dialog("Internet Connection Required", 
+                                            message, 
+                                            "This error occurs when Supabase cannot download required dependencies from deno.land. "
+                                            "Internet connectivity is required during Supabase startup.")
+        else:
+            # Show standard error message
+            QMessageBox.critical(self, "Error", message)
         
         # Update UI state
         self.update_ui_for_stopped_services()
@@ -1183,10 +1270,10 @@ class PharmacyAppLauncher(QMainWindow):
         """Find the stop_pharmacy_app.py script"""
         # Check common locations
         possible_locations = [
-            "./stop_pharmacy_app.py",
-            "../stop_pharmacy_app.py",
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "../stop_pharmacy_app.py"),
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), "stop_pharmacy_app.py")
+            "./scripts/stop_pharmacy_app.py",
+            "../scripts/stop_pharmacy_app.py",
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "../scripts/stop_pharmacy_app.py"),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts/stop_pharmacy_app.py")
         ]
         
         for location in possible_locations:
@@ -1277,6 +1364,26 @@ class PharmacyAppLauncher(QMainWindow):
             self.handle_error(event.message)
             return True
         return super(PharmacyAppLauncher, self).event(event)
+
+    def _show_detailed_error_dialog(self, title, message, additional_info=None):
+        """Show a more detailed error dialog with additional information"""
+        msg_box = QMessageBox(self)
+        msg_box.setIcon(QMessageBox.Critical)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        
+        if additional_info:
+            msg_box.setInformativeText(additional_info)
+            
+        # Add helpful buttons
+        retry_button = msg_box.addButton("Retry", QMessageBox.ActionRole)
+        msg_box.addButton(QMessageBox.Close)
+        
+        msg_box.exec_()
+        
+        # If retry was clicked
+        if msg_box.clickedButton() == retry_button:
+            QTimer.singleShot(500, self.start_services)
 
 # Custom event for service status updates
 class ServiceStatusEvent(QEvent):

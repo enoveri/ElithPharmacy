@@ -5,6 +5,7 @@ Configuration module for the pharmacy backend
 import os
 import socket
 from dotenv import load_dotenv
+import platform
 
 # Load environment variables
 load_dotenv()
@@ -28,7 +29,6 @@ LOCAL_SUPABASE_KEY = os.getenv("LOCAL_SUPABASE_KEY")
 REMOTE_SUPABASE_URL = os.getenv("REMOTE_SUPABASE_URL")
 REMOTE_SUPABASE_KEY = os.getenv("REMOTE_SUPABASE_KEY")
 REMOTE_SERVICE_ROLE_KEY = os.getenv("REMOTE_SERVICE_ROLE_KEY")
-
 # Sync Configuration
 SYNC_INTERVAL_MINUTES = int(os.getenv("SYNC_INTERVAL_MINUTES"))
 SYNC_LOG_FILE = os.getenv("SYNC_LOG_FILE", "sync.log")
