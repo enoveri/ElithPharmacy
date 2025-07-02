@@ -16,6 +16,10 @@ import {
   FiList,
   FiClock,
   FiDollarSign,
+  FiCheck,
+  FiX,
+  FiArchive,
+  FiLoader,
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
@@ -48,6 +52,17 @@ function Inventory() {
   const [viewMode, setViewMode] = useState("table"); // "table" or "grid"
   const [sortBy, setSortBy] = useState("name");
   const [sortOrder, setSortOrder] = useState("asc"); // Fetch products on component mount
+  const [selectedProducts, setSelectedProducts] = useState(new Set());
+  const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
+  const [bulkDeleteType, setBulkDeleteType] = useState('archive'); // 'archive' or 'delete'
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [bulkValidation, setBulkValidation] = useState({
+    totalSelected: 0,
+    canDelete: [],
+    hasWarnings: [],
+    warnings: []
+  });
+
   useEffect(() => {
     console.log("🔄 [Inventory] Starting to fetch products...");
     console.log("📊 [Inventory] Current products state:", products);
@@ -234,15 +249,138 @@ function Inventory() {
   }
 
   const getStockStatus = (product) => {
-    if (product.quantity === 0)
-      return {
-        status: "out-of-stock",
-        color: "#ef4444",
-        text: "Out of Stock",
+    const minStock = product.minStockLevel || product.min_stock_level || 0;
+    const quantity = product.quantity || 0;
+
+    if (quantity === 0) {
+      return { text: "Out of Stock", color: "#ef4444" };
+    } else if (quantity <= minStock) {
+      return { text: "Low Stock", color: "#f59e0b" };
+    } else {
+      return { text: "In Stock", color: "#10b981" };
+    }
+  };
+
+  // Bulk selection handlers
+  const handleSelectAll = (checked) => {
+    if (checked) {
+      const allProductIds = new Set(filteredProducts.map(product => product.id));
+      setSelectedProducts(allProductIds);
+    } else {
+      setSelectedProducts(new Set());
+    }
+  };
+
+  const handleSelectProduct = (productId, checked) => {
+    const newSelection = new Set(selectedProducts);
+    if (checked) {
+      newSelection.add(productId);
+    } else {
+      newSelection.delete(productId);
+    }
+    setSelectedProducts(newSelection);
+  };
+
+  const validateBulkDelete = async (productIds) => {
+    try {
+      console.log("🔍 [Inventory] Validating bulk delete for products:", productIds);
+      
+      const salesData = await dataService.sales.getAll();
+      const selectedProductsList = filteredProducts.filter(p => productIds.has(p.id));
+      
+      const validation = {
+        totalSelected: productIds.size,
+        canDelete: [],
+        hasWarnings: [],
+        warnings: []
       };
-    if (product.quantity <= product.minStockLevel)
-      return { status: "low-stock", color: "#f59e0b", text: "Low Stock" };
-    return { status: "in-stock", color: "#10b981", text: "In Stock" };
+
+      for (const product of selectedProductsList) {
+        const productSales = salesData.filter((sale) =>
+          sale.items?.some(
+            (item) =>
+              item.product_id === product.id || item.productId === product.id
+          )
+        );
+
+        const warnings = [];
+        if (productSales.length > 0) {
+          warnings.push(`${product.name}: ${productSales.length} sales records`);
+        }
+        if (product.quantity > 0) {
+          warnings.push(`${product.name}: ${product.quantity} units in stock`);
+        }
+
+        if (warnings.length > 0) {
+          validation.hasWarnings.push(product.id);
+          validation.warnings.push(...warnings);
+        } else {
+          validation.canDelete.push(product.id);
+        }
+      }
+
+      setBulkValidation(validation);
+      return validation;
+    } catch (error) {
+      console.error("❌ [Inventory] Error validating bulk delete:", error);
+      setBulkValidation({
+        totalSelected: productIds.size,
+        canDelete: [],
+        hasWarnings: Array.from(productIds),
+        warnings: ["Unable to validate product dependencies. Please try again."]
+      });
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.size === 0) return;
+    
+    setShowBulkDeleteModal(true);
+    await validateBulkDelete(selectedProducts);
+  };
+
+  const executeBulkAction = async () => {
+    setIsBulkDeleting(true);
+    try {
+      const productIds = Array.from(selectedProducts);
+      
+      if (bulkDeleteType === 'archive') {
+        console.log("📦 [Inventory] Archiving products:", productIds);
+        // Archive products by updating their status
+        for (const id of productIds) {
+          await dataService.products.update(id, { status: 'archived' });
+        }
+        alert(`Successfully archived ${productIds.length} products!`);
+      } else {
+        console.log("🗑️ [Inventory] Deleting products:", productIds);
+        // Delete products
+        for (const id of productIds) {
+          await dataService.products.delete(id);
+        }
+        alert(`Successfully deleted ${productIds.length} products!`);
+      }
+      
+      // Refresh products and clear selection
+      await fetchProducts();
+      setSelectedProducts(new Set());
+      setShowBulkDeleteModal(false);
+      
+    } catch (error) {
+      console.error("❌ [Inventory] Error with bulk action:", error);
+      alert("Error performing bulk action. Please try again.");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  const closeBulkDeleteModal = () => {
+    setShowBulkDeleteModal(false);
+    setBulkValidation({
+      totalSelected: 0,
+      canDelete: [],
+      hasWarnings: [],
+      warnings: []
+    });
   };
 
   const renderTableView = () => (
@@ -250,6 +388,23 @@ function Inventory() {
       <table style={{ width: "100%", borderCollapse: "collapse" }}>
         <thead>
           <tr style={{ borderBottom: "2px solid #f3f4f6" }}>
+            <th
+              style={{
+                padding: "12px",
+                textAlign: "left",
+                fontSize: "14px",
+                fontWeight: "600",
+                color: "#374151",
+                width: "40px",
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedProducts.size > 0 && selectedProducts.size === filteredProducts.length}
+                onChange={(e) => handleSelectAll(e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+            </th>
             <th
               style={{
                 padding: "12px",
@@ -329,8 +484,17 @@ function Inventory() {
                 style={{
                   borderBottom: "1px solid #f3f4f6",
                   transition: "background-color 0.3s ease",
+                  backgroundColor: selectedProducts.has(product.id) ? "#f0f9ff" : "transparent",
                 }}
               >
+                <td style={{ padding: "16px 12px" }}>
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.has(product.id)}
+                    onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                  />
+                </td>
                 <td style={{ padding: "16px 12px" }}>
                   <div>
                     <div
@@ -461,13 +625,24 @@ function Inventory() {
             key={product.id}
             id={`product-${product.id}`}
             style={{
-              backgroundColor: "white",
+              backgroundColor: selectedProducts.has(product.id) ? "#f0f9ff" : "white",
               borderRadius: "12px",
               padding: "16px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              border: selectedProducts.has(product.id) ? "2px solid #3b82f6" : "1px solid transparent",
               transition: "transform 0.3s ease",
+              position: "relative",
             }}
           >
+            {/* Checkbox */}
+            <div style={{ position: "absolute", top: "12px", right: "12px" }}>
+              <input
+                type="checkbox"
+                checked={selectedProducts.has(product.id)}
+                onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
+                className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+              />
+            </div>
             <div style={{ marginBottom: "12px" }}>
               <div
                 style={{
@@ -954,6 +1129,76 @@ function Inventory() {
         </div>
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedProducts.size > 0 && (
+        <div
+          style={{
+            backgroundColor: "#f0f9ff",
+            border: "1px solid #bfdbfe",
+            borderRadius: "12px",
+            padding: "16px 24px",
+            marginBottom: "24px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <FiCheck
+              style={{
+                backgroundColor: "#3b82f6",
+                color: "white",
+                borderRadius: "50%",
+                padding: "4px",
+                width: "24px",
+                height: "24px",
+              }}
+            />
+            <span style={{ fontSize: "14px", fontWeight: "500", color: "#1f2937" }}>
+              {selectedProducts.size} product{selectedProducts.size !== 1 ? 's' : ''} selected
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button
+              onClick={() => setSelectedProducts(new Set())}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #d1d5db",
+                borderRadius: "6px",
+                backgroundColor: "white",
+                color: "#6b7280",
+                fontSize: "14px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <FiX size={14} />
+              Clear Selection
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              style={{
+                padding: "8px 16px",
+                border: "1px solid #dc2626",
+                borderRadius: "6px",
+                backgroundColor: "#dc2626",
+                color: "white",
+                fontSize: "14px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+              }}
+            >
+              <FiTrash2 size={14} />
+              Bulk Actions
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Products Table */}
       <div
         style={{
@@ -965,6 +1210,137 @@ function Inventory() {
       >
         {viewMode === "table" ? renderTableView() : renderGridView()}
       </div>
+
+      {/* Bulk Delete Modal */}
+      {showBulkDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-96 overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200">
+              <div className="flex items-center">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <FiAlertTriangle className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Bulk Actions
+                  </h3>
+                  <p className="text-sm text-gray-500">
+                    Choose action for {bulkValidation.totalSelected} selected products
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={closeBulkDeleteModal}
+                className="text-gray-400 hover:text-gray-600"
+                disabled={isBulkDeleting}
+              >
+                <FiX className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6">
+              {/* Warnings */}
+              {bulkValidation.warnings.length > 0 && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
+                  <div className="flex">
+                    <FiAlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-yellow-800 mb-2">
+                        Warning: Some products have dependencies
+                      </p>
+                      <div className="text-yellow-700 max-h-32 overflow-y-auto">
+                        {bulkValidation.warnings.slice(0, 5).map((warning, index) => (
+                          <p key={index} className="mb-1">• {warning}</p>
+                        ))}
+                        {bulkValidation.warnings.length > 5 && (
+                          <p className="text-yellow-600 italic">
+                            ... and {bulkValidation.warnings.length - 5} more
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Type Selection */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-700 mb-3">Choose an action:</p>
+                <div className="space-y-3">
+                  <label className="flex items-center p-3 border border-blue-200 rounded-md bg-blue-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="bulkAction"
+                      value="archive"
+                      checked={bulkDeleteType === 'archive'}
+                      onChange={(e) => setBulkDeleteType(e.target.value)}
+                      className="mr-3"
+                    />
+                    <FiArchive className="w-4 h-4 text-blue-600 mr-2" />
+                    <div>
+                      <p className="font-medium text-blue-900">Archive Products</p>
+                      <p className="text-blue-700 text-xs">Hide from inventory but keep all data</p>
+                    </div>
+                  </label>
+                  <label className="flex items-center p-3 border border-red-200 rounded-md bg-red-50 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="bulkAction"
+                      value="delete"
+                      checked={bulkDeleteType === 'delete'}
+                      onChange={(e) => setBulkDeleteType(e.target.value)}
+                      className="mr-3"
+                    />
+                    <FiTrash2 className="w-4 h-4 text-red-600 mr-2" />
+                    <div>
+                      <p className="font-medium text-red-900">Permanent Delete</p>
+                      <p className="text-red-700 text-xs">Remove products but keep sales history</p>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+              <button
+                onClick={closeBulkDeleteModal}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                disabled={isBulkDeleting}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={executeBulkAction}
+                className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white ${
+                  bulkDeleteType === 'archive' 
+                    ? 'bg-blue-600 hover:bg-blue-700' 
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+                disabled={isBulkDeleting}
+              >
+                {isBulkDeleting ? (
+                  <>
+                    <FiLoader className="w-4 h-4 mr-2 animate-spin" />
+                    {bulkDeleteType === 'archive' ? 'Archiving...' : 'Deleting...'}
+                  </>
+                ) : (
+                  <>
+                    {bulkDeleteType === 'archive' ? (
+                      <FiArchive className="w-4 h-4 mr-2" />
+                    ) : (
+                      <FiTrash2 className="w-4 h-4 mr-2" />
+                    )}
+                    {bulkDeleteType === 'archive' ? 'Archive Products' : 'Delete Products'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
