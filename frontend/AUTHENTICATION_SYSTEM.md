@@ -11,7 +11,7 @@ The Elith Pharmacy application now has a comprehensive authentication system tha
 A wrapper component that:
 - Checks if the user is authenticated
 - Redirects unauthenticated users to the login page
-- Supports admin-only routes with role checking
+- Supports admin-only routes with role checking via `admin_users` table
 - Shows loading states during authentication checks
 - Provides a beautiful authentication required screen
 
@@ -21,6 +21,7 @@ A wrapper component that:
 - Automatic redirect to intended page after login
 - Loading spinner during authentication checks
 - Error handling for admin access
+- Database-based admin role verification
 
 ### 2. AuthContext (`src/contexts/AuthContext.jsx`)
 
@@ -83,10 +84,12 @@ All main application routes are now protected:
 
 ## Admin Role Checking
 
-The system checks for admin privileges using:
-1. Email match: `admin@elithpharmacy.com`
-2. User metadata: `user.user_metadata?.role === 'admin'`
-3. App metadata: `user.app_metadata?.role === 'admin'`
+The system checks for admin privileges by:
+1. **Database Lookup**: Queries the `admin_users` table for the user's email
+2. **Role Verification**: Checks if `role = 'admin'` and `is_active = true`
+3. **Access Decision**: Grants admin access only if both conditions are met
+
+**No hardcoded emails** - all admin access is determined by the database records.
 
 ## Usage Examples
 
@@ -123,10 +126,21 @@ The AuthStatus component shows real-time authentication status in the top-right 
 ## Security Features
 
 1. **Route Protection**: All sensitive routes require authentication
-2. **Role-Based Access**: Admin routes require admin privileges
+2. **Database-Based Role Checking**: Admin routes check `admin_users` table for role verification
 3. **Session Management**: Automatic session handling with Supabase
 4. **Redirect Security**: Safe redirect handling with state preservation
-5. **Loading States**: Prevents flash of protected content during auth checks
+5. **Active User Verification**: Only active users (`is_active = true`) can access admin features
+
+## Admin User Management
+
+Admin users are stored in the `admin_users` table with the following structure:
+- `email` - User's email address (must match Supabase Auth email)
+- `role` - User role ('admin', 'manager', 'pharmacist', 'staff')
+- `is_active` - Whether the user account is active
+- `full_name` - User's full name
+- Other metadata fields
+
+**To grant admin access**: Set `role = 'admin'` and `is_active = true` in the `admin_users` table.
 
 ## Error Handling
 

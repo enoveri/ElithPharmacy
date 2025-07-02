@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase/index.js';
 import { FiShield, FiLogIn } from 'react-icons/fi';
 
 const ProtectedRoute = ({ children, requireAuth = true, adminOnly = false }) => {
@@ -26,16 +27,32 @@ const ProtectedRoute = ({ children, requireAuth = true, adminOnly = false }) => 
 
     // If admin access is required, check user role
     if (adminOnly && user) {
-      // Check if user is admin (you can implement this based on your user role system)
+      // Check if user is admin by looking up admin_users table
       const checkAdminAccess = async () => {
         try {
-          // This is a placeholder - implement based on your user role system
-          const isAdmin = user.email === 'admin@elithpharmacy.com' || 
-                         user.user_metadata?.role === 'admin' ||
-                         user.app_metadata?.role === 'admin';
+          // Check admin_users table for role information
+          const { data: adminUser, error: adminError } = await supabase
+            .from('admin_users')
+            .select('role, is_active')
+            .eq('email', user.email)
+            .eq('is_active', true)
+            .single();
+
+          if (adminError || !adminUser) {
+            console.log('🚫 [ProtectedRoute] User not found in admin_users or not active');
+            navigate('/', { 
+              state: { 
+                message: 'You do not have admin privileges'
+              } 
+            });
+            return;
+          }
+
+          // Check if user has admin role
+          const isAdmin = adminUser.role === 'admin';
           
           if (!isAdmin) {
-            console.log('🚫 [ProtectedRoute] User not admin, redirecting to dashboard');
+            console.log('🚫 [ProtectedRoute] User role is not admin:', adminUser.role);
             navigate('/', { 
               state: { 
                 message: 'You do not have admin privileges'

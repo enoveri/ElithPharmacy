@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase/index.js';
 
 export const useUserRole = () => {
   const { user, loading: authLoading } = useAuth();
@@ -27,8 +27,6 @@ export const useUserRole = () => {
         setLoading(true);
         setError(null);
 
-        console.log('🔍 [useUserRole] Checking role for user:', user.email);
-
         // Check admin_users table for role information
         const { data: adminUser, error: adminError } = await supabase
           .from('admin_users')
@@ -38,7 +36,6 @@ export const useUserRole = () => {
           .single();
 
         if (adminError) {
-          console.log('❌ [useUserRole] Error fetching admin user:', adminError);
           // Check if user exists but is inactive
           const { data: inactiveUser } = await supabase
             .from('admin_users')
@@ -47,28 +44,20 @@ export const useUserRole = () => {
             .single();
 
           if (inactiveUser && !inactiveUser.is_active) {
-            console.log('⚠️ [useUserRole] User account is inactive');
             setUserRole('inactive');
             setIsAdmin(false);
           } else {
-            console.log('❌ [useUserRole] User not found in admin_users table');
             setUserRole('unauthorized');
             setIsAdmin(false);
           }
         } else if (adminUser) {
-          console.log('✅ [useUserRole] Found user role:', adminUser.role);
           setUserRole(adminUser.role);
           
-          // Check if user is admin
-          const adminStatus = adminUser.role === 'admin' || 
-                             user.email === 'admin@elithpharmacy.com' ||
-                             user.user_metadata?.role === 'admin' ||
-                             user.app_metadata?.role === 'admin';
+          // Check if user is admin - only check database role, no hardcoded emails
+          const adminStatus = adminUser.role === 'admin';
           
           setIsAdmin(adminStatus);
-          console.log('🔐 [useUserRole] Admin status:', adminStatus);
         } else {
-          console.log('❌ [useUserRole] No admin user data found');
           setUserRole('unknown');
           setIsAdmin(false);
         }

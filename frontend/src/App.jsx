@@ -237,7 +237,8 @@ function App() {
           
           console.log("✅ Successfully updated user_id");
           return { success: true, message: "ID mismatch fixed" };
-        }
+        },
+
       },
       testDashboard: async () => {
         console.log("🧪 Testing dashboard stats...");
@@ -251,13 +252,7 @@ function App() {
         console.log("💰 Sales result:", result);
         return result;
       },
-      createAdmin: async () => {
-        console.log("👑 Creating admin user...");
-        const { createDefaultAdminUser } = await import('./utils/createAdminUser');
-        const result = await createDefaultAdminUser();
-        console.log("👑 Admin creation result:", result);
-        return result;
-      },
+
     };
   }
   return (

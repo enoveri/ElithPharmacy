@@ -30,7 +30,7 @@ import Notifications from "../pages/Notifications";
 
 import AdminSetup from "../pages/AdminSetup";
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
-import CreateAdminUser from "../pages/CreateAdminUser";
+
 
 export const router = createBrowserRouter([
   {
@@ -139,8 +139,5 @@ export const router = createBrowserRouter([
     path: "/admin-setup",
     element: <AdminSetup />,
   },
-  {
-    path: "/create-admin",
-    element: <CreateAdminUser />,
-  },
+
 ]);
