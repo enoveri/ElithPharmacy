@@ -55,9 +55,14 @@ BEGIN
     WHERE product_id = product_id_param;
     
     -- Get purchase items count (if table exists)
-    SELECT COUNT(*) INTO purchase_items_count
-    FROM purchase_items 
-    WHERE product_id = product_id_param;
+    purchase_items_count := 0;
+    BEGIN
+        SELECT COUNT(*) INTO purchase_items_count
+        FROM purchase_items 
+        WHERE product_id = product_id_param;
+    EXCEPTION WHEN undefined_table THEN
+        purchase_items_count := 0;
+    END;
     
     -- Get recent sales (last 30 days)
     SELECT COUNT(DISTINCT s.id) INTO recent_sales_count
@@ -300,7 +305,7 @@ BEGIN
         );
         RETURN OLD;
     ELSIF TG_OP = 'UPDATE' THEN
-        IF NEW.status = 'archived' AND OLD.status != 'archived' THEN
+        IF NEW.status = 'archived' AND (OLD.status IS NULL OR OLD.status != 'archived') THEN
             INSERT INTO product_deletion_audit (
                 product_id, product_name, operation_type,
                 operation_reason, performed_by, operation_data
@@ -323,29 +328,7 @@ CREATE TRIGGER product_operation_audit
     FOR EACH ROW EXECUTE FUNCTION log_product_operation();
 
 -- =================================================================
--- 5. ROW LEVEL SECURITY UPDATES
--- =================================================================
-
--- Update RLS policies to exclude archived items from normal queries
--- (Only if you want archived items hidden by default)
-
--- Products: Hide archived products in normal queries
-DROP POLICY IF EXISTS "Users can view active products" ON products;
-CREATE POLICY "Users can view active products" ON products
-    FOR SELECT USING (
-        status != 'archived' OR 
-        auth.uid() IN (SELECT id FROM auth.users WHERE email LIKE '%admin%')
-    );
-
--- Allow admins to see all products including archived
-DROP POLICY IF EXISTS "Admins can view all products" ON products;
-CREATE POLICY "Admins can view all products" ON products
-    FOR SELECT USING (
-        auth.uid() IN (SELECT id FROM auth.users WHERE email LIKE '%admin%')
-    );
-
--- =================================================================
--- 6. HELPER VIEWS
+-- 5. HELPER VIEWS
 -- =================================================================
 
 -- View for active products only
@@ -370,7 +353,7 @@ LEFT JOIN auth.users au ON pda.performed_by = au.id
 ORDER BY pda.performed_at DESC;
 
 -- =================================================================
--- 7. CLEANUP AND MAINTENANCE FUNCTIONS  
+-- 6. CLEANUP AND MAINTENANCE FUNCTIONS  
 -- =================================================================
 
 -- Function to restore archived product
@@ -423,38 +406,6 @@ BEGIN
     );
 END;
 $$ LANGUAGE plpgsql;
-
--- =================================================================
--- 8. EXAMPLE USAGE
--- =================================================================
-
-/*
--- Get product dependencies before deletion
-SELECT get_product_dependencies(1);
-
--- Archive a product with related sales
-SELECT archive_product_cascade(1, 'Product discontinued', true);
-
--- Delete a product with cascade
-SELECT cascade_delete_product(1);
-
--- Bulk archive multiple products
-SELECT bulk_product_operation(
-    ARRAY[1,2,3], 
-    'archive', 
-    'Bulk archive operation',
-    true
-);
-
--- Restore an archived product
-SELECT restore_archived_product(1);
-
--- View deletion audit log
-SELECT * FROM product_deletion_audit_view LIMIT 10;
-
--- Cleanup old archived products (older than 1 year)
-SELECT cleanup_old_archived_products(365);
-*/
 
 -- =================================================================
 -- GRANTS AND PERMISSIONS
