@@ -1,4 +1,5 @@
 export { default as ResponsiveInventory } from "./ResponsiveInventory";
+export { default as ResponsiveStockAudit } from "./ResponsiveStockAudit";
 export { default as ResponsiveCustomers } from "./ResponsiveCustomers";
 export { default as ResponsiveReports } from "./ResponsiveReports";
 export { default as ResponsiveSettings } from "./ResponsiveSettings";

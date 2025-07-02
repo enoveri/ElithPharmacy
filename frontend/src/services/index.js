@@ -380,3 +380,4 @@ export const dataService = {
 };
 
 export default dataService;
+export { stockAuditService } from "./stockAuditService.js";

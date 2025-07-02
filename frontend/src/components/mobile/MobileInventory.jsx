@@ -11,6 +11,7 @@ import {
   FiEdit,
   FiEye,
   FiRefreshCw,
+  FiClock,
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { dataService } from "../../services";
@@ -219,14 +220,29 @@ const MobileInventory = () => {
           )}
         </AnimatePresence>
 
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={() => navigate("/inventory/add")}
-          className="mobile-action-button w-full mt-3"
-        >
-          <FiPlus size={20} />
-          Add Product
-        </motion.button>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/inventory/audit")}
+            className="mobile-action-button secondary"
+            style={{ 
+              backgroundColor: "#f59e0b",
+              color: "white",
+              border: "none"
+            }}
+          >
+            <FiClock size={20} />
+            Stock Audit
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/inventory/add")}
+            className="mobile-action-button"
+          >
+            <FiPlus size={20} />
+            Add Product
+          </motion.button>
+        </div>
       </div>
       {/* Stats Overview */}
       <div className="stats-grid mb-6">

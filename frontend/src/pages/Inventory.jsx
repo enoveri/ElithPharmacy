@@ -609,9 +609,29 @@ function Inventory() {
           display: "flex",
           justifyContent: "flex-end",
           alignItems: "center",
+          gap: "12px",
           marginBottom: "32px",
         }}
       >
+        <button
+          onClick={() => navigate("/inventory/audit")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            backgroundColor: "#f59e0b",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          <FiClock size={16} />
+          Stock Audit
+        </button>
         <button
           onClick={() => navigate("/inventory/add")}
           style={{
