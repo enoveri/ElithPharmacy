@@ -285,9 +285,6 @@ function Inventory() {
     try {
       console.log("🔍 [Inventory] Validating bulk delete for products:", productIds);
       
-      const salesData = await dataService.sales.getAll();
-      const selectedProductsList = filteredProducts.filter(p => productIds.has(p.id));
-      
       const validation = {
         totalSelected: productIds.size,
         canDelete: [],
@@ -295,29 +292,38 @@ function Inventory() {
         warnings: []
       };
 
-      for (const product of selectedProductsList) {
-        const productSales = salesData.filter((sale) =>
-          sale.items?.some(
-            (item) =>
-              item.product_id === product.id || item.productId === product.id
-          )
-        );
+      // Get relations for each product
+      const productIdsArray = Array.from(productIds);
+      const relationsPromises = productIdsArray.map(id => 
+        dataService.products.getRelations(id)
+      );
+      
+      const relationsResults = await Promise.all(relationsPromises);
+      
+      productIdsArray.forEach((productId, index) => {
+        const relations = relationsResults[index];
+        const product = filteredProducts.find(p => p.id === productId);
+        
+        if (!relations || !product) return;
 
         const warnings = [];
-        if (productSales.length > 0) {
-          warnings.push(`${product.name}: ${productSales.length} sales records`);
+        if (relations.salesCount > 0) {
+          warnings.push(`${product.name}: ${relations.salesCount} sales records`);
         }
         if (product.quantity > 0) {
           warnings.push(`${product.name}: ${product.quantity} units in stock`);
         }
+        if (relations.recentSalesCount > 0) {
+          warnings.push(`${product.name}: ${relations.recentSalesCount} recent sales`);
+        }
 
         if (warnings.length > 0) {
-          validation.hasWarnings.push(product.id);
+          validation.hasWarnings.push(productId);
           validation.warnings.push(...warnings);
         } else {
-          validation.canDelete.push(product.id);
+          validation.canDelete.push(productId);
         }
-      }
+      });
 
       setBulkValidation(validation);
       return validation;
@@ -344,30 +350,52 @@ function Inventory() {
     try {
       const productIds = Array.from(selectedProducts);
       
-      if (bulkDeleteType === 'archive') {
-        console.log("📦 [Inventory] Archiving products:", productIds);
-        // Archive products by updating their status
-        for (const id of productIds) {
-          await dataService.products.update(id, { status: 'archived' });
-        }
-        alert(`Successfully archived ${productIds.length} products!`);
-      } else {
-        console.log("🗑️ [Inventory] Deleting products:", productIds);
-        // Delete products
-        for (const id of productIds) {
-          await dataService.products.delete(id);
-        }
-        alert(`Successfully deleted ${productIds.length} products!`);
-      }
+      console.log(`🔄 [Inventory] Executing bulk ${bulkDeleteType} for ${productIds.length} products`);
       
-      // Refresh products and clear selection
-      await fetchProducts();
-      setSelectedProducts(new Set());
-      setShowBulkDeleteModal(false);
+      const options = {
+        archive: bulkDeleteType === 'archive',
+        cascadeDelete: true,
+        archiveRelatedSales: bulkDeleteType === 'archive',
+        reason: `Bulk ${bulkDeleteType} from inventory page`
+      };
+      
+      const result = await dataService.products.bulkDelete(productIds, options);
+      
+      if (result.success) {
+        const { successful, failed, totalProcessed } = result.data;
+        
+        console.log(`✅ [Inventory] Bulk operation completed: ${successful.length}/${totalProcessed} successful`);
+        
+        // Show detailed success message
+        let message = `Successfully ${bulkDeleteType === 'archive' ? 'archived' : 'deleted'} ${successful.length} products!`;
+        
+        if (failed.length > 0) {
+          message += `\n${failed.length} operations failed. Please check the console for details.`;
+        }
+        
+        // Calculate total affected sales
+        const totalAffectedSales = successful.reduce((sum, item) => {
+          return sum + (item.result?.data?.affectedSales || 0);
+        }, 0);
+        
+        if (totalAffectedSales > 0) {
+          message += `\n${totalAffectedSales} related sales were also ${bulkDeleteType === 'archive' ? 'archived' : 'deleted'}.`;
+        }
+        
+        alert(message);
+        
+        // Refresh products and clear selection
+        await fetchProducts();
+        setSelectedProducts(new Set());
+        setShowBulkDeleteModal(false);
+        
+      } else {
+        throw new Error(result.error?.message || "Bulk operation failed");
+      }
       
     } catch (error) {
       console.error("❌ [Inventory] Error with bulk action:", error);
-      alert("Error performing bulk action. Please try again.");
+      alert(`Error performing bulk ${bulkDeleteType}. Please try again.\n\nError: ${error.message}`);
     } finally {
       setIsBulkDeleting(false);
     }

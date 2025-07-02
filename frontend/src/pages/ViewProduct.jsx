@@ -152,48 +152,46 @@ function ViewProduct() {
     try {
       console.log("🔍 [ViewProduct] Validating product for deletion:", productId);
       
-      // Check for sales history
-      const salesData = await dataService.sales.getAll();
-      const productSales = salesData.filter((sale) =>
-        sale.items?.some(
-          (item) =>
-            item.product_id === productId || item.productId === productId
-        )
-      );
+      // Use the new relations function for better validation
+      const relations = await dataService.products.getRelations(productId);
       
-      const hasSales = productSales.length > 0;
+      if (!relations) {
+        setDeleteValidation({
+          hasSales: false,
+          hasActiveOrders: false,
+          hasStockMovements: false,
+          canDelete: false,
+          warnings: ["Unable to validate product dependencies. Please try again."]
+        });
+        return null;
+      }
+
       const warnings = [];
       
-      if (hasSales) {
-        warnings.push(`This product has ${productSales.length} sales records that will be affected.`);
+      if (relations.salesCount > 0) {
+        warnings.push(`This product has ${relations.salesCount} sales records that will be affected.`);
       }
       
       if (product?.quantity > 0) {
         warnings.push(`Product has ${product.quantity} units in stock that will be removed.`);
       }
       
-      // Check for recent sales (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const recentSales = productSales.filter(sale => 
-        new Date(sale.created_at || sale.date) > thirtyDaysAgo
-      );
-      
-      if (recentSales.length > 0) {
-        warnings.push(`Product has ${recentSales.length} recent sales in the last 30 days.`);
+      if (relations.recentSalesCount > 0) {
+        warnings.push(`Product has ${relations.recentSalesCount} recent sales in the last 30 days.`);
       }
       
-      // For demo purposes, allow deletion but show warnings
-      const canDelete = true; // In production, you might want stricter rules
+      // Allow deletion with cascade
+      const canDelete = true;
       
       const validation = {
-        hasSales,
-        hasActiveOrders: false, // TODO: Add actual check when orders system exists
+        hasSales: relations.salesCount > 0,
+        hasActiveOrders: false,
         hasStockMovements: product?.quantity > 0,
         canDelete,
         warnings,
-        salesCount: productSales.length,
-        recentSalesCount: recentSales.length
+        salesCount: relations.salesCount,
+        recentSalesCount: relations.recentSalesCount,
+        relations
       };
       
       console.log("✅ [ViewProduct] Validation result:", validation);
@@ -228,14 +226,21 @@ function ViewProduct() {
     setIsDeleting(true);
     try {
       console.log("🗑️ [ViewProduct] Deleting product:", id);
-      await dataService.products.delete(id);
-      console.log("✅ [ViewProduct] Product deleted successfully");
+      const result = await dataService.products.delete(id, { cascadeDelete: true });
       
-      // Show success message briefly before navigating
-      setShowDeleteModal(false);
-      // Could add a toast notification here instead of alert
-      alert("Product deleted successfully!");
-      navigate("/inventory");
+      if (result) {
+        console.log("✅ [ViewProduct] Product deleted successfully:", result);
+        
+        // Show success message with details
+        setShowDeleteModal(false);
+        const message = result.affectedSales > 0 
+          ? `Product deleted successfully along with ${result.affectedSales} related sales!`
+          : "Product deleted successfully!";
+        alert(message);
+        navigate("/inventory");
+      } else {
+        throw new Error("Delete operation failed");
+      }
     } catch (error) {
       console.error("❌ [ViewProduct] Error deleting product:", error);
       alert("Error deleting product. Please try again.");
@@ -248,12 +253,20 @@ function ViewProduct() {
     setIsDeleting(true);
     try {
       console.log("📦 [ViewProduct] Archiving product:", id);
-      await dataService.products.update(id, { status: 'archived' });
-      console.log("✅ [ViewProduct] Product archived successfully");
+      const result = await dataService.products.archive(id, { 
+        archiveRelatedSales: true,
+        reason: 'Manual archive from ViewProduct'
+      });
       
-      setShowDeleteModal(false);
-      alert("Product archived successfully!");
-      navigate("/inventory");
+      if (result) {
+        console.log("✅ [ViewProduct] Product archived successfully:", result);
+        
+        setShowDeleteModal(false);
+        alert("Product archived successfully! It will no longer appear in active inventory.");
+        navigate("/inventory");
+      } else {
+        throw new Error("Archive operation failed");
+      }
     } catch (error) {
       console.error("❌ [ViewProduct] Error archiving product:", error);
       alert("Error archiving product. Please try again.");

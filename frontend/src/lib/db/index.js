@@ -522,16 +522,369 @@ export const dbHelpers = {
   },
 
   // Delete a product
-  deleteProduct: async (id) => {
-    const { error } = await supabase.from("products").delete().eq("id", id);
+  deleteProduct: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting product:", id, "Options:", options);
 
-    if (error) {
-      console.error("Error deleting product:", error);
-      return false;
+      // Check if product exists and get related data
+      const { data: product, error: productError } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", parseInt(id))
+        .single();
+
+      if (productError) {
+        console.error("❌ [DB] Error fetching product for deletion:", productError);
+        return { success: false, error: productError };
+      }
+
+      // Get related sales data
+      const { data: relatedSales, error: salesError } = await supabase
+        .from("sale_items")
+        .select("sale_id, quantity, product_id")
+        .eq("product_id", parseInt(id));
+
+      if (salesError) {
+        console.error("❌ [DB] Error fetching related sales:", salesError);
+      }
+
+      const uniqueSaleIds = [...new Set(relatedSales?.map(item => item.sale_id) || [])];
+      console.log(`📊 [DB] Product has ${relatedSales?.length || 0} sale items in ${uniqueSaleIds.length} sales`);
+
+      if (options.cascadeDelete && relatedSales?.length > 0) {
+        console.log("🔄 [DB] Performing cascade delete - removing related sales");
+        
+        // Delete sale items first
+        const { error: saleItemsError } = await supabase
+          .from("sale_items")
+          .delete()
+          .eq("product_id", parseInt(id));
+
+        if (saleItemsError) {
+          console.error("❌ [DB] Error deleting sale items:", saleItemsError);
+          return { success: false, error: saleItemsError };
+        }
+
+        // Delete sales that only contain this product
+        for (const saleId of uniqueSaleIds) {
+          const { data: remainingItems } = await supabase
+            .from("sale_items")
+            .select("id")
+            .eq("sale_id", saleId);
+
+          if (!remainingItems || remainingItems.length === 0) {
+            const { error: saleDeleteError } = await supabase
+              .from("sales")
+              .delete()
+              .eq("id", saleId);
+
+            if (saleDeleteError) {
+              console.error(`❌ [DB] Error deleting sale ${saleId}:`, saleDeleteError);
+            } else {
+              console.log(`✅ [DB] Deleted orphaned sale ${saleId}`);
+            }
+          }
+        }
+      }
+
+      // Delete the product
+      const { error: deleteError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", parseInt(id));
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting product:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Product deleted successfully");
+      return { 
+        success: true, 
+        data: {
+          deletedProduct: product,
+          affectedSales: uniqueSaleIds.length,
+          affectedSaleItems: relatedSales?.length || 0
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteProduct:", error);
+      return { success: false, error };
     }
-
-    return true;
   },
+
+  // Archive product with related data
+  archiveProduct: async (id, options = {}) => {
+    try {
+      console.log("📦 [DB] Archiving product:", id, "Options:", options);
+
+      // Update product status to archived
+      const { data: archivedProduct, error: archiveError } = await supabase
+        .from("products")
+        .update({ 
+          status: 'archived',
+          archived_at: new Date().toISOString(),
+          archived_reason: options.reason || 'Manual archive'
+        })
+        .eq("id", parseInt(id))
+        .select()
+        .single();
+
+      if (archiveError) {
+        console.error("❌ [DB] Error archiving product:", archiveError);
+        return { success: false, error: archiveError };
+      }
+
+      if (options.archiveRelatedSales) {
+        console.log("🔄 [DB] Archiving related sales");
+        
+        // Get related sales
+        const { data: relatedSales } = await supabase
+          .from("sale_items")
+          .select("sale_id")
+          .eq("product_id", parseInt(id));
+
+        const uniqueSaleIds = [...new Set(relatedSales?.map(item => item.sale_id) || [])];
+
+        // Archive related sales
+        if (uniqueSaleIds.length > 0) {
+          const { error: salesArchiveError } = await supabase
+            .from("sales")
+            .update({ 
+              status: 'archived',
+              archived_at: new Date().toISOString(),
+              archived_reason: `Product ${id} archived`
+            })
+            .in("id", uniqueSaleIds);
+
+          if (salesArchiveError) {
+            console.error("❌ [DB] Error archiving related sales:", salesArchiveError);
+          } else {
+            console.log(`✅ [DB] Archived ${uniqueSaleIds.length} related sales`);
+          }
+        }
+      }
+
+      console.log("✅ [DB] Product archived successfully");
+      return { success: true, data: archivedProduct };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in archiveProduct:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Delete sale with related items
+  deleteSale: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting sale:", id);
+
+      // Get sale data before deletion
+      const { data: sale, error: saleError } = await supabase
+        .from("sales")
+        .select("*")
+        .eq("id", parseInt(id))
+        .single();
+
+      if (saleError) {
+        console.error("❌ [DB] Error fetching sale for deletion:", saleError);
+        return { success: false, error: saleError };
+      }
+
+      // Delete sale items first
+      const { error: itemsError } = await supabase
+        .from("sale_items")
+        .delete()
+        .eq("sale_id", parseInt(id));
+
+      if (itemsError) {
+        console.error("❌ [DB] Error deleting sale items:", itemsError);
+        return { success: false, error: itemsError };
+      }
+
+      // Delete the sale
+      const { error: deleteError } = await supabase
+        .from("sales")
+        .delete()
+        .eq("id", parseInt(id));
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting sale:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Sale deleted successfully");
+      return { success: true, data: sale };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteSale:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Delete customer with cascade options
+  deleteCustomer: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting customer:", id, "Options:", options);
+
+      // Check for related sales
+      const { data: relatedSales } = await supabase
+        .from("sales")
+        .select("id")
+        .eq("customer_id", parseInt(id));
+
+      if (relatedSales && relatedSales.length > 0 && !options.cascadeDelete) {
+        console.log(`❌ [DB] Customer has ${relatedSales.length} related sales, cascade required`);
+        return { 
+          success: false, 
+          error: { 
+            message: "Customer has related sales. Use cascadeDelete option to delete all related data.",
+            relatedSales: relatedSales.length 
+          }
+        };
+      }
+
+      if (options.cascadeDelete && relatedSales?.length > 0) {
+        console.log(`🔄 [DB] Cascade deleting ${relatedSales.length} related sales`);
+        
+        // Delete all related sales and their items
+        for (const sale of relatedSales) {
+          await dbHelpers.deleteSale(sale.id);
+        }
+      }
+
+      // Delete the customer
+      const { data: deletedCustomer, error: deleteError } = await supabase
+        .from("customers")
+        .delete()
+        .eq("id", parseInt(id))
+        .select()
+        .single();
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting customer:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Customer deleted successfully");
+      return { 
+        success: true, 
+        data: {
+          deletedCustomer,
+          deletedSales: relatedSales?.length || 0
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteCustomer:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Bulk delete products
+  bulkDeleteProducts: async (productIds, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Bulk deleting products:", productIds, "Options:", options);
+      
+      const results = [];
+      const errors = [];
+
+      for (const id of productIds) {
+        try {
+          if (options.archive) {
+            const result = await dbHelpers.archiveProduct(id, options);
+            results.push({ id, action: 'archived', result });
+          } else {
+            const result = await dbHelpers.deleteProduct(id, options);
+            results.push({ id, action: 'deleted', result });
+          }
+        } catch (error) {
+          errors.push({ id, error });
+          console.error(`❌ [DB] Error processing product ${id}:`, error);
+        }
+      }
+
+      const successful = results.filter(r => r.result.success);
+      const failed = results.filter(r => !r.result.success).concat(errors);
+
+      console.log(`✅ [DB] Bulk operation completed: ${successful.length} successful, ${failed.length} failed`);
+      
+      return {
+        success: failed.length === 0,
+        data: {
+          successful,
+          failed,
+          totalProcessed: productIds.length
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in bulkDeleteProducts:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Get related data for a product (for validation before delete)
+  getProductRelations: async (id) => {
+    try {
+      console.log("🔍 [DB] Getting product relations for:", id);
+
+      const [saleItemsResult, purchaseItemsResult] = await Promise.all([
+        supabase
+          .from("sale_items")
+          .select("sale_id, quantity, created_at")
+          .eq("product_id", parseInt(id)),
+        
+        supabase
+          .from("purchase_items")
+          .select("purchase_id, quantity, created_at") 
+          .eq("product_id", parseInt(id))
+          .limit(1) // Just check if any exist
+      ]);
+
+      const saleItems = saleItemsResult.data || [];
+      const purchaseItems = purchaseItemsResult.data || [];
+      const uniqueSaleIds = [...new Set(saleItems.map(item => item.sale_id))];
+
+      // Get sales data
+      let salesData = [];
+      if (uniqueSaleIds.length > 0) {
+        const { data: sales } = await supabase
+          .from("sales")
+          .select("id, date, total_amount, customer_id, created_at")
+          .in("id", uniqueSaleIds);
+        
+        salesData = sales || [];
+      }
+
+      // Calculate recent activity (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const recentSales = salesData.filter(sale => 
+        new Date(sale.created_at || sale.date) > thirtyDaysAgo
+      );
+
+      const relations = {
+        salesCount: salesData.length,
+        saleItemsCount: saleItems.length,
+        recentSalesCount: recentSales.length,
+        purchaseItemsCount: purchaseItems.length,
+        hasRelatedData: salesData.length > 0 || purchaseItems.length > 0,
+        sales: salesData,
+        recentSales
+      };
+
+      console.log("✅ [DB] Product relations:", relations);
+      return { success: true, data: relations };
+
+    } catch (error) {
+      console.error("❌ [DB] Error getting product relations:", error);
+      return { success: false, error };
+    }
+  },
+
   // Create a new sale
   createSale: async (sale) => {
     try {
@@ -591,38 +944,6 @@ export const dbHelpers = {
     } catch (error) {
       console.error("❌ [DB] createSale failed:", error);
       throw error;
-    }
-  },
-
-  // Delete a sale
-  deleteSale: async (id) => {
-    try {
-      // First delete sale items
-      const { error: itemsError } = await supabase
-        .from("sale_items")
-        .delete()
-        .eq("sale_id", id);
-
-      if (itemsError) {
-        console.error("Error deleting sale items:", itemsError);
-        return false;
-      }
-
-      // Then delete the sale
-      const { error: saleError } = await supabase
-        .from("sales")
-        .delete()
-        .eq("id", id);
-
-      if (saleError) {
-        console.error("Error deleting sale:", saleError);
-        return false;
-      }
-
-      return true;
-    } catch (error) {
-      console.error("Error deleting sale:", error);
-      return false;
     }
   },
 
@@ -901,32 +1222,8 @@ export const dbHelpers = {
 
     return data[0];
   },
-  // Delete a customer
-  deleteCustomer: async (id) => {
-    const { error } = await supabase.from("customers").delete().eq("id", id);
 
-    if (error) {
-      console.error("Error deleting customer:", error);
-
-      // Handle foreign key constraint errors
-      if (error.code === "23503") {
-        return {
-          success: false,
-          error: "CONSTRAINT_ERROR",
-          message:
-            "Cannot delete customer with existing sales records. Please remove associated sales first.",
-        };
-      }
-
-      return {
-        success: false,
-        error: "DELETE_ERROR",
-        message: error.message || "Failed to delete customer",
-      };
-    }
-
-    return { success: true };
-  },  // Notifications functions
+  // Notifications functions
   getNotifications: async (userId = null) => {
     try {
       console.log("🔄 [DB] Fetching notifications...");
@@ -983,7 +1280,8 @@ export const dbHelpers = {
       });
       return { data: [], error };
     }
-  },  createNotification: async (notificationData) => {
+  }, 
+  createNotification: async (notificationData) => {
     try {
       console.log("🔄 [DB] Creating notification:", notificationData);
 
@@ -1761,6 +2059,372 @@ export const dbHelpers = {
     } catch (error) {
       console.error("❌ [DB] Error in getUserByEmail:", error);
       return { success: false, error, data: null };
+    }
+  },
+
+  // Delete Functions with Cascade Support
+
+  // Delete product with cascade options
+  deleteProduct: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting product:", id, "Options:", options);
+
+      // Check if product exists and get related data
+      const { data: product, error: productError } = await supabase
+        .from("products")
+        .select("*")
+        .eq("id", parseInt(id))
+        .single();
+
+      if (productError) {
+        console.error("❌ [DB] Error fetching product for deletion:", productError);
+        return { success: false, error: productError };
+      }
+
+      // Get related sales data
+      const { data: relatedSales, error: salesError } = await supabase
+        .from("sale_items")
+        .select("sale_id, quantity, product_id")
+        .eq("product_id", parseInt(id));
+
+      if (salesError) {
+        console.error("❌ [DB] Error fetching related sales:", salesError);
+      }
+
+      const uniqueSaleIds = [...new Set(relatedSales?.map(item => item.sale_id) || [])];
+      console.log(`📊 [DB] Product has ${relatedSales?.length || 0} sale items in ${uniqueSaleIds.length} sales`);
+
+      if (options.cascadeDelete && relatedSales?.length > 0) {
+        console.log("🔄 [DB] Performing cascade delete - removing related sales");
+        
+        // Delete sale items first
+        const { error: saleItemsError } = await supabase
+          .from("sale_items")
+          .delete()
+          .eq("product_id", parseInt(id));
+
+        if (saleItemsError) {
+          console.error("❌ [DB] Error deleting sale items:", saleItemsError);
+          return { success: false, error: saleItemsError };
+        }
+
+        // Delete sales that only contain this product
+        for (const saleId of uniqueSaleIds) {
+          const { data: remainingItems } = await supabase
+            .from("sale_items")
+            .select("id")
+            .eq("sale_id", saleId);
+
+          if (!remainingItems || remainingItems.length === 0) {
+            const { error: saleDeleteError } = await supabase
+              .from("sales")
+              .delete()
+              .eq("id", saleId);
+
+            if (saleDeleteError) {
+              console.error(`❌ [DB] Error deleting sale ${saleId}:`, saleDeleteError);
+            } else {
+              console.log(`✅ [DB] Deleted orphaned sale ${saleId}`);
+            }
+          }
+        }
+      }
+
+      // Delete the product
+      const { error: deleteError } = await supabase
+        .from("products")
+        .delete()
+        .eq("id", parseInt(id));
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting product:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Product deleted successfully");
+      return { 
+        success: true, 
+        data: {
+          deletedProduct: product,
+          affectedSales: uniqueSaleIds.length,
+          affectedSaleItems: relatedSales?.length || 0
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteProduct:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Archive product with related data
+  archiveProduct: async (id, options = {}) => {
+    try {
+      console.log("📦 [DB] Archiving product:", id, "Options:", options);
+
+      // Update product status to archived
+      const { data: archivedProduct, error: archiveError } = await supabase
+        .from("products")
+        .update({ 
+          status: 'archived',
+          archived_at: new Date().toISOString(),
+          archived_reason: options.reason || 'Manual archive'
+        })
+        .eq("id", parseInt(id))
+        .select()
+        .single();
+
+      if (archiveError) {
+        console.error("❌ [DB] Error archiving product:", archiveError);
+        return { success: false, error: archiveError };
+      }
+
+      if (options.archiveRelatedSales) {
+        console.log("🔄 [DB] Archiving related sales");
+        
+        // Get related sales
+        const { data: relatedSales } = await supabase
+          .from("sale_items")
+          .select("sale_id")
+          .eq("product_id", parseInt(id));
+
+        const uniqueSaleIds = [...new Set(relatedSales?.map(item => item.sale_id) || [])];
+
+        // Archive related sales
+        if (uniqueSaleIds.length > 0) {
+          const { error: salesArchiveError } = await supabase
+            .from("sales")
+            .update({ 
+              status: 'archived',
+              archived_at: new Date().toISOString(),
+              archived_reason: `Product ${id} archived`
+            })
+            .in("id", uniqueSaleIds);
+
+          if (salesArchiveError) {
+            console.error("❌ [DB] Error archiving related sales:", salesArchiveError);
+          } else {
+            console.log(`✅ [DB] Archived ${uniqueSaleIds.length} related sales`);
+          }
+        }
+      }
+
+      console.log("✅ [DB] Product archived successfully");
+      return { success: true, data: archivedProduct };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in archiveProduct:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Delete sale with related items
+  deleteSale: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting sale:", id);
+
+      // Get sale data before deletion
+      const { data: sale, error: saleError } = await supabase
+        .from("sales")
+        .select("*")
+        .eq("id", parseInt(id))
+        .single();
+
+      if (saleError) {
+        console.error("❌ [DB] Error fetching sale for deletion:", saleError);
+        return { success: false, error: saleError };
+      }
+
+      // Delete sale items first
+      const { error: itemsError } = await supabase
+        .from("sale_items")
+        .delete()
+        .eq("sale_id", parseInt(id));
+
+      if (itemsError) {
+        console.error("❌ [DB] Error deleting sale items:", itemsError);
+        return { success: false, error: itemsError };
+      }
+
+      // Delete the sale
+      const { error: deleteError } = await supabase
+        .from("sales")
+        .delete()
+        .eq("id", parseInt(id));
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting sale:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Sale deleted successfully");
+      return { success: true, data: sale };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteSale:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Delete customer with cascade options
+  deleteCustomer: async (id, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Deleting customer:", id, "Options:", options);
+
+      // Check for related sales
+      const { data: relatedSales } = await supabase
+        .from("sales")
+        .select("id")
+        .eq("customer_id", parseInt(id));
+
+      if (relatedSales && relatedSales.length > 0 && !options.cascadeDelete) {
+        console.log(`❌ [DB] Customer has ${relatedSales.length} related sales, cascade required`);
+        return { 
+          success: false, 
+          error: { 
+            message: "Customer has related sales. Use cascadeDelete option to delete all related data.",
+            relatedSales: relatedSales.length 
+          }
+        };
+      }
+
+      if (options.cascadeDelete && relatedSales?.length > 0) {
+        console.log(`🔄 [DB] Cascade deleting ${relatedSales.length} related sales`);
+        
+        // Delete all related sales and their items
+        for (const sale of relatedSales) {
+          await dbHelpers.deleteSale(sale.id);
+        }
+      }
+
+      // Delete the customer
+      const { data: deletedCustomer, error: deleteError } = await supabase
+        .from("customers")
+        .delete()
+        .eq("id", parseInt(id))
+        .select()
+        .single();
+
+      if (deleteError) {
+        console.error("❌ [DB] Error deleting customer:", deleteError);
+        return { success: false, error: deleteError };
+      }
+
+      console.log("✅ [DB] Customer deleted successfully");
+      return { 
+        success: true, 
+        data: {
+          deletedCustomer,
+          deletedSales: relatedSales?.length || 0
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteCustomer:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Bulk delete products
+  bulkDeleteProducts: async (productIds, options = {}) => {
+    try {
+      console.log("🗑️ [DB] Bulk deleting products:", productIds, "Options:", options);
+      
+      const results = [];
+      const errors = [];
+
+      for (const id of productIds) {
+        try {
+          if (options.archive) {
+            const result = await dbHelpers.archiveProduct(id, options);
+            results.push({ id, action: 'archived', result });
+          } else {
+            const result = await dbHelpers.deleteProduct(id, options);
+            results.push({ id, action: 'deleted', result });
+          }
+        } catch (error) {
+          errors.push({ id, error });
+          console.error(`❌ [DB] Error processing product ${id}:`, error);
+        }
+      }
+
+      const successful = results.filter(r => r.result.success);
+      const failed = results.filter(r => !r.result.success).concat(errors);
+
+      console.log(`✅ [DB] Bulk operation completed: ${successful.length} successful, ${failed.length} failed`);
+      
+      return {
+        success: failed.length === 0,
+        data: {
+          successful,
+          failed,
+          totalProcessed: productIds.length
+        }
+      };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in bulkDeleteProducts:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Get related data for a product (for validation before delete)
+  getProductRelations: async (id) => {
+    try {
+      console.log("🔍 [DB] Getting product relations for:", id);
+
+      const [saleItemsResult, purchaseItemsResult] = await Promise.all([
+        supabase
+          .from("sale_items")
+          .select("sale_id, quantity, created_at")
+          .eq("product_id", parseInt(id)),
+        
+        supabase
+          .from("purchase_items")
+          .select("purchase_id, quantity, created_at") 
+          .eq("product_id", parseInt(id))
+          .limit(1) // Just check if any exist
+      ]);
+
+      const saleItems = saleItemsResult.data || [];
+      const purchaseItems = purchaseItemsResult.data || [];
+      const uniqueSaleIds = [...new Set(saleItems.map(item => item.sale_id))];
+
+      // Get sales data
+      let salesData = [];
+      if (uniqueSaleIds.length > 0) {
+        const { data: sales } = await supabase
+          .from("sales")
+          .select("id, date, total_amount, customer_id, created_at")
+          .in("id", uniqueSaleIds);
+        
+        salesData = sales || [];
+      }
+
+      // Calculate recent activity (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const recentSales = salesData.filter(sale => 
+        new Date(sale.created_at || sale.date) > thirtyDaysAgo
+      );
+
+      const relations = {
+        salesCount: salesData.length,
+        saleItemsCount: saleItems.length,
+        recentSalesCount: recentSales.length,
+        purchaseItemsCount: purchaseItems.length,
+        hasRelatedData: salesData.length > 0 || purchaseItems.length > 0,
+        sales: salesData,
+        recentSales
+      };
+
+      console.log("✅ [DB] Product relations:", relations);
+      return { success: true, data: relations };
+
+    } catch (error) {
+      console.error("❌ [DB] Error getting product relations:", error);
+      return { success: false, error };
     }
   },
 };

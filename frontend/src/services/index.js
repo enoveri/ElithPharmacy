@@ -58,8 +58,28 @@ export const dataService = {
       return result;
     },
 
-    delete: async (id) => {
-      return await dbHelpers.deleteProduct(id);
+    delete: async (id, options = {}) => {
+      // Default to cascade delete for better UX
+      const deleteOptions = { cascadeDelete: true, ...options };
+      const result = await dbHelpers.deleteProduct(id, deleteOptions);
+      return result.success ? result.data : null;
+    },
+
+    archive: async (id, options = {}) => {
+      // Default to archiving related sales
+      const archiveOptions = { archiveRelatedSales: true, ...options };
+      const result = await dbHelpers.archiveProduct(id, archiveOptions);
+      return result.success ? result.data : null;
+    },
+
+    bulkDelete: async (productIds, options = {}) => {
+      const result = await dbHelpers.bulkDeleteProducts(productIds, options);
+      return result;
+    },
+
+    getRelations: async (id) => {
+      const result = await dbHelpers.getProductRelations(id);
+      return result.success ? result.data : null;
     },
   },
 
@@ -97,8 +117,9 @@ export const dataService = {
       return await dbHelpers.updateCustomer(id, updates);
     },
 
-    delete: async (id) => {
-      return await dbHelpers.deleteCustomer(id);
+    delete: async (id, options = {}) => {
+      const result = await dbHelpers.deleteCustomer(id, options);
+      return result.success ? result.data : null;
     },
   },
 
@@ -144,8 +165,9 @@ export const dataService = {
       return await dbHelpers.updateSale(id, updates);
     },
 
-    delete: async (id) => {
-      return await dbHelpers.deleteSale(id);
+    delete: async (id, options = {}) => {
+      const result = await dbHelpers.deleteSale(id, options);
+      return result.success ? result.data : null;
     },
   },
 
