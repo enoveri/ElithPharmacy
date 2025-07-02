@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase/index.js';
+import { exportToCSV } from '../utils/exportUtils';
 
 export const stockAuditService = {
   // Create a new stock audit
@@ -93,8 +94,28 @@ export const stockAuditService = {
   // Export audit data
   async exportAuditData(auditData, format = 'csv') {
     try {
-      // This is handled in the frontend for now
-      return { success: true, data: auditData };
+      if (format === 'csv') {
+        // Format data for CSV export
+        const csvData = auditData.audit_items.map(item => ({
+          'Product Name': item.name || 'Unknown Product',
+          'Batch Number': item.batch_number || item.batchNumber || 'No batch',
+          'Category': item.category || 'No category',
+          'System Stock': item.quantity || 0,
+          'Physical Count': item.physicalCount || 0,
+          'Variance': item.variance || 0,
+          'Status': item.status || 'pending',
+          'Audit Date': auditData.audit_date
+        }));
+
+        // Generate filename with date
+        const filename = `stock_audit_${auditData.audit_date || new Date().toISOString().split('T')[0]}.csv`;
+        
+        // Export to CSV
+        exportToCSV(csvData, filename);
+        return { success: true };
+      }
+      
+      return { success: false, error: 'Unsupported format' };
     } catch (error) {
       console.error('Error exporting audit data:', error);
       return { success: false, error: error.message };

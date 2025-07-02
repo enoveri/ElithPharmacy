@@ -205,6 +205,38 @@ function StockAudit() {
     }
   };
 
+  const startNewAudit = () => {
+    setAuditData({});
+    setAuditDate(new Date().toISOString().split("T")[0]);
+    alert("New audit started! Begin by entering physical counts for products.");
+  };
+
+  const resumePreviousAudit = async () => {
+    try {
+      const result = await stockAuditService.loadDraft();
+      if (result.success && result.data) {
+        const draftData = result.data;
+        setAuditDate(draftData.audit_date || new Date().toISOString().split("T")[0]);
+        // Reconstruct audit data from draft
+        const reconstructedAuditData = {};
+        draftData.audit_items?.forEach(item => {
+          if (item.physicalCount !== null && item.physicalCount !== undefined) {
+            reconstructedAuditData[item.id] = {
+              physicalCount: item.physicalCount
+            };
+          }
+        });
+        setAuditData(reconstructedAuditData);
+        alert("Previous audit draft loaded successfully!");
+      } else {
+        alert("No previous audit draft found.");
+      }
+    } catch (error) {
+      console.error("Error loading draft:", error);
+      alert("Failed to load previous audit. Please try again.");
+    }
+  };
+
   const stats = {
     totalProducts: products.length,
     itemsAudited: auditedItems,
@@ -606,6 +638,56 @@ function StockAudit() {
         </div>
       </div>
 
+      {/* Action Buttons */}
+      <div style={{
+        backgroundColor: "white",
+        borderRadius: "12px",
+        padding: "20px",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+        marginBottom: "24px",
+      }}>
+        <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
+          <button
+            onClick={startNewAudit}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#10b981",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FiPackage size={16} />
+            Start New Audit
+          </button>
+          <button
+            onClick={resumePreviousAudit}
+            style={{
+              padding: "12px 24px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FiClock size={16} />
+            Resume Previous
+          </button>
+        </div>
+      </div>
+
       {/* Products Table */}
       <div style={{
         backgroundColor: "white",
@@ -756,6 +838,7 @@ function StockAudit() {
                     <td style={{ padding: "12px", textAlign: "center" }}>
                       <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
                         <button
+                          onClick={() => navigate(`/inventory/view/${product.id}`)}
                           style={{
                             padding: "6px",
                             border: "none",
@@ -771,6 +854,7 @@ function StockAudit() {
                           <FiEye size={14} color="#6b7280" />
                         </button>
                         <button
+                          onClick={() => navigate(`/inventory/edit/${product.id}`)}
                           style={{
                             padding: "6px",
                             border: "none",

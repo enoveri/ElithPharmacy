@@ -18,14 +18,14 @@ import {
   FiX,
   FiArrowLeft,
   FiSave,
-  FiCheckCircle
+  FiCheckCircle,
+  FiDownload
 } from 'react-icons/fi';
 import { stockAuditService, dataService } from "../../services";
-import { useProductsStore, useSettingsStore } from '../../store';
+import { useSettingsStore } from '../../store';
 
 const MobileStockAudit = () => {
   const navigate = useNavigate();
-  const { products, fetchProducts, isLoading } = useProductsStore();
   const { settings } = useSettingsStore();
   const { currency = 'UGX' } = settings;
 
@@ -34,6 +34,8 @@ const MobileStockAudit = () => {
   const [currentAudit, setCurrentAudit] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [filters, setFilters] = useState({
     lowStock: false,
     expiringSoon: false,
@@ -44,6 +46,8 @@ const MobileStockAudit = () => {
   const [auditData, setAuditData] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // useEffect to load products and categories
   useEffect(() => {
@@ -143,6 +147,32 @@ const MobileStockAudit = () => {
       status: 'in_progress'
     });
     setAuditData({});
+  };
+
+  const resumePreviousAudit = async () => {
+    try {
+      const result = await stockAuditService.loadDraft();
+      if (result.success && result.data) {
+        const draftData = result.data;
+        setAuditDate(draftData.audit_date || new Date().toISOString().split("T")[0]);
+        // Reconstruct audit data from draft
+        const reconstructedAuditData = {};
+        draftData.audit_items?.forEach(item => {
+          if (item.physicalCount !== null && item.physicalCount !== undefined) {
+            reconstructedAuditData[item.id] = {
+              physicalCount: item.physicalCount
+            };
+          }
+        });
+        setAuditData(reconstructedAuditData);
+        alert("Previous audit draft loaded successfully!");
+      } else {
+        alert("No previous audit draft found.");
+      }
+    } catch (error) {
+      console.error("Error loading draft:", error);
+      alert("Failed to load previous audit. Please try again.");
+    }
   };
 
   // Add missing function implementations
@@ -359,7 +389,7 @@ const MobileStockAudit = () => {
             Start New Audit
           </button>
           <button
-            onClick={() => console.log('Resume previous')}
+            onClick={resumePreviousAudit}
             className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium"
           >
             <FiPause className="w-4 h-4" />
@@ -457,7 +487,10 @@ const MobileStockAudit = () => {
                   <FiEye className="w-4 h-4" />
                   View
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg">
+                <button 
+                  onClick={() => navigate(`/inventory/edit/${product.id}`)}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg"
+                >
                   <FiEdit3 className="w-4 h-4" />
                   Adjust
                 </button>
@@ -482,17 +515,24 @@ const MobileStockAudit = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-2">
+          <button 
+            onClick={exportToCSV}
+            className="flex items-center justify-center gap-1 px-3 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg"
+          >
+            <FiDownload className="w-4 h-4" />
+            Export
+          </button>
           <button 
             onClick={saveDraft}
-            className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg"
+            className="flex items-center justify-center gap-1 px-3 py-3 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg"
           >
             <FiSave className="w-4 h-4" />
-            Save Draft
+            Draft
           </button>
           <button 
             onClick={completeAudit}
-            className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-green-600 rounded-lg"
+            className="flex items-center justify-center gap-1 px-3 py-3 text-sm font-medium text-white bg-green-600 rounded-lg"
           >
             <FiCheckCircle className="w-4 h-4" />
             Complete
