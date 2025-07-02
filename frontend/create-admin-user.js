@@ -5,7 +5,7 @@
  * 
  * This script creates an admin user with the following credentials:
  * - Email: admin@elith.com
- * - Password: admin
+ * - Password: admin1234
  * - Role: admin
  * 
  * Usage: node create-admin-user.js
@@ -35,7 +35,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
  */
 async function createAdminUser() {
   const email = 'admin@elith.com';
-  const password = 'admin';
+  const password = 'admin1234';
   const fullName = 'System Administrator';
 
   try {
@@ -103,7 +103,7 @@ async function createAdminUser() {
     console.log('\n🎉 Admin user created successfully!');
     console.log('\n📋 Login Credentials:');
     console.log('   Email: admin@elith.com');
-    console.log('   Password: admin');
+    console.log('   Password: admin1234');
     console.log('   Role: Admin');
     console.log('\n🔗 You can now log in to the application at: http://localhost:5173/login');
 

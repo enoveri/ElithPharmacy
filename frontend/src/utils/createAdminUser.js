@@ -129,7 +129,7 @@ export const checkAdminUserExists = async (email) => {
  */
 export const createDefaultAdminUser = async () => {
   const email = 'admin@elith.com';
-  const password = 'admin';
+  const password = 'admin1234';
   const fullName = 'System Administrator';
 
   // First check if user already exists

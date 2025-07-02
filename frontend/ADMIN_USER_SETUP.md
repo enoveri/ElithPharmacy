@@ -6,7 +6,7 @@ This guide explains how to create an admin user for the Elith Pharmacy applicati
 
 The default admin user will be created with the following credentials:
 - **Email**: `admin@elith.com`
-- **Password**: `admin`
+- **Password**: `admin1234`
 - **Role**: `admin`
 - **Full Name**: `System Administrator`
 

@@ -62,7 +62,7 @@ const CreateAdminUser = () => {
             <h3 className="font-semibold text-blue-900 mb-2">Admin User Details</h3>
             <div className="space-y-2 text-sm">
               <div><strong>Email:</strong> admin@elith.com</div>
-              <div><strong>Password:</strong> admin</div>
+              <div><strong>Password:</strong> admin1234</div>
               <div><strong>Role:</strong> Admin</div>
               <div><strong>Full Name:</strong> System Administrator</div>
             </div>
