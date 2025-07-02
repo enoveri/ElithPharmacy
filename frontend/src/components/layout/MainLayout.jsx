@@ -19,6 +19,7 @@ const MainLayout = () => {
       "/inventory/add": "Add Product",
       "/inventory/edit": "Edit Product",
       "/inventory/view": "View Product",
+      "/inventory/audit": "Stock Audit",
       "/purchases": "Purchase Orders",
       "/purchases/add": "Add Purchase Order",
       "/purchases/edit": "Edit Purchase Order",
@@ -73,6 +74,10 @@ const MainLayout = () => {
       "/inventory/add": {
         title: "Add Product",
         subtitle: "Add new product to inventory",
+      },
+      "/inventory/audit": {
+        title: "Stock Audit",
+        subtitle: "Perform comprehensive inventory audits and track variances",
       },
       "/purchases": {
         title: "Purchase Orders",

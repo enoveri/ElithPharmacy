@@ -20,7 +20,7 @@ import {
   FiSave,
   FiCheckCircle
 } from 'react-icons/fi';
-import { dataService } from '../../services';
+import { stockAuditService, dataService } from "../../services";
 import { useProductsStore, useSettingsStore } from '../../store';
 
 const MobileStockAudit = () => {
@@ -43,17 +43,39 @@ const MobileStockAudit = () => {
   const [sortBy, setSortBy] = useState('name');
   const [auditData, setAuditData] = useState({});
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
 
-  // Categories for filtering
-  const categories = [
-    'Pain Relief', 'Antibiotics', 'Vitamins & Supplements', 'Cold & Flu',
-    'Digestive Health', 'Heart & Blood Pressure', 'Diabetes Care',
-    'Skin Care', 'Eye Care', 'Other'
-  ];
-
+  // useEffect to load products and categories
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
+    const loadData = async () => {
+      setIsLoading(true);
+      try {
+        console.log("🔄 [MobileStockAudit] Loading products...");
+        const productsData = await dataService.products.getAll();
+        console.log("✅ [MobileStockAudit] Products loaded:", productsData?.length || 0);
+        setProducts(productsData || []);
+
+        console.log("🔄 [MobileStockAudit] Loading categories...");
+        const categoriesData = await dataService.categories.getAll();
+        console.log("✅ [MobileStockAudit] Categories loaded:", categoriesData?.length || 0);
+        setCategories(categoriesData || []);
+      } catch (error) {
+        console.error("❌ [MobileStockAudit] Error loading data:", error);
+        setProducts([]);
+        // Fallback to hardcoded categories
+        setCategories([
+          { id: 1, name: "Pain Relief" },
+          { id: 2, name: "Antibiotics" },
+          { id: 3, name: "Vitamins & Supplements" },
+          { id: 4, name: "Cold & Flu" },
+          { id: 5, name: "Other" },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
 
   // Handle physical count updates
   const updatePhysicalCount = (productId, count) => {
@@ -88,52 +110,30 @@ const MobileStockAudit = () => {
   };
 
   // Filter and sort products
-  const filteredProducts = products
-    .filter(product => {
-      // Search filter
-      const matchesSearch = 
-        product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.batch_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        product.category?.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredProducts = products.filter(product => {
+    const matchesSearch = (product.name || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.batch_number || product.batchNumber || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (product.category || "").toLowerCase().includes(searchTerm.toLowerCase());
 
-      // Category filter
-      const matchesCategory = filters.category === 'all' || product.category === filters.category;
+    let matchesStatus = true;
+    if (statusFilter !== 'all') {
+      matchesStatus = getAuditStatus(product.id) === statusFilter;
+    }
 
-      // Status filters
-      let matchesFilters = true;
-      if (filters.lowStock) {
-        const minStock = product.min_stock_level || 10;
-        matchesFilters = matchesFilters && product.quantity <= minStock;
-      }
-      if (filters.expiringSoon) {
-        const expiryDate = product.expiry_date;
-        if (expiryDate) {
-          const daysUntilExpiry = Math.ceil((new Date(expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-          matchesFilters = matchesFilters && daysUntilExpiry <= 30 && daysUntilExpiry > 0;
-        } else {
-          matchesFilters = false;
-        }
-      }
-      if (filters.varianceOnly) {
-        matchesFilters = matchesFilters && getVariance(product.id) !== 0;
-      }
-
-      return matchesSearch && matchesCategory && matchesFilters;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case 'stock':
-          return b.quantity - a.quantity;
-        case 'variance':
-          return Math.abs(getVariance(b.id)) - Math.abs(getVariance(a.id));
-        default:
-          return a.name?.localeCompare(b.name) || 0;
-      }
-    });
+    const matchesCategory = categoryFilter === 'all' || (product.category || "") === categoryFilter;
+    return matchesSearch && matchesStatus && matchesCategory;
+  });
 
   // Calculate summary statistics
-  const auditedItems = Object.keys(auditData).length;
-  const totalVariance = Object.values(auditData).reduce((sum, item) => sum + (item.variance || 0), 0);
+  const auditedItems = Object.keys(auditData).filter(
+    key => auditData[key]?.physicalCount !== undefined && 
+           auditData[key]?.physicalCount !== null && 
+           auditData[key]?.physicalCount !== ""
+  ).length;
+  const totalVariance = Object.keys(auditData).reduce((sum, productId) => {
+    return sum + getVariance(parseInt(productId));
+  }, 0);
+  const estimatedValue = totalVariance * 5000;
 
   // Start new audit
   const startNewAudit = () => {
@@ -145,63 +145,79 @@ const MobileStockAudit = () => {
     setAuditData({});
   };
 
-  // Save draft functionality
+  // Add missing function implementations
+  const exportToCSV = async () => {
+    try {
+      const auditDataForExport = {
+        audit_date: auditDate,
+        audit_items: filteredProducts.map(product => ({
+          ...product,
+          physicalCount: auditData[product.id]?.physicalCount || null,
+          variance: getVariance(product.id),
+          status: getAuditStatus(product.id)
+        })),
+        total_items_audited: auditedItems,
+        total_variance: totalVariance,
+        estimated_value_impact: estimatedValue
+      };
+      await stockAuditService.exportAuditData(auditDataForExport, "csv");
+    } catch (error) {
+      console.error("Export failed:", error);
+      alert("Export failed. Please try again.");
+    }
+  };
+
   const saveDraft = async () => {
     try {
       const draftData = {
         audit_date: auditDate,
-        audit_items: Object.entries(auditData).map(([productId, data]) => ({
-          product_id: productId,
-          system_stock: getProductById(productId)?.quantity || 0,
-          physical_count: data.physicalCount,
-          variance: data.variance,
-          status: getAuditStatus(productId)
+        audit_items: products.map(product => ({
+          ...product,
+          physicalCount: auditData[product.id]?.physicalCount || null,
+          variance: getVariance(product.id),
+          status: getAuditStatus(product.id)
         })),
+        status: "draft",
         total_items_audited: auditedItems,
         total_variance: totalVariance,
-        status: 'draft',
-        created_at: new Date().toISOString()
+        estimated_value_impact: estimatedValue
       };
-
-      localStorage.setItem('stock_audit_draft', JSON.stringify(draftData));
-      alert('Draft saved successfully!');
+      await stockAuditService.saveDraft(draftData);
+      alert("Draft saved successfully!");
     } catch (error) {
-      console.error('Error saving draft:', error);
-      alert('Error saving draft. Please try again.');
+      console.error("Save failed:", error);
+      alert("Save failed. Please try again.");
     }
   };
 
-  // Complete audit functionality
   const completeAudit = async () => {
+    if (auditedItems < 5) {
+      alert("Please audit at least 5 items before completing the audit.");
+      return;
+    }
+    
     try {
-      if (auditedItems === 0) {
-        alert('Please audit at least one item before completing.');
-        return;
-      }
-
-      const completeAuditData = {
+      const auditDataForCompletion = {
         audit_date: auditDate,
-        audit_items: Object.entries(auditData).map(([productId, data]) => ({
-          product_id: productId,
-          system_stock: getProductById(productId)?.quantity || 0,
-          physical_count: data.physicalCount,
-          variance: data.variance,
-          status: getAuditStatus(productId)
+        audit_items: products.map(product => ({
+          ...product,
+          physicalCount: auditData[product.id]?.physicalCount || null,
+          variance: getVariance(product.id),
+          status: getAuditStatus(product.id)
         })),
+        status: "completed",
         total_items_audited: auditedItems,
         total_variance: totalVariance,
-        status: 'completed',
+        estimated_value_impact: estimatedValue,
         completed_at: new Date().toISOString()
       };
-
-      console.log('Completing audit:', completeAuditData);
-      localStorage.removeItem('stock_audit_draft');
-      
-      alert('Audit completed successfully!');
-      navigate('/inventory');
+      await stockAuditService.completeAudit(auditDataForCompletion);
+      alert("Audit completed successfully!");
+      // Navigate back to inventory
+      window.history.back();
     } catch (error) {
-      console.error('Error completing audit:', error);
-      alert('Error completing audit. Please try again.');
+      console.error("Complete audit failed:", error);
+      alert("Failed to complete audit. Please try again.");
     }
   };
 
@@ -243,14 +259,14 @@ const MobileStockAudit = () => {
 
           {/* Search Bar */}
           <div className="relative">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
             <input
               type="text"
               placeholder="Search products..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-4 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+            <FiSearch className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
           </div>
         </div>
 
@@ -299,7 +315,7 @@ const MobileStockAudit = () => {
                     >
                       <option value="all">All Categories</option>
                       {categories.map(category => (
-                        <option key={category} value={category}>{category}</option>
+                        <option key={category.id} value={category.name}>{category.name}</option>
                       ))}
                     </select>
                   </div>
@@ -372,8 +388,21 @@ const MobileStockAudit = () => {
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-medium text-gray-900 truncate">{product.name}</h3>
-                    <p className="text-sm text-gray-500 truncate">{product.batch_number}</p>
+                    <div style={{ 
+                      fontSize: '14px', 
+                      fontWeight: '600', 
+                      color: '#1f2937', 
+                      marginBottom: '4px' 
+                    }}>
+                      {product.name || "Unknown Product"}
+                    </div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: '#6b7280', 
+                      marginBottom: '8px' 
+                    }}>
+                      Batch: {product.batch_number || product.batchNumber || "No batch"} • {product.category || "No category"}
+                    </div>
                   </div>
                 </div>
                 
