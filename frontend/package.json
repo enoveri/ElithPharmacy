@@ -14,7 +14,8 @@
     "build:analyze": "npm run build && npx vite-bundle-analyzer dist/stats.html",
     "clean": "rm -rf dist",
     "validate": "node validate-deployment.js",
-    "deploy:check": "npm run validate && npm run build && npm run preview"
+    "deploy:check": "npm run validate && npm run build && npm run preview",
+    "create-admin": "node create-admin-user.js"
   },
   "dependencies": {
     "@react-spring/web": "^10.0.1",

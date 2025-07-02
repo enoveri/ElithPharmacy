@@ -251,6 +251,13 @@ function App() {
         console.log("💰 Sales result:", result);
         return result;
       },
+      createAdmin: async () => {
+        console.log("👑 Creating admin user...");
+        const { createDefaultAdminUser } = await import('./utils/createAdminUser');
+        const result = await createDefaultAdminUser();
+        console.log("👑 Admin creation result:", result);
+        return result;
+      },
     };
   }
   return (
