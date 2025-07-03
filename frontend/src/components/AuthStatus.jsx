@@ -1,6 +1,8 @@
 import React from 'react';
+import styles from '././custom_css/Custom.module.css';
 import { useAuth } from '../contexts/AuthContext';
 import { FiUser, FiLogOut } from 'react-icons/fi';
+import { useState, useEffect } from 'react'
 
 const AuthStatus = () => {
   const { user, loading, logout } = useAuth();
@@ -37,9 +39,9 @@ const AuthStatus = () => {
   }
 
   return (
-    <div className="fixed top-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg z-50">
+    <div className={`${styles.authStatusBadge} fixed top-5 right-65 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg z-50 hover:scale-105 transition-transform duration-200`}>
       <div className="flex items-center gap-2">
-        <FiUser className="h-4 w-4" />
+        <FiUser className="h-4 w-4"/>
         <span className="text-sm font-medium">
           Logged in as: {user.email}
         </span>
