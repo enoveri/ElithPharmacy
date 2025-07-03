@@ -5,6 +5,7 @@ import { FiArrowLeft, FiArrowRight, FiCheck, FiPackage } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
+import CategorySelect from "../components/ui/CategorySelect";
 import "../styles/mobile.css";
 
 function AddProduct() {
@@ -19,7 +20,6 @@ function AddProduct() {
   const location = useLocation();
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [categories, setCategories] = useState([]);
   const { addProduct } = useProductsStore();
 
   // Check if this is being called from a purchase order
@@ -87,32 +87,7 @@ function AddProduct() {
     }
   }, [isFromPurchaseOrder, purchaseOrderData]);
 
-  // Load categories on component mount
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await dataService.categories.getAll();
-        setCategories(categoriesData);
-      } catch (error) {
-        console.error("Error loading categories:", error);
-        // Fallback to hardcoded categories
-        setCategories([
-          { id: 1, name: "Antibiotics" },
-          { id: 2, name: "Pain Relief" },
-          { id: 3, name: "Vitamins" },
-          { id: 4, name: "Cold & Flu" },
-          { id: 5, name: "Supplements" },
-          { id: 6, name: "First Aid" },
-          { id: 7, name: "Diabetes Care" },
-          { id: 8, name: "Heart Health" },
-          { id: 9, name: "Skin Care" },
-          { id: 10, name: "Mental Health" },
-        ]);
-      }
-    };
-
-    loadCategories();
-  }, []);
+  // Categories are now handled by the CategorySelect component
 
   const renderBasicInfoStep = () => (
     <div
@@ -191,35 +166,14 @@ function AddProduct() {
           >
             Category *
           </label>
-          <div style={{ position: "relative" }}>
-            <input
-              type="text"
-              list="categories"
-              value={productData.category}
-              onChange={(e) =>
-                setProductData({ ...productData, category: e.target.value })
-              }
-              className={isMobile ? "mobile-form-input" : ""}
-              style={
-                isMobile
-                  ? {}
-                  : {
-                      width: "100%",
-                      padding: "10px 12px",
-                      border: "1px solid #d1d5db",
-                      borderRadius: "6px",
-                      fontSize: "13px",
-                    }
-              }
-              placeholder="Select or type category"
-              required
-            />
-            <datalist id="categories">
-              {categories.map((category) => (
-                <option key={category.id} value={category.name} />
-              ))}
-            </datalist>
-          </div>
+          <CategorySelect
+            value={productData.category}
+            onChange={(selectedCategory) =>
+              setProductData({ ...productData, category: selectedCategory })
+            }
+            placeholder="Select or create category"
+            required={true}
+          />
         </div>
 
         <div>

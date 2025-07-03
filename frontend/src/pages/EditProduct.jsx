@@ -17,6 +17,7 @@ import {
 import { dataService } from "../services";
 import { useSettings } from "../contexts/SettingsContext";
 import { useIsMobile } from "../hooks/useIsMobile";
+import CategorySelect from "../components/ui/CategorySelect";
 import "../styles/mobile.css";
 
 function EditProduct() {
@@ -72,18 +73,7 @@ function EditProduct() {
     },
   ];
 
-  const [categories, setCategories] = useState([
-    "Pain Relief",
-    "Antibiotics",
-    "Vitamins & Supplements",
-    "Cold & Flu",
-    "Digestive Health",
-    "Heart & Blood Pressure",
-    "Diabetes Care",
-    "Skin Care",
-    "Eye Care",
-    "Other",
-  ]);
+  // Categories are now handled by the CategorySelect component
 
   // Load existing product data and categories
   useEffect(() => {
@@ -93,11 +83,8 @@ function EditProduct() {
         try {
           console.log("🔍 [EditProduct] Loading product with ID:", id);
 
-          // Load product and categories in parallel
-          const [product, categoriesData] = await Promise.all([
-            dataService.products.getById(id),
-            dataService.categories.getAll().catch(() => []), // Fallback to empty array
-          ]);
+          // Load product data
+          const product = await dataService.products.getById(id);
 
           if (!product) {
             console.error("❌ [EditProduct] Product not found");
@@ -108,13 +95,6 @@ function EditProduct() {
           }
 
           console.log("✅ [EditProduct] Product loaded:", product);
-
-          // Update categories if loaded successfully
-          if (categoriesData && categoriesData.length > 0) {
-            const categoryNames = categoriesData.map((cat) => cat.name || cat);
-            setCategories([...new Set([...categoryNames, "Other"])]);
-            console.log("✅ [EditProduct] Categories loaded:", categoryNames);
-          }
 
           // Map database fields to form fields (handle both camelCase and snake_case)
           setFormData({
@@ -167,6 +147,22 @@ function EditProduct() {
       setErrors((prev) => ({
         ...prev,
         [name]: "",
+      }));
+    }
+  };
+
+  // Handle category change from CategorySelect component
+  const handleCategoryChange = (selectedCategory) => {
+    setFormData((prev) => ({
+      ...prev,
+      category: selectedCategory,
+    }));
+
+    // Clear category error when user selects a category
+    if (errors.category) {
+      setErrors((prev) => ({
+        ...prev,
+        category: "",
       }));
     }
   };
@@ -361,28 +357,13 @@ function EditProduct() {
                 >
                   Category *
                 </label>
-                <select
-                  name="category"
+                <CategorySelect
                   value={formData.category}
-                  onChange={handleInputChange}
-                  style={{
-                    width: "100%",
-                    padding: "10px 12px",
-                    border: errors.category
-                      ? "1px solid #ef4444"
-                      : "1px solid #e5e7eb",
-                    borderRadius: "6px",
-                    fontSize: "13px",
-                    backgroundColor: "#ffffff",
-                  }}
-                >
-                  <option value="">Select category</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleCategoryChange}
+                  error={errors.category}
+                  placeholder="Select or create category"
+                  required={true}
+                />
                 {errors.category && (
                   <p
                     style={{
