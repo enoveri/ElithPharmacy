@@ -249,7 +249,7 @@ function EditProduct() {
         manufacturer: formData.manufacturer,
         expiryDate: formData.expiryDate || null,
         batchNumber: formData.batchNumber,
-        location: formData.location,
+        // location: formData.location, // Commented out - column doesn't exist in database
         status: formData.status,
       };
 
