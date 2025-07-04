@@ -15,11 +15,11 @@ import {
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { dataService } from "../../services";
-import { useSettings } from "../../contexts/SettingsContext";
+import { useSettingsStore } from "../../store";
 
 const MobileInventory = () => {
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings } = useSettingsStore();
   const { currency = "UGX" } = settings;
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);

@@ -13,11 +13,11 @@ import {
   FiCamera,
 } from "react-icons/fi";
 import { dataService } from "../../services";
-import { useSettings } from "../../contexts/SettingsContext";
+import { useSettingsStore } from "../../store";
 
 const MobilePOS = () => {
   // Get settings for currency and tax rate
-  const { settings } = useSettings();
+  const { settings } = useSettingsStore();
   const { currency = "UGX", taxRate = 18 } = settings;
 
   const [products, setProducts] = useState([]);

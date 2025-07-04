@@ -15,7 +15,7 @@ import {
   FiCamera,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
 import CategorySelect from "../components/ui/CategorySelect";
 import "../styles/mobile.css";
@@ -25,7 +25,7 @@ function EditProduct() {
   const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings } = useSettingsStore();
   const { currency = "UGX" } = settings;
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);

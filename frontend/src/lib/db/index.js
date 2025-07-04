@@ -2427,6 +2427,146 @@ export const dbHelpers = {
       return { success: false, error };
     }
   },
+
+  // Category management functions
+  getCategories: async () => {
+    try {
+      console.log("📂 [DB] Fetching all categories");
+      
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("status", "active")
+        .order("name");
+
+      if (error) {
+        console.error("❌ [DB] Error fetching categories:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Categories fetched:", data?.length || 0);
+      return { success: true, data: data || [] };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getCategories:", error);
+      return { success: false, error };
+    }
+  },
+
+  getCategoryById: async (id) => {
+    try {
+      console.log("📂 [DB] Fetching category by ID:", id);
+      
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error fetching category:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Category fetched:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getCategoryById:", error);
+      return { success: false, error };
+    }
+  },
+
+  createCategory: async (category) => {
+    try {
+      console.log("📂 [DB] Creating category:", category);
+      
+      const categoryData = {
+        name: category.name,
+        description: category.description || null,
+        status: category.status || "active",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("categories")
+        .insert(categoryData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error creating category:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Category created:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in createCategory:", error);
+      return { success: false, error };
+    }
+  },
+
+  updateCategory: async (id, updates) => {
+    try {
+      console.log("📂 [DB] Updating category:", id, updates);
+      
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("categories")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error updating category:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Category updated:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in updateCategory:", error);
+      return { success: false, error };
+    }
+  },
+
+  deleteCategory: async (id) => {
+    try {
+      console.log("📂 [DB] Deleting category:", id);
+      
+      // Soft delete by setting status to 'inactive'
+      const { data, error } = await supabase
+        .from("categories")
+        .update({ 
+          status: "inactive",
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error deleting category:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Category deleted (soft):", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteCategory:", error);
+      return { success: false, error };
+    }
+  },
 };
 
 export default dbHelpers;
