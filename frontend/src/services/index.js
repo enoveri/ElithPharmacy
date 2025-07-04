@@ -224,25 +224,33 @@ export const dataService = {
   // Categories
   categories: {
     getAll: async () => {
-      const { data, error } = await dbHelpers.getCategories();
-      if (error) throw error;
-      return data || [];
+      const result = await dbHelpers.getCategories();
+      if (!result.success) throw result.error;
+      return result.data || [];
     },
 
     getById: async (id) => {
-      return await dbHelpers.getCategoryById(id);
+      const result = await dbHelpers.getCategoryById(id);
+      if (!result.success) throw result.error;
+      return result.data;
     },
 
     create: async (category) => {
-      return await dbHelpers.createCategory(category);
+      const result = await dbHelpers.createCategory(category);
+      if (!result.success) throw result.error;
+      return result.data;
     },
 
     update: async (id, updates) => {
-      return await dbHelpers.updateCategory(id, updates);
+      const result = await dbHelpers.updateCategory(id, updates);
+      if (!result.success) throw result.error;
+      return result.data;
     },
 
     delete: async (id) => {
-      return await dbHelpers.deleteCategory(id);
+      const result = await dbHelpers.deleteCategory(id);
+      if (!result.success) throw result.error;
+      return result.data;
     },
   }, // Enhanced Notifications with comprehensive service
   notifications: {

@@ -18,12 +18,12 @@ import {
   FiClock,
   FiFileText,
 } from "react-icons/fi";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettingsStore } from "../store";
 
 function PurchaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings } = useSettingsStore();
   const { currency = "UGX" } = settings;
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);

@@ -21,7 +21,7 @@ import {
   FiLoader,
 } from "react-icons/fi";
 import { dataService } from "../services";
-import { useSettings } from "../contexts/SettingsContext";
+import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
 
@@ -30,7 +30,7 @@ function ViewProduct() {
   const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
-  const { settings } = useSettings();
+  const { settings } = useSettingsStore();
   const { currency = "UGX" } = settings;
 
   const [product, setProduct] = useState(null);
