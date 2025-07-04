@@ -817,6 +817,25 @@ function Inventory() {
         }}
       >
         <button
+          onClick={() => navigate("/inventory/receive")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            backgroundColor: "#10b981",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          <FiPackage size={16} />
+          Receive Stock
+        </button>
+        <button
           onClick={() => navigate("/inventory/audit")}
           style={{
             display: "flex",
