@@ -1243,13 +1243,13 @@ Email: info@elithpharmacy.com`;
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>{" "}
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(sale.subtotal || 0).toFixed(2)}
+                  Ush {(sale.subtotal || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Tax:</span>
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  ₦{(sale.tax || 0).toFixed(2)}
+                  Ush{(sale.tax || 0).toFixed(2)}
                 </span>
               </div>
               {(sale.discount || 0) > 0 && (
@@ -1258,7 +1258,7 @@ Email: info@elithpharmacy.com`;
                 >
                   <span style={{ color: "#6b7280" }}>Discount:</span>{" "}
                   <span style={{ fontWeight: "600", color: "#ef4444" }}>
-                    -₦{(sale.discount || 0).toFixed(2)}
+                    -Ush{(sale.discount || 0).toFixed(2)}
                   </span>
                 </div>
               )}
@@ -1286,7 +1286,7 @@ Email: info@elithpharmacy.com`;
                     color: "#10b981",
                   }}
                 >
-                  ₦{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                  Ush{(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                 </span>
               </div>
             </div>
