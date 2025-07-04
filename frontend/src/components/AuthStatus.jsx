@@ -39,19 +39,34 @@ const AuthStatus = () => {
   }
 
   return (
-    <div className={`${styles.authStatusBadge} fixed top-5 right-65 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded-lg shadow-lg z-50 hover:scale-105 transition-transform duration-200`}>
-      <div className="flex items-center gap-2">
-        <FiUser className="h-4 w-4"/>
-        <span className="text-sm font-medium">
-          Logged in as: {user.email}
-        </span>
-        <button
-          onClick={handleLogout}
-          className="ml-2 p-1 hover:bg-green-200 rounded transition-colors"
-          title="Logout"
-        >
-          <FiLogOut className="h-3 w-3" />
-        </button>
+    <div className={`${styles.authStatusBadge} fixed top-3.5 right-65 z-50`}>
+      <div className="relative group">
+        <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium cursor-pointer">
+          {user.email.charAt(0).toUpperCase()}
+          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
+        </div>
+        {/* Tooltip*/}
+        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 border border-gray-200">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium">
+                {user.email.charAt(0).toUpperCase()}
+              </div>
+              <div className="text-sm font-medium text-gray-700">
+                {user.email}
+              </div>
+            </div>
+            <div className="border-t border-gray-200 mt-2 pt-2">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 text-sm text-gray-700 hover:bg-gray-100 p-2 rounded transition-colors"
+              >
+                <FiLogOut className="h-4 w-4" />
+                <span>Log out</span>
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

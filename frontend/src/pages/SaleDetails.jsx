@@ -1243,7 +1243,7 @@ Email: info@elithpharmacy.com`;
               <div style={{ display: "flex", justifyContent: "space-between" }}>
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>{" "}
                 <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  Ush{(sale.subtotal || 0).toFixed(2)}
+                  Ush {(sale.subtotal || 0).toFixed(2)}
                 </span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
