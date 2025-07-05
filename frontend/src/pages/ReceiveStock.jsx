@@ -52,6 +52,7 @@ function ReceiveStock() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
   // Import functionality
   const [showImport, setShowImport] = useState(false);
@@ -121,8 +122,11 @@ function ReceiveStock() {
           ...product,
           quantityReceived: 1,
           costPrice: product.cost_price || 0,
+          sellingPrice: product.price || 0,
           batchNumber: "",
           expiryDate: "",
+          manufacturer: product.manufacturer || "",
+          volume: product.volume || "",
           notes: "",
         },
       ]);
@@ -132,23 +136,59 @@ function ReceiveStock() {
     setShowSearch(false);
   };
 
-  const addNewProduct = () => {
-    if (!searchTerm.trim()) return;
-    
-    // Create a new product object for receiving
-    const newProduct = {
-      id: `new-${Date.now()}`, // Temporary ID for new products
-      name: searchTerm.trim(),
-      category: "Other", // Default category
-      manufacturer: "",
-      quantity: 0, // New product starts with 0 inventory
-      cost_price: 0,
-      price: 0,
-      min_stock_level: 0,
-      isNewProduct: true, // Flag to identify new products
-    };
-    
-    addProductToReceive(newProduct);
+  const createNewProduct = async (searchTerm) => {
+    try {
+      setCreatingProduct(true);
+      console.log("🔄 [ReceiveStock] Creating new product:", searchTerm);
+
+      // Create the new product in the database
+      const productData = {
+        name: searchTerm.trim(),
+        category: "Other", // Default category
+        manufacturer: "",
+        quantity: 0, // New product starts with 0 inventory
+        cost_price: 0,
+        price: 0,
+        min_stock_level: 0,
+        volume: "",
+        batch_number: "",
+        expiry_date: null,
+        description: `Product created during stock receipt on ${new Date().toLocaleDateString()}`,
+      };
+
+      const newProduct = await dataService.products.create(productData);
+      console.log("✅ [ReceiveStock] New product created:", newProduct);
+
+      // Check if product was actually created
+      if (!newProduct) {
+        throw new Error("Product creation returned null");
+      }
+
+      // Add to local products list
+      setProducts((prev) => [...prev, newProduct]);
+
+      // Add the newly created product to receive stock
+      addProductToReceive(newProduct);
+
+      return newProduct;
+    } catch (error) {
+      console.error("❌ [ReceiveStock] Error creating product:", error);
+
+      // Provide more specific error messages
+      let errorMessage = "Error creating product. Please try again.";
+      if (error.message && error.message.includes("duplicate")) {
+        errorMessage =
+          "A product with this name already exists. Please search for it instead.";
+      } else if (error.message && error.message.includes("constraint")) {
+        errorMessage =
+          "Invalid product information. Please check and try again.";
+      }
+
+      setError(errorMessage);
+      return null;
+    } finally {
+      setCreatingProduct(false);
+    }
   };
 
   const updateProductQuantity = (index, change) => {
@@ -178,138 +218,32 @@ function ReceiveStock() {
   };
 
   const calculateTotals = () => {
-    const subtotal = selectedProducts.reduce(
-      (sum, product) => sum + (product.quantityReceived * (product.costPrice || 0)),
-      0
-    );
-    const tax = subtotal * (settings.taxRate || 18) / 100;
-    const total = subtotal + tax;
+    const totalItems = selectedProducts.reduce((sum, product) => sum + product.quantityReceived, 0);
+    const totalCost = selectedProducts.reduce((sum, product) => sum + (product.quantityReceived * product.costPrice), 0);
     
-    return { subtotal, tax, total };
+    return { totalItems, totalCost };
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (selectedProducts.length === 0) {
-      setError("Please add at least one product to receive");
-      return;
-    }
-
-    if (!supplier.name.trim()) {
-      setError("Please enter supplier name");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      const processedProducts = [];
-      
-      // Update product quantities in inventory
-      for (const product of selectedProducts) {
-        const currentProduct = await dataService.products.getById(product.id);
-        if (currentProduct) {
-          const newQuantity = (currentProduct.quantity || 0) + product.quantityReceived;
-          
-          const updateData = {
-            quantity: newQuantity,
-            last_restock_date: new Date().toISOString(),
-          };
-
-          // Update cost price if provided
-          if (product.costPrice > 0) {
-            updateData.cost_price = product.costPrice;
-          }
-
-          // Update batch and expiry if provided
-          if (product.batchNumber) {
-            updateData.batch_number = product.batchNumber;
-          }
-          if (product.expiryDate) {
-            updateData.expiry_date = product.expiryDate;
-          }
-
-          await dataService.products.update(product.id, updateData);
-          
-          // Track processed products for purchase record
-          processedProducts.push({
-            product_name: product.name,
-            quantity: product.quantityReceived,
-            unit_cost: product.costPrice || 0,
-            total: product.quantityReceived * (product.costPrice || 0)
-          });
-        }
-      }
-
-      // Create purchase record for the manual stock receipt
-      try {
-        const totalAmount = processedProducts.reduce((sum, item) => sum + item.total, 0);
-        const receiptDate = new Date().toISOString();
-
-        const purchaseData = {
-          purchase_number: referenceNumber,
-          supplier: {
-            name: supplier.name,
-            contact: supplier.contact,
-            email: supplier.email,
-            phone: supplier.phone
-          },
-          order_date: receiptDate,
-          expected_delivery: deliveryDate + 'T00:00:00Z',
-          actual_delivery: receiptDate,
-          status: 'delivered',
-          total_amount: totalAmount,
-          purchase_items: processedProducts,
-          notes: notes || `Manual stock receipt. ${selectedProducts.length} products received.`,
-          is_import: false,
-          delivery_info: {
-            reference_number: referenceNumber,
-            delivery_date: deliveryDate,
-            notes: notes
-          }
-        };
-
-        await dataService.purchases.create(purchaseData);
-        console.log("✅ Purchase record created for manual receipt:", referenceNumber);
-      } catch (error) {
-        console.error("Error creating purchase record:", error);
-        // Don't fail the entire process if purchase record creation fails
-      }
-
-      setSuccess(true);
-      setTimeout(() => {
-        navigate("/inventory");
-      }, 2000);
-
-    } catch (error) {
-      console.error("Error receiving stock:", error);
-      setError("Failed to receive stock. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Import functionality methods
+  // Import functionality
   const downloadTemplate = () => {
-    const template = [
-      [
-        "Product_Name",
-        "Category", 
-        "Volume",
-        "Retail_Price",
-        "Cost_Price", 
-        "Quantity_Received",
-        "Batch_Number",
-        "Expiry_Date",
-        "Manufacturer",
-        "Notes"
-      ],
+    const headers = [
+      "Product_Name",
+      "Category", 
+      "Volume",
+      "Retail_Price",
+      "Cost_Price",
+      "Quantity_Received",
+      "Batch_Number",
+      "Expiry_Date",
+      "Manufacturer",
+      "Notes"
+    ];
+    
+    const sampleData = [
       [
         "Panadol 500mg",
         "Pain Relief",
-        "500mg",
+        "500mg", 
         "1000",
         "750",
         "100",
@@ -320,9 +254,9 @@ function ReceiveStock() {
       ],
       [
         "Amoxicillin 250mg",
-        "Antibiotics", 
+        "Antibiotics",
         "250mg",
-        "500",
+        "500", 
         "300",
         "50",
         "BATCH002",
@@ -331,44 +265,52 @@ function ReceiveStock() {
         "Express delivery"
       ]
     ];
-
-    const csvContent = template.map(row => row.join(",")).join("\n");
+    
+    const csvContent = [headers, ...sampleData]
+      .map(row => row.map(cell => `"${cell}"`).join(","))
+      .join("\n");
+    
     const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
+    const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
     link.download = "stock_import_template.csv";
+    document.body.appendChild(link);
     link.click();
-    window.URL.revokeObjectURL(url);
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const validTypes = [
-        "text/csv",
-        "application/vnd.ms-excel",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-      ];
-      
-      if (validTypes.includes(file.type) || file.name.endsWith('.csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        setImportFile(file);
-        setError("");
-      } else {
-        setError("Please select a valid CSV or Excel file");
-        event.target.value = "";
-      }
+    if (!file) return;
+    
+    // Check file type
+    const allowedTypes = [
+      'text/csv',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    if (!allowedTypes.includes(file.type) && !file.name.match(/\.(csv|xlsx|xls)$/i)) {
+      setError("Please select a CSV or Excel file (.csv, .xlsx, .xls)");
+      return;
     }
+    
+    setImportFile(file);
+    setError("");
   };
 
   const parseCSV = (text) => {
     const lines = text.split('\n').filter(line => line.trim());
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    if (lines.length < 2) return [];
+    
+    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim());
     const data = [];
     
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
-      if (values.length >= headers.length && values[0]) {
+      const values = lines[i].split(',').map(v => v.replace(/"/g, '').trim());
+      if (values.length >= headers.length) {
         const row = {};
         headers.forEach((header, index) => {
           row[header] = values[index] || '';
@@ -382,272 +324,196 @@ function ReceiveStock() {
 
   const processImportData = async () => {
     if (!importFile) return;
-
+    
     setImportLoading(true);
     setImportProgress(0);
     setError("");
-
+    
     try {
-      const fileText = await importFile.text();
-      const importData = parseCSV(fileText);
+      const text = await importFile.text();
+      const data = parseCSV(text);
       
-      if (importData.length === 0) {
+      if (data.length === 0) {
         throw new Error("No valid data found in file");
       }
-
-      // Load existing products and categories
-      const existingProducts = await dataService.products.getAll();
-      const existingCategories = await dataService.categories.getAll();
       
-      const stats = {
-        processed: 0,
-        updated: 0,
-        created: 0,
-        categoriesCreated: 0,
-        errors: []
-      };
-
-      // Get or create categories first
-      const categoryMap = new Map();
-      existingCategories.forEach(cat => {
-        categoryMap.set(cat.name.toLowerCase(), cat.name);
+      // Validate required fields
+      const requiredFields = ['Product_Name'];
+      const validData = data.filter(row => {
+        return requiredFields.every(field => row[field] && row[field].trim());
       });
-
-      const newCategories = new Set();
       
-      for (const row of importData) {
-        const category = row.Category || row.category || row.Tags || row.tags || '';
-        if (category && !categoryMap.has(category.toLowerCase())) {
-          newCategories.add(category);
+      if (validData.length === 0) {
+        throw new Error("No rows with required Product_Name found");
+      }
+      
+      // Process each row
+      const processedData = [];
+      let existingProducts = 0;
+      let newProducts = 0;
+      
+      for (let i = 0; i < validData.length; i++) {
+        const row = validData[i];
+        setImportProgress((i / validData.length) * 100);
+        
+        // Check if product exists
+        const existingProduct = products.find(p => 
+          p.name.toLowerCase() === row.Product_Name.toLowerCase()
+        );
+        
+        if (existingProduct) {
+          existingProducts++;
+                     processedData.push({
+             ...existingProduct,
+             quantityReceived: parseInt(row.Quantity_Received) || 0,
+             costPrice: parseFloat(row.Cost_Price) || existingProduct.cost_price || 0,
+             sellingPrice: parseFloat(row.Retail_Price) || existingProduct.price || 0,
+             batchNumber: row.Batch_Number || "",
+             expiryDate: row.Expiry_Date || "",
+             manufacturer: row.Manufacturer || existingProduct.manufacturer || "",
+             volume: row.Volume || existingProduct.volume || "",
+             notes: row.Notes || "",
+             isExisting: true
+           });
+        } else {
+          newProducts++;
+                     processedData.push({
+             id: `new-${Date.now()}-${i}`,
+             name: row.Product_Name.trim(),
+             category: row.Category || "Other",
+             manufacturer: row.Manufacturer || "",
+             quantity: 0,
+             cost_price: parseFloat(row.Cost_Price) || 0,
+             price: parseFloat(row.Retail_Price) || 0,
+             min_stock_level: 0,
+             quantityReceived: parseInt(row.Quantity_Received) || 0,
+             costPrice: parseFloat(row.Cost_Price) || 0,
+             sellingPrice: parseFloat(row.Retail_Price) || 0,
+             batchNumber: row.Batch_Number || "",
+             expiryDate: row.Expiry_Date || "",
+             volume: row.Volume || "",
+             notes: row.Notes || "",
+             isNewProduct: true
+           });
         }
       }
-
-      // Count new categories that will be created
-      stats.categoriesCreated = newCategories.size;
-
-      // Process products for preview
-      const previewData = [];
-      for (let i = 0; i < importData.length; i++) {
-        try {
-          const row = importData[i];
-          setImportProgress(Math.round((i / importData.length) * 100));
-
-          // Map the data fields (handle various column name formats)
-          const productName = row.Product_Name || row.Product || row.product_name || row.product || '';
-          const category = row.Category || row.category || row.Tags || row.tags || '';
-          const volume = row.Volume || row.volume || '';
-          const retailPrice = parseFloat(row.Retail_Price || row.retail_price || row.price || '0');
-          const costPrice = parseFloat(row.Cost_Price || row.cost_price || '0');
-          const quantityReceived = parseInt(row.Quantity_Received || row.In_Stock || row.in_stock || row.quantity || '0');
-          const batchNumber = row.Batch_Number || row.batch_number || '';
-          const expiryDate = row.Expiry_Date || row.expiry_date || row.Earliest_Expiry || '';
-          const manufacturer = row.Manufacturer || row.manufacturer || '';
-          // Note: Facility_Name is ignored as it represents the pharmacy (customer), not the supplier
-
-          if (!productName) {
-            stats.errors.push(`Row ${i + 2}: Product name is required`);
-            continue;
-          }
-
-          // Find existing product by name
-          const existingProduct = existingProducts.find(p => 
-            p.name.toLowerCase() === productName.toLowerCase()
-          );
-
-          const previewItem = {
-            rowNumber: i + 2,
-            productName,
-            category: category || 'General',
-            volume,
-            retailPrice,
-            costPrice,
-            quantityReceived,
-            batchNumber,
-            expiryDate,
-            manufacturer,
-            action: existingProduct ? 'update' : 'create',
-            currentQuantity: existingProduct ? existingProduct.quantity || 0 : 0,
-            newQuantity: existingProduct ? (existingProduct.quantity || 0) + quantityReceived : quantityReceived,
-            existingProduct
-          };
-
-          previewData.push(previewItem);
-
-          if (existingProduct) {
-            stats.updated++;
-          } else {
-            stats.created++;
-          }
-
-          stats.processed++;
-        } catch (error) {
-          console.error("Error processing row:", i + 2, error);
-          stats.errors.push(`Row ${i + 2}: ${error.message}`);
-        }
-      }
-
-      setImportPreview(previewData);
-      setPreviewStats(stats);
+      
+      setImportProgress(100);
+      setImportPreview(processedData);
+      setPreviewStats({
+        total: processedData.length,
+        existing: existingProducts,
+        new: newProducts
+      });
       setShowPreview(true);
-
+      
     } catch (error) {
-      console.error("Import error:", error);
+      console.error("Import processing error:", error);
       setError(`Import failed: ${error.message}`);
     } finally {
       setImportLoading(false);
-      setImportProgress(0);
     }
   };
 
   const confirmImport = async () => {
-    if (!importPreview || !previewStats) return;
-
+    if (!importPreview) return;
+    
     setConfirmLoading(true);
     setError("");
-
+    
     try {
-      // Load existing categories
-      const existingCategories = await dataService.categories.getAll();
-      const categoryMap = new Map();
-      existingCategories.forEach(cat => {
-        categoryMap.set(cat.name.toLowerCase(), cat.name);
-      });
-
-      // Create new categories first
-      const newCategories = new Set();
-      for (const item of importPreview) {
-        if (item.category && !categoryMap.has(item.category.toLowerCase())) {
-          newCategories.add(item.category);
-        }
-      }
-
-      for (const categoryName of newCategories) {
+      // Create new products first
+      const newProducts = importPreview.filter(p => p.isNewProduct);
+      const createdProducts = [];
+      
+      for (const productData of newProducts) {
         try {
-          await dataService.categories.create({
-            name: categoryName,
-            description: `Auto-created from import`,
-            status: 'active'
-          });
-          categoryMap.set(categoryName.toLowerCase(), categoryName);
+                     const newProduct = await dataService.products.create({
+             name: productData.name,
+             category: productData.category,
+             manufacturer: productData.manufacturer,
+             quantity: 0,
+             cost_price: productData.cost_price,
+             price: productData.price,
+             min_stock_level: 0,
+             volume: productData.volume,
+             batch_number: productData.batchNumber,
+             expiry_date: productData.expiryDate,
+             description: `Imported on ${new Date().toLocaleDateString()}`
+           });
+          
+          if (newProduct) {
+                         createdProducts.push({
+               ...newProduct,
+               quantityReceived: productData.quantityReceived,
+               costPrice: productData.costPrice,
+               sellingPrice: productData.sellingPrice,
+               batchNumber: productData.batchNumber,
+               expiryDate: productData.expiryDate,
+               manufacturer: productData.manufacturer,
+               volume: productData.volume,
+               notes: productData.notes
+             });
+          }
         } catch (error) {
-          console.error("Error creating category:", categoryName, error);
+          console.error("Error creating product:", productData.name, error);
         }
       }
-
-      // Process products
-      const results = {
-        processed: 0,
-        updated: 0,
-        created: 0,
-        categoriesCreated: newCategories.size,
-        errors: []
-      };
-
-      const processedProducts = [];
-      for (const item of importPreview) {
-        try {
-          if (item.action === 'update') {
-            // Update existing product
-            const updateData = {
-              quantity: item.newQuantity,
-              last_restock_date: new Date().toISOString(),
-            };
-
-            if (item.costPrice > 0) updateData.cost_price = item.costPrice;
-            if (item.retailPrice > 0) updateData.price = item.retailPrice;
-            if (item.category) updateData.category = item.category;
-            if (item.manufacturer) updateData.manufacturer = item.manufacturer;
-
-            await dataService.products.update(item.existingProduct.id, updateData);
-            results.updated++;
+      
+      // Add existing products
+      const existingProducts = importPreview.filter(p => p.isExisting);
+      
+      // Combine all products for receiving
+      const allProducts = [...createdProducts, ...existingProducts];
+      
+      // Add to selected products
+      setSelectedProducts(prev => {
+        const combined = [...prev];
+        
+        allProducts.forEach(importedProduct => {
+          const existingIndex = combined.findIndex(p => p.id === importedProduct.id);
+          
+                     if (existingIndex >= 0) {
+             // Update existing selection
+             combined[existingIndex].quantityReceived += importedProduct.quantityReceived;
+             combined[existingIndex].costPrice = importedProduct.costPrice;
+             combined[existingIndex].sellingPrice = importedProduct.sellingPrice;
+             combined[existingIndex].batchNumber = importedProduct.batchNumber;
+             combined[existingIndex].expiryDate = importedProduct.expiryDate;
+             combined[existingIndex].manufacturer = importedProduct.manufacturer;
+             combined[existingIndex].volume = importedProduct.volume;
+             combined[existingIndex].notes = importedProduct.notes;
           } else {
-            // Create new product
-            const newProduct = {
-              name: item.productName,
-              category: item.category || 'General',
-              price: item.retailPrice || 0,
-              cost_price: item.costPrice || 0,
-              quantity: item.quantityReceived || 0,
-              manufacturer: item.manufacturer || '',
-              last_restock_date: new Date().toISOString(),
-            };
-
-            if (item.volume) newProduct.volume = item.volume;
-            
-            await dataService.products.create(newProduct);
-            results.created++;
+            // Add new selection
+            combined.push(importedProduct);
           }
-
-          // Track processed products for purchase record
-          processedProducts.push({
-            product_name: item.productName,
-            quantity: item.quantityReceived,
-            unit_cost: item.costPrice,
-            total: item.quantityReceived * item.costPrice
-          });
-
-          results.processed++;
-        } catch (error) {
-          console.error("Error processing item:", item.productName, error);
-          results.errors.push(`${item.productName}: ${error.message}`);
-        }
-      }
-
-      // Create purchase record for the import
-      try {
-        const purchaseNumber = `IMP-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Date.now().toString().slice(-4)}`;
-        const totalAmount = processedProducts.reduce((sum, item) => sum + item.total, 0);
-        const importDate = new Date().toISOString();
-
-        const purchaseData = {
-          purchase_number: purchaseNumber,
-          supplier: {
-            name: supplier.name || 'CSV Import',
-            contact: supplier.contact || '',
-            email: supplier.email || '',
-            phone: supplier.phone || ''
-          },
-          order_date: importDate,
-          expected_delivery: importDate,
-          actual_delivery: importDate,
-          status: 'delivered',
-          total_amount: totalAmount,
-          purchase_items: processedProducts,
-          notes: `Bulk import from CSV file. ${results.processed} items processed, ${results.updated} updated, ${results.created} created.`,
-          is_import: true, // Flag to identify this as an import record
-          import_stats: {
-            processed: results.processed,
-            updated: results.updated,
-            created: results.created,
-            categoriesCreated: results.categoriesCreated,
-            import_date: importDate,
-            reference_number: referenceNumber
-          }
-        };
-
-        await dataService.purchases.create(purchaseData);
-        console.log("✅ Purchase record created for import:", purchaseNumber);
-      } catch (error) {
-        console.error("Error creating purchase record:", error);
-        // Don't fail the entire import if purchase record creation fails
-      }
-
-      setImportResults(results);
+        });
+        
+        return combined;
+      });
+      
+      // Update products list with new products
+      setProducts(prev => [...prev, ...createdProducts]);
+      
+      // Show success and reset import
+      setImportResults({
+        total: allProducts.length,
+        created: createdProducts.length,
+        updated: existingProducts.length
+      });
+      
+      // Reset import state
       setImportFile(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-
-      // Reset preview state
       setImportPreview(null);
-      setPreviewStats(null);
       setShowPreview(false);
-
-      // Reload products to update the search
-      await loadProducts();
-
+      setShowImport(false);
+      
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
     } catch (error) {
-      console.error("Import error:", error);
+      console.error("Import confirmation error:", error);
       setError(`Import failed: ${error.message}`);
     } finally {
       setConfirmLoading(false);
@@ -655,422 +521,302 @@ function ReceiveStock() {
   };
 
   const cancelImport = () => {
-    setImportPreview(null);
-    setPreviewStats(null);
-    setShowPreview(false);
     setImportFile(null);
+    setImportPreview(null);
+    setShowPreview(false);
+    setImportProgress(0);
+    setError("");
+    
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
   const resetImport = () => {
-    setShowImport(false);
     setImportFile(null);
-    setImportResults(null);
-    setImportProgress(0);
     setImportPreview(null);
-    setPreviewStats(null);
     setShowPreview(false);
+    setImportProgress(0);
+    setImportResults(null);
+    setError("");
+    setShowImport(false);
+    
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
-  if (success) {
-    return (
-      <div
-        style={{
-          padding: "24px",
-          backgroundColor: "#f8fafc",
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-            padding: "48px",
-            textAlign: "center",
-            maxWidth: "400px",
-            width: "100%",
-          }}
-        >
-          <FiCheckCircle
-            style={{
-              fontSize: "64px",
-              color: "#10b981",
-              marginBottom: "16px",
-            }}
-          />
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#1f2937",
-              marginBottom: "8px",
-            }}
-          >
-            Stock Received Successfully!
-          </h2>
-          <p
-            style={{
-              color: "#6b7280",
-              marginBottom: "16px",
-            }}
-          >
-            Inventory has been updated with the received stock.
-          </p>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#9ca3af",
-            }}
-          >
-            Redirecting to inventory...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (selectedProducts.length === 0) {
+      setError("Please add at least one product to receive stock");
+      return;
+    }
 
+    if (!supplier.name.trim()) {
+      setError("Please enter supplier name");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      // Create the stock receive record
+      const receiveData = {
+        reference_number: referenceNumber,
+        supplier_name: supplier.name,
+        supplier_contact: supplier.contact,
+        supplier_email: supplier.email,
+        supplier_phone: supplier.phone,
+        delivery_date: deliveryDate,
+        notes: notes,
+        total_items: calculateTotals().totalItems,
+        total_cost: calculateTotals().totalCost,
+        products: selectedProducts.map(product => ({
+          product_id: product.id,
+          quantity_received: product.quantityReceived,
+          cost_price: product.costPrice,
+          batch_number: product.batchNumber,
+          expiry_date: product.expiryDate,
+          notes: product.notes
+        }))
+      };
+
+      // Submit the receive stock record as a purchase
+      const result = await dataService.purchases.create(receiveData);
+      
+      if (result) {
+        // Update product quantities and all relevant fields after successful purchase
+        for (const product of selectedProducts) {
+          try {
+            const currentProduct = await dataService.products.getById(product.id);
+            if (currentProduct) {
+              const updateData = {
+                quantity: (currentProduct.quantity || 0) + product.quantityReceived,
+                cost_price: product.costPrice || currentProduct.cost_price,
+                last_restock_date: new Date().toISOString()
+              };
+
+              // Update selling price if provided
+              if (product.sellingPrice && product.sellingPrice > 0) {
+                updateData.price = product.sellingPrice;
+              }
+
+              // Update batch number if provided
+              if (product.batchNumber) {
+                updateData.batch_number = product.batchNumber;
+              }
+
+              // Update expiry date if provided
+              if (product.expiryDate) {
+                updateData.expiry_date = product.expiryDate;
+              }
+
+              // Update manufacturer if provided
+              if (product.manufacturer) {
+                updateData.manufacturer = product.manufacturer;
+              }
+
+              // Update volume if provided
+              if (product.volume) {
+                updateData.volume = product.volume;
+              }
+
+              await dataService.products.update(product.id, updateData);
+            }
+          } catch (error) {
+            console.error("Error updating product:", error);
+          }
+        }
+        
+        setSuccess(true);
+        
+        // Reset form after successful submission
+        setTimeout(() => {
+          navigate("/inventory");
+        }, 2000);
+      } else {
+        throw new Error("Failed to submit stock receive record");
+      }
+    } catch (error) {
+      console.error("Error submitting stock receive:", error);
+      setError("Failed to submit stock receive record. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Basic JSX structure
   return (
     <div
       style={{
-        padding: "24px",
-        backgroundColor: "#f8fafc",
         minHeight: "100vh",
+        backgroundColor: "#f9fafb",
+        padding: isMobile ? "16px" : "24px",
       }}
     >
-      {/* Action Buttons */}
+      {/* Add CSS for animations */}
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
+          maxWidth: "1200px",
+          margin: "0 auto",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-          <FiPackage style={{ fontSize: "24px", color: "#3b82f6" }} />
-          <h1
-            style={{
-              fontSize: "24px",
-              fontWeight: "600",
-              color: "#1f2937",
-            }}
-          >
-            Receive Stock
-          </h1>
-        </div>
-        <button
-          onClick={() => navigate("/inventory")}
+        {/* Header */}
+        <div
           style={{
             display: "flex",
+            justifyContent: "space-between",
             alignItems: "center",
-            gap: "8px",
-            padding: "12px 20px",
-            backgroundColor: "#6b7280",
-            color: "white",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: "500",
-            cursor: "pointer",
+            marginBottom: "24px",
           }}
         >
-          <FiArrowLeft size={16} />
-          Back to Inventory
-        </button>
-      </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button
+              onClick={() => navigate("/inventory")}
+              style={{
+                padding: "8px",
+                backgroundColor: "white",
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <FiArrowLeft style={{ fontSize: "18px" }} />
+            </button>
+            <h1
+              style={{
+                fontSize: "24px",
+                fontWeight: "600",
+                color: "#1f2937",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <FiPackage style={{ fontSize: "24px" }} />
+              Receive Stock
+            </h1>
+          </div>
+          
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <button
+              onClick={() => setShowImport(!showImport)}
+              style={{
+                padding: "8px 16px",
+                backgroundColor: showImport ? "#3b82f6" : "white",
+                border: "1px solid #3b82f6",
+                borderRadius: "8px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                color: showImport ? "white" : "#3b82f6",
+                fontSize: "14px",
+                fontWeight: "500",
+              }}
+            >
+              <FiUpload style={{ fontSize: "16px" }} />
+              {showImport ? "Hide Import" : "Bulk Import"}
+            </button>
+          </div>
+        </div>
 
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-        {/* Error Display */}
+        {/* Success Message */}
+        {success && (
+          <div
+            style={{
+              backgroundColor: "#dcfce7",
+              border: "1px solid #22c55e",
+              borderRadius: "8px",
+              padding: "12px",
+              marginBottom: "24px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}
+          >
+            <FiCheckCircle style={{ color: "#22c55e" }} />
+            <span style={{ color: "#166534" }}>Stock received successfully!</span>
+          </div>
+        )}
+
+        {/* Error Message */}
         {error && (
           <div
             style={{
               backgroundColor: "#fef2f2",
-              border: "1px solid #fecaca",
-              borderRadius: "12px",
-              padding: "16px",
+              border: "1px solid #ef4444",
+              borderRadius: "8px",
+              padding: "12px",
+              marginBottom: "24px",
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              gap: "8px",
             }}
           >
-            <FiAlertCircle style={{ color: "#f87171", fontSize: "20px" }} />
-            <span style={{ color: "#dc2626", fontSize: "14px" }}>{error}</span>
+            <FiAlertCircle style={{ color: "#ef4444" }} />
+            <span style={{ color: "#dc2626" }}>{error}</span>
           </div>
         )}
 
-        {/* Supplier Information */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2
+        {/* Import Success Message */}
+        {importResults && (
+          <div
             style={{
-              fontSize: "18px",
-              fontWeight: "500",
-              color: "#1f2937",
-              marginBottom: "16px",
+              backgroundColor: "#dcfce7",
+              border: "1px solid #22c55e",
+              borderRadius: "8px",
+              padding: "12px",
+              marginBottom: "24px",
               display: "flex",
               alignItems: "center",
               gap: "8px",
             }}
           >
-            <FiUser style={{ fontSize: "20px" }} />
-            Supplier Information
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-              gap: "16px",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Supplier Name *
-              </label>
-              <input
-                type="text"
-                required
-                value={supplier.name}
-                onChange={(e) => setSupplier({ ...supplier, name: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-                placeholder="Enter supplier name"
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Contact Person
-              </label>
-              <input
-                type="text"
-                value={supplier.contact}
-                onChange={(e) => setSupplier({ ...supplier, contact: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-                placeholder="Contact person name"
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                value={supplier.phone}
-                onChange={(e) => setSupplier({ ...supplier, phone: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-                placeholder="Phone number"
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                value={supplier.email}
-                onChange={(e) => setSupplier({ ...supplier, email: e.target.value })}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-                placeholder="Email address"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Delivery Information */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "18px",
-              fontWeight: "500",
-              color: "#1f2937",
-              marginBottom: "16px",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <FiTruck style={{ fontSize: "20px" }} />
-            Delivery Information
-          </h2>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-              gap: "16px",
-            }}
-          >
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Reference Number
-              </label>
-              <input
-                type="text"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-                placeholder="Reference/Invoice number"
-              />
-            </div>
-            <div>
-              <label
-                style={{
-                  display: "block",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                  color: "#374151",
-                  marginBottom: "8px",
-                }}
-              >
-                Delivery Date
-              </label>
-              <input
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                }}
-              />
-            </div>
-          </div>
-          <div style={{ marginTop: "16px" }}>
-            <label
+            <FiCheckCircle style={{ color: "#22c55e" }} />
+            <span style={{ color: "#166534" }}>
+              Import successful! {importResults.total} products processed 
+              ({importResults.created} created, {importResults.updated} updated)
+            </span>
+            <button
+              onClick={resetImport}
               style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#374151",
-                marginBottom: "8px",
+                marginLeft: "auto",
+                padding: "4px",
+                backgroundColor: "transparent",
+                border: "none",
+                color: "#22c55e",
+                cursor: "pointer",
               }}
             >
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              style={{
-                width: "100%",
-                padding: "12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                fontSize: "14px",
-                resize: "vertical",
-              }}
-              placeholder="Additional notes about the delivery..."
-            />
+              <FiX />
+            </button>
           </div>
-        </div>
+        )}
 
-        {/* Import Section */}
-        <div
-          style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          }}
-        >
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+          {/* Supplier Information */}
           <div
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "16px",
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
             <h2
@@ -1078,501 +824,659 @@ function ReceiveStock() {
                 fontSize: "18px",
                 fontWeight: "500",
                 color: "#1f2937",
+                marginBottom: "16px",
                 display: "flex",
                 alignItems: "center",
                 gap: "8px",
               }}
             >
-              <FiUpload style={{ fontSize: "20px" }} />
-              Import Stock Data
+              <FiTruck style={{ fontSize: "20px" }} />
+              Supplier Information
             </h2>
-            <button
-              type="button"
-              onClick={() => setShowImport(!showImport)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                padding: "12px 16px",
-                backgroundColor: "#10b981",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: "pointer",
-              }}
-            >
-              <FiFileText size={16} />
-              {showImport ? "Hide Import" : "Bulk Import"}
-            </button>
-          </div>
-
-          {showImport && (
+            
             <div
               style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: "8px",
-                padding: "16px",
-                display: "flex",
-                flexDirection: "column",
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
                 gap: "16px",
               }}
             >
-              {/* Template Download */}
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: "12px",
-                  backgroundColor: "#dbeafe",
-                  borderRadius: "8px",
-                }}
-              >
-                <div>
-                  <h3 style={{ fontWeight: "500", color: "#1e3a8a" }}>Download Template</h3>
-                  <p style={{ fontSize: "14px", color: "#1d4ed8" }}>
-                    Get the correct CSV template to ensure proper data import
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={downloadTemplate}
+              <div>
+                <label
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                    padding: "8px 16px",
-                    backgroundColor: "#2563eb",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "8px",
+                    display: "block",
                     fontSize: "14px",
                     fontWeight: "500",
-                    cursor: "pointer",
+                    color: "#374151",
+                    marginBottom: "6px",
                   }}
                 >
-                  <FiDownload size={16} />
-                  Download Template
-                </button>
+                  Supplier Name *
+                </label>
+                <input
+                  type="text"
+                  value={supplier.name}
+                  onChange={(e) => setSupplier({ ...supplier, name: e.target.value })}
+                  required
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                  placeholder="Enter supplier name"
+                />
               </div>
 
-              {/* File Upload */}
-              <div className="space-y-3">
-                <label className="block text-sm font-medium text-gray-700">
-                  Upload CSV/Excel File
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Contact Person
                 </label>
-                <div className="flex items-center space-x-3">
+                <input
+                  type="text"
+                  value={supplier.contact}
+                  onChange={(e) => setSupplier({ ...supplier, contact: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                  placeholder="Contact person name"
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Phone
+                </label>
+                <input
+                  type="tel"
+                  value={supplier.phone}
+                  onChange={(e) => setSupplier({ ...supplier, phone: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                  placeholder="Phone number"
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={supplier.email}
+                  onChange={(e) => setSupplier({ ...supplier, email: e.target.value })}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                  placeholder="Email address"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Import Section */}
+          {showImport && (
+            <div
+              style={{
+                backgroundColor: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "500",
+                  color: "#1f2937",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <FiUpload style={{ fontSize: "20px" }} />
+                Bulk Import Products
+              </h2>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                {/* Download Template */}
+                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                  <button
+                    onClick={downloadTemplate}
+                    style={{
+                      padding: "8px 16px",
+                      backgroundColor: "#f3f4f6",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#374151",
+                    }}
+                  >
+                    <FiDownload style={{ fontSize: "16px" }} />
+                    Download Template
+                  </button>
+                  <span style={{ fontSize: "14px", color: "#6b7280" }}>
+                    Get the CSV template with sample data
+                  </span>
+                </div>
+
+                {/* File Upload */}
+                <div>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Upload CSV/Excel File
+                  </label>
                   <input
                     ref={fileInputRef}
                     type="file"
                     accept=".csv,.xlsx,.xls"
                     onChange={handleFileSelect}
-                    className="hidden"
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      border: "2px dashed #d1d5db",
+                      borderRadius: "8px",
+                      backgroundColor: "#f9fafb",
+                      cursor: "pointer",
+                    }}
                   />
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-                  >
-                    <FiUpload className="h-4 w-4 mr-2" />
-                    Choose File
-                  </button>
                   {importFile && (
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">{importFile.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setImportFile(null);
-                          if (fileInputRef.current) fileInputRef.current.value = "";
-                        }}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <FiX className="h-4 w-4" />
-                      </button>
+                    <div
+                      style={{
+                        marginTop: "8px",
+                        padding: "8px 12px",
+                        backgroundColor: "#f0f9ff",
+                        border: "1px solid #3b82f6",
+                        borderRadius: "6px",
+                        fontSize: "14px",
+                        color: "#1e40af",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "8px",
+                      }}
+                    >
+                      <FiFileText />
+                      {importFile.name}
                     </div>
                   )}
                 </div>
-                
-                {importFile && (
-                  <div className="flex space-x-3">
-                    <button
-                      type="button"
-                      onClick={processImportData}
-                      disabled={importLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center"
+
+                {/* Process Button */}
+                {importFile && !importLoading && !showPreview && (
+                  <button
+                    onClick={processImportData}
+                    style={{
+                      padding: "12px 24px",
+                      backgroundColor: "#3b82f6",
+                      border: "none",
+                      borderRadius: "8px",
+                      color: "white",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      alignSelf: "flex-start",
+                    }}
+                  >
+                    <FiUpload />
+                    Process File
+                  </button>
+                )}
+
+                {/* Import Progress */}
+                {importLoading && (
+                  <div
+                    style={{
+                      padding: "16px",
+                      backgroundColor: "#f0f9ff",
+                      border: "1px solid #3b82f6",
+                      borderRadius: "8px",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        marginBottom: "8px",
+                      }}
                     >
-                      {importLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Processing... {importProgress}%
-                        </>
-                      ) : (
-                        <>
-                          <FiUpload className="h-4 w-4 mr-2" />
-                          Import Data
-                        </>
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={cancelImport}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                      <div
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          border: "2px solid #3b82f6",
+                          borderTop: "2px solid transparent",
+                          borderRadius: "50%",
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
+                      <span style={{ fontSize: "14px", color: "#1e40af" }}>
+                        Processing import... {Math.round(importProgress)}%
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        width: "100%",
+                        height: "8px",
+                        backgroundColor: "#e5e7eb",
+                        borderRadius: "4px",
+                        overflow: "hidden",
+                      }}
                     >
-                      Cancel
-                    </button>
+                      <div
+                        style={{
+                          width: `${importProgress}%`,
+                          height: "100%",
+                          backgroundColor: "#3b82f6",
+                          transition: "width 0.3s ease",
+                        }}
+                      />
+                    </div>
                   </div>
                 )}
-              </div>
 
-              {/* Import Progress */}
-              {importLoading && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span>Processing import...</span>
-                    <span>{importProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div 
-                      className="bg-green-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${importProgress}%` }}
-                    ></div>
-                  </div>
-                </div>
-              )}
-
-              {/* Import Preview */}
-              {showPreview && importPreview && previewStats && (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-gray-900">Import Preview</h3>
-                    <div className="text-sm text-gray-500">
-                      {importPreview.length} items found
-                    </div>
-                  </div>
-                  
-                  {/* Statistics */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-semibold text-blue-600">{previewStats.processed}</div>
-                      <div className="text-sm text-blue-700">To Process</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-lg font-semibold text-green-600">{previewStats.updated}</div>
-                      <div className="text-sm text-green-700">Will Update</div>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <div className="text-lg font-semibold text-purple-600">{previewStats.created}</div>
-                      <div className="text-sm text-purple-700">Will Create</div>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <div className="text-lg font-semibold text-orange-600">{previewStats.categoriesCreated}</div>
-                      <div className="text-sm text-orange-700">Categories</div>
-                    </div>
-                  </div>
-
-                  {/* Errors */}
-                  {previewStats.errors.length > 0 && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <h4 className="font-medium text-red-800 mb-2">Validation Errors:</h4>
-                      <div className="text-sm text-red-700 space-y-1 max-h-32 overflow-y-auto">
-                        {previewStats.errors.map((error, index) => (
-                          <div key={index}>• {error}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Preview Table */}
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-3 border-b">
-                      <h4 className="font-medium text-gray-900">Products to Import</h4>
-                    </div>
-                    <div className="overflow-x-auto max-h-96">
-                      <table className="w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Product Name
-                            </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Action
-                            </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Category
-                            </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Quantity
-                            </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Cost Price
-                            </th>
-                            <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Retail Price
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {importPreview.map((item, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-3 py-2 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">{item.productName}</div>
-                                {item.manufacturer && (
-                                  <div className="text-xs text-gray-500">{item.manufacturer}</div>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap">
-                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                                  item.action === 'create' 
-                                    ? 'bg-purple-100 text-purple-800' 
-                                    : 'bg-green-100 text-green-800'
-                                }`}>
-                                  {item.action === 'create' ? 'Create' : 'Update'}
-                                </span>
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {item.category}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {item.action === 'update' ? (
-                                  <span className="text-green-600">
-                                    {item.currentQuantity} → {item.newQuantity}
-                                  </span>
-                                ) : (
-                                  <span>{item.quantityReceived}</span>
-                                )}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {currency} {item.costPrice.toFixed(2)}
-                              </td>
-                              <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900">
-                                {currency} {item.retailPrice.toFixed(2)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-
-                  {/* Confirmation Buttons */}
-                  <div className="flex justify-end space-x-3">
-                    <button
-                      type="button"
-                      onClick={cancelImport}
-                      className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={confirmImport}
-                      disabled={confirmLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center"
-                    >
-                      {confirmLoading ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Confirming...
-                        </>
-                      ) : (
-                        <>
-                          <FiCheckCircle className="h-4 w-4 mr-2" />
-                          Confirm Import
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Import Results */}
-              {importResults && (
-                <div className="space-y-3">
-                  <h3 className="font-medium text-gray-900">Import Results</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="text-center p-3 bg-blue-50 rounded-lg">
-                      <div className="text-lg font-semibold text-blue-600">{importResults.processed}</div>
-                      <div className="text-sm text-blue-700">Processed</div>
-                    </div>
-                    <div className="text-center p-3 bg-green-50 rounded-lg">
-                      <div className="text-lg font-semibold text-green-600">{importResults.updated}</div>
-                      <div className="text-sm text-green-700">Updated</div>
-                    </div>
-                    <div className="text-center p-3 bg-purple-50 rounded-lg">
-                      <div className="text-lg font-semibold text-purple-600">{importResults.created}</div>
-                      <div className="text-sm text-purple-700">Created</div>
-                    </div>
-                    <div className="text-center p-3 bg-orange-50 rounded-lg">
-                      <div className="text-lg font-semibold text-orange-600">{importResults.categoriesCreated}</div>
-                      <div className="text-sm text-orange-700">Categories</div>
-                    </div>
-                  </div>
-                  
-                  {importResults.errors.length > 0 && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
-                      <h4 className="font-medium text-red-800 mb-2">Errors:</h4>
-                      <div className="text-sm text-red-700 space-y-1 max-h-32 overflow-y-auto">
-                        {importResults.errors.map((error, index) => (
-                          <div key={index}>• {error}</div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <button
-                    type="button"
-                    onClick={resetImport}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                {/* Import Preview */}
+                {showPreview && importPreview && previewStats && (
+                  <div
+                    style={{
+                      padding: "16px",
+                      backgroundColor: "#f9fafb",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "8px",
+                    }}
                   >
-                    Close Import
-                  </button>
-                </div>
-              )}
+                    <h3
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "500",
+                        color: "#1f2937",
+                        marginBottom: "12px",
+                      }}
+                    >
+                      Import Preview
+                    </h3>
+                    
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                        gap: "12px",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          backgroundColor: "#dbeafe",
+                          borderRadius: "6px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "18px", fontWeight: "600", color: "#1e40af" }}>
+                          {previewStats.total}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Total Products</div>
+                      </div>
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          backgroundColor: "#dcfce7",
+                          borderRadius: "6px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "18px", fontWeight: "600", color: "#166534" }}>
+                          {previewStats.new}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>New Products</div>
+                      </div>
+                      <div
+                        style={{
+                          padding: "8px 12px",
+                          backgroundColor: "#fef3c7",
+                          borderRadius: "6px",
+                          textAlign: "center",
+                        }}
+                      >
+                        <div style={{ fontSize: "18px", fontWeight: "600", color: "#92400e" }}>
+                          {previewStats.existing}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#6b7280" }}>Existing Products</div>
+                      </div>
+                    </div>
 
-              {/* Import Instructions */}
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-2">Import Instructions:</h3>
-                <ul className="text-sm text-gray-600 space-y-1">
-                  <li>• Download the template to see the required format</li>
-                  <li>• Product_Name column is required for all rows</li>
-                  <li>• Categories (Tags column) will be created automatically if they don't exist</li>
-                  <li>• Existing products will have their stock quantities updated (added to current stock)</li>
-                  <li>• New products will be created with the provided information</li>
-                  <li>• Facility_Name column is ignored (represents your pharmacy, not the supplier)</li>
-                  <li>• Supports both CSV and Excel (.xlsx, .xls) files</li>
-                </ul>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+                    <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
+                      <button
+                        onClick={confirmImport}
+                        disabled={confirmLoading}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: confirmLoading ? "#d1d5db" : "#22c55e",
+                          border: "none",
+                          borderRadius: "6px",
+                          color: "white",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          cursor: confirmLoading ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        {confirmLoading ? (
+                          <>
+                            <div
+                              style={{
+                                width: "14px",
+                                height: "14px",
+                                border: "2px solid #ffffff",
+                                borderTop: "2px solid transparent",
+                                borderRadius: "50%",
+                                animation: "spin 1s linear infinite",
+                              }}
+                            />
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <FiCheckCircle />
+                            Confirm Import
+                          </>
+                        )}
+                      </button>
+                      <button
+                        onClick={cancelImport}
+                        disabled={confirmLoading}
+                        style={{
+                          padding: "8px 16px",
+                          backgroundColor: "white",
+                          border: "1px solid #d1d5db",
+                          borderRadius: "6px",
+                          color: "#374151",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          cursor: confirmLoading ? "not-allowed" : "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        <FiX />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-      {/* Product Search and Selection */}
-      <div
-        style={{
-          backgroundColor: "white",
-          borderRadius: "12px",
-          padding: "24px",
-          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h2
-          style={{
-            fontSize: "18px",
-            fontWeight: "500",
-            color: "#1f2937",
-            marginBottom: "16px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <FiSearch style={{ fontSize: "20px" }} />
-          Add Products Manually
-        </h2>
-        
-        {/* Search Box */}
-        <div style={{ position: "relative", marginBottom: "24px" }}>
-          <div
-            style={{
-              position: "absolute",
-              top: "0",
-              left: "0",
-              height: "100%",
-              paddingLeft: "12px",
-              display: "flex",
-              alignItems: "center",
-              pointerEvents: "none",
-            }}
-          >
-            <FiSearch style={{ fontSize: "20px", color: "#9ca3af" }} />
-          </div>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              width: "100%",
-              paddingLeft: "40px",
-              paddingRight: "16px",
-              paddingTop: "12px",
-              paddingBottom: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              outline: "none",
-            }}
-            placeholder="Search products by name, category, or manufacturer..."
-          />
-          
-          {/* Search Results Dropdown */}
-          {showSearch && searchResults.length > 0 && (
-            <div
-              style={{
-                position: "absolute",
-                zIndex: "10",
-                width: "100%",
-                backgroundColor: "white",
-                border: "1px solid #d1d5db",
-                borderRadius: "8px",
-                boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                marginTop: "4px",
-                maxHeight: "240px",
-                overflowY: "auto",
-              }}
-            >
-              {searchResults.map((product) => (
-                <button
-                  key={product.id}
-                  type="button"
-                  onClick={() => addProductToReceive(product)}
+                {/* Import Instructions */}
+                <div
                   style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    textAlign: "left",
-                    backgroundColor: "white",
-                    border: "none",
-                    borderBottom: "1px solid #f3f4f6",
-                    cursor: "pointer",
-                    transition: "background-color 0.2s",
-                  }}
-                  onMouseEnter={(e) => {
-                    e.target.style.backgroundColor = "#f9fafb";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.target.style.backgroundColor = "white";
+                    padding: "16px",
+                    backgroundColor: "#f9fafb",
+                    borderRadius: "8px",
+                    border: "1px solid #e5e7eb",
                   }}
                 >
-                  <div style={{ fontWeight: "500", color: "#1f2937" }}>
-                    {product.name}
-                  </div>
-                  <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                    {product.category} • Current Stock: {product.quantity || 0}
-                  </div>
-                </button>
-              ))}
+                  <h3
+                    style={{
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      color: "#1f2937",
+                      marginBottom: "8px",
+                    }}
+                  >
+                    Import Instructions:
+                  </h3>
+                  <ul style={{ fontSize: "12px", color: "#6b7280", margin: 0, paddingLeft: "16px" }}>
+                    <li>Download the template to see the required format</li>
+                    <li>Product_Name column is required for all rows</li>
+                    <li>Categories will be created automatically if they don't exist</li>
+                    <li>Existing products will have their stock quantities updated</li>
+                    <li>New products will be created with the provided information</li>
+                    <li>Supports both CSV and Excel (.xlsx, .xls) files</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           )}
-        </div>
 
-        {/* Selected Products */}
-        {selectedProducts.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <h3 style={{ fontWeight: "500", color: "#1f2937", fontSize: "16px" }}>Products to Receive</h3>
+          {/* Product Search and Selection */}
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: "500",
+                color: "#1f2937",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <FiSearch style={{ fontSize: "20px" }} />
+              Add Products Manually
+            </h2>
             
-            {selectedProducts.map((product, index) => (
-              <div key={product.id} className="border border-gray-200 rounded-lg p-4">
-                {isMobile ? (
-                  // Mobile Layout
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-start">
+            {/* Search Box */}
+            <div style={{ position: "relative", marginBottom: "24px" }}>
+              <div
+                style={{
+                  position: "absolute",
+                  top: "0",
+                  left: "0",
+                  height: "100%",
+                  paddingLeft: "12px",
+                  display: "flex",
+                  alignItems: "center",
+                  pointerEvents: "none",
+                }}
+              >
+                <FiSearch style={{ fontSize: "20px", color: "#9ca3af" }} />
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{
+                  width: "100%",
+                  paddingLeft: "40px",
+                  paddingRight: "16px",
+                  paddingTop: "12px",
+                  paddingBottom: "12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  outline: "none",
+                }}
+                placeholder="Search products by name, category, or manufacturer..."
+              />
+              
+              {/* Search Results Dropdown */}
+              {showSearch && (
+                <div
+                  style={{
+                    position: "absolute",
+                    zIndex: "10",
+                    width: "100%",
+                    backgroundColor: "white",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                    marginTop: "4px",
+                    maxHeight: "240px",
+                    overflowY: "auto",
+                  }}
+                >
+                  {searchResults.length > 0 ? (
+                    searchResults.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => addProductToReceive(product)}
+                        style={{
+                          width: "100%",
+                          padding: "12px 16px",
+                          textAlign: "left",
+                          backgroundColor: "white",
+                          border: "none",
+                          borderBottom: "1px solid #f3f4f6",
+                          cursor: "pointer",
+                          transition: "background-color 0.2s",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.style.backgroundColor = "#f9fafb";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.style.backgroundColor = "white";
+                        }}
+                      >
+                        <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                          {product.name}
+                        </div>
+                        <div style={{ fontSize: "14px", color: "#6b7280" }}>
+                          {product.category} • Current Stock: {product.quantity || 0}
+                        </div>
+                      </button>
+                    ))
+                  ) : (
+                    <div
+                      style={{
+                        padding: "12px 16px",
+                        textAlign: "center",
+                        color: "#6b7280",
+                        fontSize: "14px",
+                      }}
+                    >
+                      No existing products found
+                    </div>
+                  )}
+                  
+                  {/* Create new product option */}
+                  {searchTerm.trim() && (
+                    <div
+                      onClick={() => createNewProduct(searchTerm)}
+                      style={{
+                        padding: "12px",
+                        cursor: creatingProduct ? "not-allowed" : "pointer",
+                        backgroundColor: creatingProduct ? "#f3f4f6" : "#f0f9ff",
+                        border: "2px dashed #3b82f6",
+                        borderRadius: "4px",
+                        margin: "4px",
+                        opacity: creatingProduct ? 0.6 : 1,
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!creatingProduct) {
+                          e.target.style.backgroundColor = "#dbeafe";
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!creatingProduct) {
+                          e.target.style.backgroundColor = "#f0f9ff";
+                        }
+                      }}
+                    >
+                      <div
+                        style={{
+                          fontWeight: "500",
+                          color: "#2563eb",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FiPlus size={16} />
+                        {creatingProduct
+                          ? "Creating..."
+                          : `Create "${searchTerm}"`}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                        {creatingProduct
+                          ? "Please wait..."
+                          : "Add as new product"}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Products */}
+            {selectedProducts.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                <h3 style={{ fontWeight: "500", color: "#1f2937", fontSize: "16px" }}>Products to Receive</h3>
+                
+                {selectedProducts.map((product, index) => (
+                  <div key={product.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-4">
                       <div>
                         <h4 className="font-medium text-gray-900">{product.name}</h4>
                         <p className="text-sm text-gray-500">{product.category}</p>
-                        <p className="text-xs text-gray-400">Current: {product.quantity || 0}</p>
+                        <p className="text-xs text-gray-400">Current Stock: {product.quantity || 0}</p>
                       </div>
                       <button
                         type="button"
@@ -1583,244 +1487,321 @@ function ReceiveStock() {
                       </button>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
                           Quantity
                         </label>
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center">
                           <button
                             type="button"
                             onClick={() => updateProductQuantity(index, -1)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-gray-500 hover:text-gray-700"
                           >
-                            <FiMinus className="h-4 w-4" />
+                            <FiMinus />
                           </button>
                           <input
                             type="number"
-                            min="1"
                             value={product.quantityReceived}
-                            onChange={(e) => updateProductField(index, 'quantityReceived', parseInt(e.target.value) || 0)}
-                            className="w-16 px-2 py-1 text-center border border-gray-300 rounded"
+                            onChange={(e) => updateProductField(index, "quantityReceived", parseInt(e.target.value) || 0)}
+                            className="w-16 text-center border-t border-b border-gray-300 py-1"
+                            min="0"
                           />
                           <button
                             type="button"
                             onClick={() => updateProductQuantity(index, 1)}
-                            className="p-1 text-gray-400 hover:text-gray-600"
+                            className="p-1 text-gray-500 hover:text-gray-700"
                           >
-                            <FiPlus className="h-4 w-4" />
+                            <FiPlus />
                           </button>
                         </div>
                       </div>
+                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Cost ({currency})
+                          Cost Price ({currency})
                         </label>
                         <input
                           type="number"
+                          value={product.costPrice}
+                          onChange={(e) => updateProductField(index, "costPrice", parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                           step="0.01"
                           min="0"
-                          value={product.costPrice}
-                          onChange={(e) => updateProductField(index, 'costPrice', parseFloat(e.target.value) || 0)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
-                          placeholder="0.00"
                         />
                       </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-3">
+                      
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Batch #
+                          Selling Price ({currency})
+                        </label>
+                        <input
+                          type="number"
+                          value={product.sellingPrice || 0}
+                          onChange={(e) => updateProductField(index, "sellingPrice", parseFloat(e.target.value) || 0)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          step="0.01"
+                          min="0"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Batch Number
                         </label>
                         <input
                           type="text"
                           value={product.batchNumber}
-                          onChange={(e) => updateProductField(index, 'batchNumber', e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
-                          placeholder="Batch"
+                          onChange={(e) => updateProductField(index, "batchNumber", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          placeholder="Optional"
                         />
                       </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 mt-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Expiry
+                          Expiry Date
                         </label>
                         <input
                           type="date"
                           value={product.expiryDate}
-                          onChange={(e) => updateProductField(index, 'expiryDate', e.target.value)}
-                          className="w-full px-2 py-1 border border-gray-300 rounded"
+                          onChange={(e) => updateProductField(index, "expiryDate", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
                         />
                       </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Desktop Layout
-                  <div className="grid grid-cols-12 gap-4 items-start">
-                    <div className="col-span-3">
-                      <h4 className="font-medium text-gray-900">{product.name}</h4>
-                      <p className="text-sm text-gray-500">{product.category}</p>
-                      <p className="text-xs text-gray-400">Current: {product.quantity || 0}</p>
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Quantity
-                      </label>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => updateProductQuantity(index, -1)}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
-                          <FiMinus className="h-4 w-4" />
-                        </button>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Manufacturer
+                        </label>
                         <input
-                          type="number"
-                          min="1"
-                          value={product.quantityReceived}
-                          onChange={(e) => updateProductField(index, 'quantityReceived', parseInt(e.target.value) || 0)}
-                          className="w-20 px-2 py-1 text-center border border-gray-300 rounded"
+                          type="text"
+                          value={product.manufacturer || ""}
+                          onChange={(e) => updateProductField(index, "manufacturer", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          placeholder="Optional"
                         />
-                        <button
-                          type="button"
-                          onClick={() => updateProductQuantity(index, 1)}
-                          className="p-1 text-gray-400 hover:text-gray-600"
-                        >
-                          <FiPlus className="h-4 w-4" />
-                        </button>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Volume/Size
+                        </label>
+                        <input
+                          type="text"
+                          value={product.volume || ""}
+                          onChange={(e) => updateProductField(index, "volume", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                          placeholder="e.g., 500mg, 100ml"
+                        />
                       </div>
                     </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Cost Price ({currency})
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={product.costPrice}
-                        onChange={(e) => updateProductField(index, 'costPrice', parseFloat(e.target.value) || 0)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded"
-                        placeholder="0.00"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Batch Number
-                      </label>
-                      <input
-                        type="text"
-                        value={product.batchNumber}
-                        onChange={(e) => updateProductField(index, 'batchNumber', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded"
-                        placeholder="Batch #"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Expiry Date
-                      </label>
-                      <input
-                        type="date"
-                        value={product.expiryDate}
-                        onChange={(e) => updateProductField(index, 'expiryDate', e.target.value)}
-                        className="w-full px-2 py-1 border border-gray-300 rounded"
-                      />
-                    </div>
-
-                    <div className="col-span-1 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeProduct(index)}
-                        className="p-2 text-red-400 hover:text-red-600"
-                      >
-                        <FiTrash2 className="h-4 w-4" />
-                      </button>
-                    </div>
                   </div>
-                )}
+                ))}
+                
+                {/* Summary */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-gray-900">Total Items:</span>
+                    <span className="text-lg font-semibold text-gray-900">{calculateTotals().totalItems}</span>
+                  </div>
+                  <div className="flex justify-between items-center mt-2">
+                    <span className="font-medium text-gray-900">Total Cost:</span>
+                    <span className="text-lg font-semibold text-gray-900">{currency} {calculateTotals().totalCost.toFixed(2)}</span>
+                  </div>
+                </div>
               </div>
-            ))}
+            )}
           </div>
-        )}
 
-        {selectedProducts.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            <FiPackage className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-            <p>No products selected</p>
-            <p className="text-sm">Search and add products above to receive stock</p>
+          {/* Additional Details */}
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+            }}
+          >
+            <h2
+              style={{
+                fontSize: "18px",
+                fontWeight: "500",
+                color: "#1f2937",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+            >
+              <FiFileText style={{ fontSize: "20px" }} />
+              Additional Details
+            </h2>
+            
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Reference Number
+                </label>
+                <input
+                  type="text"
+                  value={referenceNumber}
+                  onChange={(e) => setReferenceNumber(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                  placeholder="Auto-generated reference"
+                />
+              </div>
+
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Delivery Date
+                </label>
+                <input
+                  type="date"
+                  value={deliveryDate}
+                  onChange={(e) => setDeliveryDate(e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "8px",
+                    fontSize: "14px",
+                    outline: "none",
+                  }}
+                />
+              </div>
+            </div>
+
+            <div style={{ marginTop: "16px" }}>
+              <label
+                style={{
+                  display: "block",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#374151",
+                  marginBottom: "6px",
+                }}
+              >
+                Notes
+              </label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows="3"
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  outline: "none",
+                  resize: "vertical",
+                }}
+                placeholder="Additional notes about this stock receipt..."
+              />
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Totals */}
-      {selectedProducts.length > 0 && (
-        <div className="bg-white shadow rounded-lg p-6">
-          <h2 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <FiDollarSign className="h-5 w-5 mr-2" />
-            Summary
-          </h2>
-          
-          <div className="space-y-2">
-            {(() => {
-              const totals = calculateTotals();
-              return (
+          {/* Submit Button */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "flex-end",
+              gap: "12px",
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => navigate("/inventory")}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: "white",
+                border: "1px solid #d1d5db",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "#374151",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || selectedProducts.length === 0}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: loading || selectedProducts.length === 0 ? "#d1d5db" : "#3b82f6",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                color: "white",
+                cursor: loading || selectedProducts.length === 0 ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.2s",
+              }}
+            >
+              {loading ? (
                 <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium">{currency} {totals.subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Tax ({settings.taxRate || 18}%):</span>
-                    <span className="font-medium">{currency} {totals.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2">
-                    <div className="flex justify-between text-lg font-semibold">
-                      <span>Total:</span>
-                      <span>{currency} {totals.total.toFixed(2)}</span>
-                    </div>
-                  </div>
+                  <div
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      border: "2px solid #ffffff",
+                      borderTop: "2px solid transparent",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
+                  Submitting...
                 </>
-              );
-            })()}
+              ) : (
+                <>
+                  <FiSave style={{ fontSize: "16px" }} />
+                  Receive Stock
+                </>
+              )}
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* Submit Button */}
-      <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'justify-end space-x-4'}`}>
-        <button
-          type="button"
-          onClick={() => navigate("/inventory")}
-          className={`px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 ${isMobile ? 'w-full' : ''}`}
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={loading || selectedProducts.length === 0}
-          className={`px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center ${isMobile ? 'w-full justify-center' : ''}`}
-        >
-          {loading ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-              Receiving Stock...
-            </>
-          ) : (
-            <>
-              <FiSave className="h-4 w-4 mr-2" />
-              Receive Stock
-            </>
-          )}
-        </button>
+        </form>
       </div>
-    </form>
-  </div>
-);
+    </div>
+  );
 }
 
 export default ReceiveStock; 
