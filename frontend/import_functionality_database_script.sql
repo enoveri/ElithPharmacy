@@ -136,8 +136,8 @@ SELECT * FROM (VALUES
     ('Diabetes Care', 'Medications and supplies for diabetes', 'active'),
     ('Eye Care', 'Eye drops and vision care products', 'active'),
     ('Respiratory', 'Medications for breathing and lung health', 'active'),
-    ('Women\'s Health', 'Medications specific to women\'s health', 'active'),
-    ('Men\'s Health', 'Medications specific to men\'s health', 'active'),
+    ('Women''s Health', 'Medications specific to women''s health', 'active'),
+    ('Men''s Health', 'Medications specific to men''s health', 'active'),
     ('General', 'General medications and supplies', 'active')
 ) AS default_categories(name, description, status)
 WHERE NOT EXISTS (SELECT 1 FROM categories LIMIT 1);

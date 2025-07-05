@@ -54,52 +54,9 @@ function Purchases() {
         setSuppliers(suppliersData || []);
       } catch (error) {
         console.error("❌ [Purchases] Error loading data:", error);
-        // Show fallback mock data if database fails
-        const mockPurchases = [
-          {
-            id: 1,
-            purchase_number: "PO-2024-001",
-            supplier: { name: "PharmaCorp Ltd" },
-            order_date: "2024-01-15T10:00:00Z",
-            expected_delivery: "2024-01-20T00:00:00Z",
-            actual_delivery: "2024-01-19T14:30:00Z",
-            status: "delivered",
-            total_amount: 125000.0,
-            purchase_items: [
-              {
-                product: { name: "Paracetamol 500mg" },
-                quantity: 500,
-                unit_cost: 18.0,
-                total: 9000.0,
-              },
-            ],
-            notes: "Delivered on time, all items in good condition",
-          },
-          {
-            id: 2,
-            purchase_number: "PO-2024-002",
-            supplier: { name: "MediPharm" },
-            order_date: "2024-01-18T09:30:00Z",
-            expected_delivery: "2024-01-25T00:00:00Z",
-            actual_delivery: null,
-            status: "pending",
-            total_amount: 85000.0,
-            purchase_items: [
-              {
-                product: { name: "Amoxicillin 250mg" },
-                quantity: 200,
-                unit_cost: 32.0,
-                total: 6400.0,
-              },
-            ],
-            notes: "Awaiting delivery confirmation",
-          },
-        ];
-        setPurchases(mockPurchases);
-        setSuppliers([
-          { id: 1, name: "PharmaCorp Ltd" },
-          { id: 2, name: "MediPharm" },
-        ]);
+        // Set empty arrays if database fails
+        setPurchases([]);
+        setSuppliers([]);
       } finally {
         setLoading(false);
       }
@@ -617,9 +574,28 @@ function Purchases() {
                     >
                       <td style={{ padding: "16px" }}>
                         <div>
-                          <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                          <div style={{ 
+                            fontWeight: "600", 
+                            color: "#1f2937",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px"
+                          }}>
                             {purchase.purchase_number ||
                               purchase.purchaseNumber}
+                            {purchase.is_import && (
+                              <span style={{
+                                backgroundColor: "#f3f4f6",
+                                color: "#6b7280",
+                                fontSize: "10px",
+                                fontWeight: "500",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                textTransform: "uppercase"
+                              }}>
+                                Import
+                              </span>
+                            )}
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
                             {
@@ -627,6 +603,11 @@ function Purchases() {
                                 .length
                             }{" "}
                             items
+                            {purchase.is_import && purchase.import_stats && (
+                              <span style={{ marginLeft: "8px", color: "#10b981" }}>
+                                • {purchase.import_stats.updated} updated, {purchase.import_stats.created} created
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>
