@@ -3,19 +3,18 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   FiPlus,
   FiSearch,
-  FiFilter,
-  FiDownload,
-  FiEye,
-  FiEdit,
-  FiTrash2,
-  FiTruck,
-  FiCalendar,
   FiDollarSign,
-  FiPackage,
+  FiCalendar,
   FiUser,
+  FiPackage,
+  FiAlertCircle,
+  FiTruck,
   FiCheckCircle,
   FiClock,
-  FiAlertTriangle,
+  FiArrowLeft,
+  FiFilter,
+  FiDatabase,
+  FiBarChart,
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useSettingsStore } from "../store";
@@ -28,78 +27,28 @@ function Purchases() {
   const navigate = useNavigate();
   const location = useLocation();
   const [purchases, setPurchases] = useState([]);
-  const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [supplierFilter, setSupplierFilter] = useState("all");
-  const [dateFilter, setDateFilter] = useState("all");
-  const [loading, setLoading] = useState(true);
+  const [highlightedPurchase, setHighlightedPurchase] = useState(null);
 
-  // Load purchases and suppliers from database
+  // Load purchases data
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         console.log("🔄 [Purchases] Loading purchases data...");
 
-        const [purchasesData, suppliersData] = await Promise.all([
-          dataService.purchases.getAll(),
-          dataService.suppliers.getAll(),
-        ]);
-
+        const purchasesData = await dataService.purchases.getAll();
         console.log("📦 [Purchases] Loaded purchases:", purchasesData);
-        console.log("🏢 [Purchases] Loaded suppliers:", suppliersData);
-
+        
         setPurchases(purchasesData || []);
-        setSuppliers(suppliersData || []);
-      } catch (error) {
-        console.error("❌ [Purchases] Error loading data:", error);
-        // Show fallback mock data if database fails
-        const mockPurchases = [
-          {
-            id: 1,
-            purchase_number: "PO-2024-001",
-            supplier: { name: "PharmaCorp Ltd" },
-            order_date: "2024-01-15T10:00:00Z",
-            expected_delivery: "2024-01-20T00:00:00Z",
-            actual_delivery: "2024-01-19T14:30:00Z",
-            status: "delivered",
-            total_amount: 125000.0,
-            purchase_items: [
-              {
-                product: { name: "Paracetamol 500mg" },
-                quantity: 500,
-                unit_cost: 18.0,
-                total: 9000.0,
-              },
-            ],
-            notes: "Delivered on time, all items in good condition",
-          },
-          {
-            id: 2,
-            purchase_number: "PO-2024-002",
-            supplier: { name: "MediPharm" },
-            order_date: "2024-01-18T09:30:00Z",
-            expected_delivery: "2024-01-25T00:00:00Z",
-            actual_delivery: null,
-            status: "pending",
-            total_amount: 85000.0,
-            purchase_items: [
-              {
-                product: { name: "Amoxicillin 250mg" },
-                quantity: 200,
-                unit_cost: 32.0,
-                total: 6400.0,
-              },
-            ],
-            notes: "Awaiting delivery confirmation",
-          },
-        ];
-        setPurchases(mockPurchases);
-        setSuppliers([
-          { id: 1, name: "PharmaCorp Ltd" },
-          { id: 2, name: "MediPharm" },
-        ]);
+        setError(null);
+      } catch (err) {
+        console.error("❌ [Purchases] Error loading data:", err);
+        setError("Failed to load purchases data");
+        setPurchases([]);
       } finally {
         setLoading(false);
       }
@@ -108,10 +57,16 @@ function Purchases() {
     loadData();
   }, []);
 
-  // Handle successful purchase creation/update from navigation state
+  // Handle success message from navigation state
   useEffect(() => {
     if (location.state?.message) {
       alert(location.state.message);
+      if (location.state.newPurchaseId) {
+        setHighlightedPurchase(location.state.newPurchaseId);
+        setTimeout(() => {
+          setHighlightedPurchase(null);
+        }, 3000);
+      }
       // Clear the state
       navigate(location.pathname, { replace: true });
     }
@@ -123,7 +78,7 @@ function Purchases() {
       (purchase.purchase_number || purchase.purchaseNumber || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
-      (purchase.supplier?.name || "")
+      (purchase.supplier_name || purchase.supplierName || "")
         .toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       (purchase.notes || "").toLowerCase().includes(searchTerm.toLowerCase());
@@ -131,89 +86,112 @@ function Purchases() {
     const matchesStatus =
       statusFilter === "all" || purchase.status === statusFilter;
 
-    const matchesSupplier =
-      supplierFilter === "all" ||
-      (purchase.supplier?.id || purchase.supplier_id) ===
-        parseInt(supplierFilter);
-
-    const matchesDate = (() => {
-      const orderDate = new Date(purchase.order_date || purchase.orderDate);
-      const now = new Date();
-
-      switch (dateFilter) {
-        case "today":
-          return orderDate.toDateString() === now.toDateString();
-        case "week":
-          const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          return orderDate >= weekAgo;
-        case "month":
-          const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          return orderDate >= monthAgo;
-        default:
-          return true;
-      }
-    })();
-
-    return matchesSearch && matchesStatus && matchesSupplier && matchesDate;
+    return matchesSearch && matchesStatus;
   });
 
-  const handleDeletePurchase = async (purchaseId) => {
-    if (!confirm("Are you sure you want to delete this purchase order?")) {
-      return;
-    }
-
-    try {
-      console.log("🗑️ [Purchases] Deleting purchase:", purchaseId);
-      const result = await dataService.purchases.delete(purchaseId);
-
-      if (result.success) {
-        setPurchases(purchases.filter((p) => p.id !== purchaseId));
-        alert("Purchase order deleted successfully!");
-      } else {
-        throw new Error(result.error?.message || "Failed to delete purchase");
-      }
-    } catch (error) {
-      console.error("❌ [Purchases] Error deleting purchase:", error);
-      alert("Error deleting purchase order. Please try again.");
-    }
-  };
-
-  // Get stats for different purchase statuses
-  const getStatusStats = () => {
+  // Get purchase stats
+  const getPurchaseStats = () => {
     const stats = {
       total: filteredPurchases.length,
+      delivered: filteredPurchases.filter((p) => p.status === "delivered").length,
       pending: filteredPurchases.filter((p) => p.status === "pending").length,
-      ordered: filteredPurchases.filter((p) => p.status === "ordered").length,
-      delivered: filteredPurchases.filter((p) => p.status === "delivered")
-        .length,
-      cancelled: filteredPurchases.filter((p) => p.status === "cancelled")
-        .length,
+      totalAmount: filteredPurchases.reduce((sum, p) => sum + (p.total_amount || p.totalAmount || 0), 0),
+      stockReceipts: filteredPurchases.filter((p) => p.type === "stock_receipt" || p.is_stock_receipt).length,
     };
     return stats;
   };
 
-  const statusStats = getStatusStats();
+  const stats = getPurchaseStats();
 
-  // Get status icon and color
-  const getStatusIcon = (status) => {
+  // Get status display info
+  const getStatusInfo = (status) => {
     switch (status) {
-      case "pending":
-        return { icon: FiClock, color: "#f59e0b" };
-      case "ordered":
-        return { icon: FiTruck, color: "#3b82f6" };
       case "delivered":
-        return { icon: FiCheckCircle, color: "#10b981" };
-      case "cancelled":
-        return { icon: FiAlertTriangle, color: "#ef4444" };
+        return { icon: FiCheckCircle, color: "#10b981", text: "Delivered" };
+      case "pending":
+        return { icon: FiClock, color: "#f59e0b", text: "Pending" };
+      case "ordered":
+        return { icon: FiTruck, color: "#3b82f6", text: "Ordered" };
       default:
-        return { icon: FiClock, color: "#6b7280" };
+        return { icon: FiClock, color: "#6b7280", text: "Unknown" };
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+          backgroundColor: "var(--color-bg-main)",
+        }}
+      >
+        <div
+          style={{
+            width: "48px",
+            height: "48px",
+            border: "4px solid #f3f4f6",
+            borderTop: "4px solid #3b82f6",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div
+        style={{
+          padding: "24px",
+          backgroundColor: "var(--color-bg-main)",
+          minHeight: "100vh",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: "60vh",
+            textAlign: "center",
+          }}
+        >
+          <FiAlertCircle
+            size={64}
+            style={{ color: "#ef4444", marginBottom: "16px" }}
+          />
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#374151",
+              marginBottom: "8px",
+            }}
+          >
+            Error Loading Purchases
+          </h2>
+          <p style={{ color: "#6b7280", marginBottom: "24px" }}>{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "12px 20px",
+              backgroundColor: "#3b82f6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+            }}
+          >
+            Retry
+          </button>
+        </div>
       </div>
     );
   }
@@ -226,18 +204,28 @@ function Purchases() {
         minHeight: "100vh",
       }}
     >
-      {/* Header Section */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "32px",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+      {/* Header */}
+      <div style={{ marginBottom: "32px" }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "8px",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "28px",
+              fontWeight: "bold",
+              color: "#1f2937",
+              margin: 0,
+            }}
+          >
+            Purchase History
+          </h1>
           <button
-            onClick={() => navigate("/purchases/add")}
+            onClick={() => navigate("/inventory/receive")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -253,50 +241,47 @@ function Purchases() {
             }}
           >
             <FiPlus size={16} />
-            New Purchase Order
+            Receive Stock
           </button>
         </div>
+        <p style={{ color: "var(--color-text-secondary)", margin: 0 }}>
+          View and manage your purchase transactions and stock receipts
+        </p>
       </div>
 
       {/* Stats Cards */}
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
           gap: "20px",
           marginBottom: "32px",
         }}
       >
         {[
           {
-            label: "Total Orders",
-            value: statusStats.total,
+            label: "Total Purchases",
+            value: stats.total,
             icon: FiPackage,
             color: "#3b82f6",
           },
           {
-            label: "Pending",
-            value: statusStats.pending,
-            icon: FiClock,
-            color: "#f59e0b",
-          },
-          {
-            label: "Ordered",
-            value: statusStats.ordered,
-            icon: FiTruck,
-            color: "#3b82f6",
+            label: "Stock Receipts",
+            value: stats.stockReceipts,
+            icon: FiDatabase,
+            color: "#10b981",
           },
           {
             label: "Delivered",
-            value: statusStats.delivered,
+            value: stats.delivered,
             icon: FiCheckCircle,
             color: "#10b981",
           },
           {
-            label: "Cancelled",
-            value: statusStats.cancelled,
-            icon: FiAlertTriangle,
-            color: "#ef4444",
+            label: "Total Amount",
+            value: `${currency}${stats.totalAmount.toLocaleString()}`,
+            icon: FiDollarSign,
+            color: "#f59e0b",
           },
         ].map((stat, index) => (
           <div
@@ -331,7 +316,7 @@ function Purchases() {
                 marginBottom: "4px",
               }}
             >
-              {stat.value}
+              {typeof stat.value === "number" ? stat.value : stat.value}
             </div>
             <div style={{ fontSize: "14px", color: "#6b7280" }}>
               {stat.label}
@@ -340,12 +325,12 @@ function Purchases() {
         ))}
       </div>
 
-      {/* Filters Section */}
+      {/* Search and Filter */}
       <div
         style={{
           backgroundColor: "white",
           borderRadius: "12px",
-          padding: "24px",
+          padding: "20px",
           marginBottom: "24px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
         }}
@@ -353,7 +338,7 @@ function Purchases() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr",
+            gridTemplateColumns: "1fr auto auto",
             gap: "16px",
             alignItems: "center",
           }}
@@ -372,7 +357,7 @@ function Purchases() {
             />
             <input
               type="text"
-              placeholder="Search purchase orders..."
+              placeholder="Search purchases by reference, supplier, or notes..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={{
@@ -394,408 +379,275 @@ function Purchases() {
               border: "1px solid #d1d5db",
               borderRadius: "8px",
               fontSize: "14px",
+              minWidth: "120px",
             }}
           >
             <option value="all">All Status</option>
+            <option value="delivered">Delivered</option>
             <option value="pending">Pending</option>
             <option value="ordered">Ordered</option>
-            <option value="delivered">Delivered</option>
-            <option value="cancelled">Cancelled</option>
           </select>
-
-          {/* Supplier Filter */}
-          <select
-            value={supplierFilter}
-            onChange={(e) => setSupplierFilter(e.target.value)}
-            style={{
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-            }}
-          >
-            <option value="all">All Suppliers</option>
-            {suppliers.map((supplier) => (
-              <option key={supplier.id} value={supplier.id}>
-                {supplier.name}
-              </option>
-            ))}
-          </select>
-
-          {/* Date Filter */}
-          <select
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            style={{
-              padding: "12px",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-            }}
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">This Week</option>
-            <option value="month">This Month</option>
-          </select>
-
-          {/* Export Button */}
-          <button
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              padding: "12px",
-              backgroundColor: "#f3f4f6",
-              border: "1px solid #d1d5db",
-              borderRadius: "8px",
-              fontSize: "14px",
-              cursor: "pointer",
-            }}
-          >
-            <FiDownload size={16} />
-            Export
-          </button>
         </div>
       </div>
 
-      {/* Purchase Orders Table */}
+      {/* Purchases History */}
       <div
         style={{
           backgroundColor: "white",
           borderRadius: "12px",
+          padding: "24px",
           boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-          overflow: "hidden",
         }}
       >
-        <div style={{ overflowX: "auto" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse" }}>
-            <thead
+        {filteredPurchases.length === 0 ? (
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "48px",
+              textAlign: "center",
+            }}
+          >
+            <FiPackage
+              size={48}
+              style={{ color: "#9ca3af", marginBottom: "16px" }}
+            />
+            <h3
               style={{
-                backgroundColor: "#f9fafb",
-                borderBottom: "1px solid #e5e7eb",
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#374151",
+                marginBottom: "8px",
               }}
             >
-              <tr>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Purchase Order
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Supplier
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Order Date
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Delivery Date
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Status
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Total Amount
-                </th>
-                <th
-                  style={{
-                    padding: "16px",
-                    textAlign: "left",
-                    fontSize: "12px",
-                    fontWeight: "600",
-                    color: "#374151",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.05em",
-                  }}
-                >
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPurchases.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan="7"
+              No Purchases Found
+            </h3>
+            <p style={{ color: "#6b7280", marginBottom: "24px" }}>
+              {searchTerm || statusFilter !== "all"
+                ? "No purchases match your search criteria."
+                : "No purchase transactions have been recorded yet."}
+            </p>
+            <button
+              onClick={() => navigate("/inventory/receive")}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "12px 24px",
+                backgroundColor: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              <FiPlus size={16} />
+              Receive Stock
+            </button>
+          </div>
+        ) : (
+          <div
+            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
+          >
+            {filteredPurchases
+              .sort((a, b) => new Date(b.order_date || b.orderDate) - new Date(a.order_date || a.orderDate))
+              .map((purchase) => {
+                if (!purchase || !purchase.id) {
+                  console.warn("Invalid purchase object:", purchase);
+                  return null;
+                }
+
+                const statusInfo = getStatusInfo(purchase.status);
+                const StatusIcon = statusInfo.icon;
+                const isStockReceipt = purchase.type === "stock_receipt" || purchase.is_stock_receipt;
+
+                return (
+                  <div
+                    key={purchase.id}
+                    id={`purchase-${purchase.id}`}
+                    onClick={() => navigate(`/purchases/${purchase.id}`)}
                     style={{
-                      padding: "48px",
-                      textAlign: "center",
-                      color: "#6b7280",
+                      padding: "16px",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      backgroundColor:
+                        highlightedPurchase === purchase.id ? "#fef3c7" : "transparent",
+                      transition: "all 0.3s ease",
+                      cursor: "pointer",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.backgroundColor =
+                        highlightedPurchase === purchase.id ? "#fef3c7" : "#f9fafb";
+                      e.target.style.transform = "translateY(-1px)";
+                      e.target.style.boxShadow = "0 4px 6px rgba(0,0,0,0.1)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.backgroundColor =
+                        highlightedPurchase === purchase.id ? "#fef3c7" : "transparent";
+                      e.target.style.transform = "translateY(0)";
+                      e.target.style.boxShadow = "none";
                     }}
                   >
                     <div
                       style={{
                         display: "flex",
-                        flexDirection: "column",
+                        justifyContent: "space-between",
                         alignItems: "center",
-                        gap: "12px",
+                        marginBottom: "12px",
                       }}
                     >
-                      <FiPackage size={48} color="#d1d5db" />
-                      <div style={{ fontSize: "18px", fontWeight: "500" }}>
-                        No purchase orders found
+                      <div>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                            marginBottom: "4px",
+                          }}
+                        >
+                          <h3
+                            style={{
+                              fontSize: "16px",
+                              fontWeight: "600",
+                              color: "#1f2937",
+                              margin: 0,
+                            }}
+                          >
+                            {purchase.purchase_number || purchase.purchaseNumber || `Purchase #${purchase.id}`}
+                          </h3>
+                          {isStockReceipt && (
+                            <span
+                              style={{
+                                backgroundColor: "#10b981",
+                                color: "white",
+                                fontSize: "10px",
+                                fontWeight: "500",
+                                padding: "2px 6px",
+                                borderRadius: "4px",
+                                textTransform: "uppercase",
+                              }}
+                            >
+                              Stock Receipt
+                            </span>
+                          )}
+                        </div>
+                        <p style={{ fontSize: "14px", color: "#6b7280", margin: 0 }}>
+                          {purchase.order_date || purchase.orderDate
+                            ? new Date(purchase.order_date || purchase.orderDate).toLocaleDateString()
+                            : "Unknown date"}
+                          {purchase.order_date || purchase.orderDate
+                            ? ` at ${new Date(purchase.order_date || purchase.orderDate).toLocaleTimeString()}`
+                            : ""}
+                        </p>
                       </div>
-                      <div style={{ fontSize: "14px" }}>
-                        {searchTerm ||
-                        statusFilter !== "all" ||
-                        supplierFilter !== "all" ||
-                        dateFilter !== "all"
-                          ? "Try adjusting your filters"
-                          : "Create your first purchase order to get started"}
+                      <div
+                        style={{
+                          fontSize: "18px",
+                          fontWeight: "bold",
+                          color: "#10b981",
+                        }}
+                      >
+                        {currency}
+                        {(purchase.total_amount || purchase.totalAmount || 0).toLocaleString()}
                       </div>
                     </div>
-                  </td>
-                </tr>
-              ) : (
-                filteredPurchases.map((purchase) => {
-                  const statusInfo = getStatusIcon(purchase.status);
-                  const StatusIcon = statusInfo.icon;
 
-                  return (
-                    <tr
-                      key={purchase.id}
-                      style={{ borderBottom: "1px solid #f3f4f6" }}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                        gap: "16px",
+                        fontSize: "14px",
+                      }}
                     >
-                      <td style={{ padding: "16px" }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FiUser color="#6b7280" size={16} />
                         <div>
-                          <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                            {purchase.purchase_number ||
-                              purchase.purchaseNumber}
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {purchase.supplier_name || purchase.supplierName || "Unknown Supplier"}
                           </div>
                           <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                            {
-                              (purchase.purchase_items || purchase.items || [])
-                                .length
-                            }{" "}
-                            items
+                            Supplier
                           </div>
                         </div>
-                      </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <FiUser size={16} color="#6b7280" />
-                          <span style={{ color: "#374151" }}>
-                            {purchase.supplier?.name ||
-                              purchase.supplierName ||
-                              "Unknown Supplier"}
-                          </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FiPackage color="#6b7280" size={16} />
+                        <div>
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {(purchase.purchase_items || purchase.items || []).length || purchase.total_items || 0} items
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                            Products
+                          </div>
                         </div>
-                      </td>
-                      <td style={{ padding: "16px", color: "#374151" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <FiCalendar size={16} color="#6b7280" />
-                          <span>
-                            {new Date(
-                              purchase.order_date || purchase.orderDate
-                            ).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "16px", color: "#374151" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <FiTruck size={16} color="#6b7280" />
-                          <span>
-                            {purchase.actual_delivery || purchase.actualDelivery
-                              ? new Date(
-                                  purchase.actual_delivery ||
-                                    purchase.actualDelivery
-                                ).toLocaleDateString()
-                              : new Date(
-                                  purchase.expected_delivery ||
-                                    purchase.expectedDelivery
-                                ).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <StatusIcon size={16} color={statusInfo.color} />
-                          <span
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <StatusIcon color={statusInfo.color} size={16} />
+                        <div>
+                          <div
                             style={{
-                              padding: "4px 8px",
-                              fontSize: "12px",
                               fontWeight: "500",
-                              borderRadius: "4px",
-                              backgroundColor: `${statusInfo.color}15`,
                               color: statusInfo.color,
-                              textTransform: "capitalize",
                             }}
                           >
-                            {purchase.status}
-                          </span>
+                            {statusInfo.text}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                            Status
+                          </div>
                         </div>
-                      </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <FiDollarSign size={16} color="#6b7280" />
-                          <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                            {currency}
-                            {(
-                              purchase.total_amount ||
-                              purchase.totalAmount ||
-                              0
-                            ).toLocaleString()}
-                          </span>
+                      </div>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "8px",
+                        }}
+                      >
+                        <FiCalendar color="#6b7280" size={16} />
+                        <div>
+                          <div style={{ fontWeight: "500", color: "#1f2937" }}>
+                            {purchase.delivery_date || purchase.deliveryDate || purchase.expected_delivery || purchase.expectedDelivery
+                              ? new Date(purchase.delivery_date || purchase.deliveryDate || purchase.expected_delivery || purchase.expectedDelivery).toLocaleDateString()
+                              : "Not specified"}
+                          </div>
+                          <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                            Delivery Date
+                          </div>
                         </div>
-                      </td>
-                      <td style={{ padding: "16px" }}>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                          }}
-                        >
-                          <button
-                            onClick={() =>
-                              navigate(`/purchases/${purchase.id}`)
-                            }
-                            style={{
-                              padding: "8px",
-                              backgroundColor: "#f3f4f6",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                            title="View Details"
-                          >
-                            <FiEye size={16} color="#6b7280" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              navigate(`/purchases/${purchase.id}/edit`)
-                            }
-                            style={{
-                              padding: "8px",
-                              backgroundColor: "#f3f4f6",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                            title="Edit Purchase"
-                          >
-                            <FiEdit size={16} color="#6b7280" />
-                          </button>
-                          <button
-                            onClick={() => handleDeletePurchase(purchase.id)}
-                            style={{
-                              padding: "8px",
-                              backgroundColor: "#fef2f2",
-                              border: "none",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                            }}
-                            title="Delete Purchase"
-                          >
-                            <FiTrash2 size={16} color="#ef4444" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -31,6 +31,7 @@ import Notifications from "../pages/Notifications";
 import AdminSetup from "../pages/AdminSetup";
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
 import ResponsiveStockAudit from "../components/responsive/ResponsiveStockAudit";
+import ReceiveStock from "../pages/ReceiveStock";
 
 
 export const router = createBrowserRouter([
@@ -65,6 +66,10 @@ export const router = createBrowserRouter([
       {
         path: "/inventory/audit",
         element: <ResponsiveStockAudit />,
+      },
+      {
+        path: "/inventory/receive",
+        element: <ReceiveStock />,
       },
       {
         path: "/pos",

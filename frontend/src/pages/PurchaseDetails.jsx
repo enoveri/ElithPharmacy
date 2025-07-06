@@ -17,8 +17,12 @@ import {
   FiCheckCircle,
   FiClock,
   FiFileText,
+  FiUpload,
+  FiDatabase,
+  FiBarChart,
 } from "react-icons/fi";
 import { useSettingsStore } from "../store";
+import { dataService } from "../services";
 
 function PurchaseDetails() {
   const { id } = useParams();
@@ -29,74 +33,30 @@ function PurchaseDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Mock purchase data
-  const mockPurchases = [
-    {
-      id: 1,
-      purchaseNumber: "PO-2024-001",
-      supplierId: 1,
-      supplierName: "PharmaCorp Ltd",
-      supplierContact: {
-        email: "orders@pharmacorp.com",
-        phone: "+234 801 234 5678",
-        address: "123 Industrial Estate, Lagos",
-      },
-      orderDate: "2024-01-15T10:00:00Z",
-      expectedDelivery: "2024-01-20T00:00:00Z",
-      actualDelivery: "2024-01-19T14:30:00Z",
-      status: "delivered",
-      totalAmount: 125000.0,
-      items: [
-        {
-          productId: 1,
-          productName: "Paracetamol 500mg",
-          quantity: 500,
-          unitCost: 18.0,
-          total: 9000.0,
-        },
-        {
-          productId: 5,
-          productName: "Ibuprofen 400mg",
-          quantity: 300,
-          unitCost: 22.5,
-          total: 6750.0,
-        },
-        {
-          productId: 3,
-          productName: "Vitamin C 1000mg",
-          quantity: 400,
-          unitCost: 25.0,
-          total: 10000.0,
-        },
-      ],
-      subtotal: 25750.0,
-      tax: 2575.0,
-      discount: 0,
-      notes:
-        "Delivered on time, all items in good condition. Quality inspection passed.",
-    },
-    // Add more mock data as needed
-  ];
+
 
   useEffect(() => {
-    try {
-      setLoading(true);
-      const foundPurchase = mockPurchases.find((p) => p.id === parseInt(id));
-
-      if (!foundPurchase) {
-        setError("Purchase order not found");
+    const loadPurchase = async () => {
+      try {
+        setLoading(true);
+        
+        // Try to load from dataService
+        const purchaseData = await dataService.purchases.getById(parseInt(id));
+        if (purchaseData && purchaseData.data) {
+          setPurchase(purchaseData.data);
+          setError(null);
+        } else {
+          setError("Purchase order not found");
+        }
+      } catch (err) {
+        console.error("Error loading purchase details:", err);
+        setError("Failed to load purchase details");
+      } finally {
         setLoading(false);
-        return;
       }
+    };
 
-      setPurchase(foundPurchase);
-      setError(null);
-    } catch (err) {
-      console.error("Error loading purchase details:", err);
-      setError("Failed to load purchase details");
-    } finally {
-      setLoading(false);
-    }
+    loadPurchase();
   }, [id]);
 
   const getStatusColor = (status) => {
@@ -246,7 +206,7 @@ function PurchaseDetails() {
                 margin: "0 0 4px 0",
               }}
             >
-              {purchase.purchaseNumber}
+              {purchase.purchaseNumber || purchase.purchase_number}
             </h1>
             <div
               style={{
@@ -260,7 +220,7 @@ function PurchaseDetails() {
                 style={{ display: "flex", alignItems: "center", gap: "4px" }}
               >
                 <FiCalendar size={16} />
-                Ordered on {new Date(purchase.orderDate).toLocaleDateString()}
+                {purchase.is_import ? 'Imported' : 'Ordered'} on {new Date(purchase.orderDate || purchase.order_date).toLocaleDateString()}
               </div>
               <div
                 style={{
@@ -335,16 +295,40 @@ function PurchaseDetails() {
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
             }}
           >
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "20px",
-              }}
-            >
-              Items Ordered
-            </h3>
+            <div style={{ 
+              display: "flex", 
+              alignItems: "center", 
+              justifyContent: "space-between",
+              marginBottom: "20px"
+            }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  margin: 0
+                }}
+              >
+                {purchase.is_import ? 'Items Imported' : 'Items Ordered'}
+              </h3>
+              {purchase.is_import && (
+                <div style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  backgroundColor: "#f3f4f6",
+                  color: "#6b7280",
+                  fontSize: "12px",
+                  fontWeight: "500",
+                  padding: "4px 8px",
+                  borderRadius: "6px",
+                  textTransform: "uppercase"
+                }}>
+                  <FiUpload size={12} />
+                  Bulk Import
+                </div>
+              )}
+            </div>
 
             <div style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
@@ -393,14 +377,14 @@ function PurchaseDetails() {
                   </tr>
                 </thead>
                 <tbody>
-                  {purchase.items.map((item, index) => (
+                  {(purchase.items || purchase.purchase_items || []).map((item, index) => (
                     <tr
                       key={index}
                       style={{ borderBottom: "1px solid #f3f4f6" }}
                     >
                       <td style={{ padding: "16px 12px" }}>
                         <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                          {item.productName}
+                          {item.productName || item.product_name || item.product?.name}
                         </div>
                       </td>
                       <td
@@ -411,7 +395,7 @@ function PurchaseDetails() {
                         }}
                       >
                         {currency}
-                        {(item.unitCost || 0).toFixed(2)}
+                        {(item.unitCost || item.unit_cost || 0).toFixed(2)}
                       </td>
                       <td
                         style={{
@@ -476,11 +460,11 @@ function PurchaseDetails() {
                     Expected Delivery
                   </div>
                   <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {new Date(purchase.expectedDelivery).toLocaleDateString()}
+                    {new Date(purchase.expectedDelivery || purchase.expected_delivery).toLocaleDateString()}
                   </div>
                 </div>
               </div>
-              {purchase.actualDelivery && (
+              {(purchase.actualDelivery || purchase.actual_delivery) && (
                 <div
                   style={{ display: "flex", alignItems: "center", gap: "12px" }}
                 >
@@ -490,7 +474,7 @@ function PurchaseDetails() {
                       Actual Delivery
                     </div>
                     <div style={{ fontWeight: "600", color: "#10b981" }}>
-                      {new Date(purchase.actualDelivery).toLocaleDateString()}
+                      {new Date(purchase.actualDelivery || purchase.actual_delivery).toLocaleDateString()}
                     </div>
                   </div>
                 </div>
@@ -608,11 +592,126 @@ function PurchaseDetails() {
                   }}
                 >
                   {currency}
-                  {(purchase.totalAmount || 0).toFixed(2)}
+                  {(purchase.totalAmount || purchase.total_amount || 0).toFixed(2)}
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Import Statistics - Only show for import records */}
+          {purchase.is_import && purchase.import_stats && (
+            <div
+              style={{
+                backgroundColor: "white",
+                borderRadius: "12px",
+                padding: "24px",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+              }}
+            >
+              <div style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                marginBottom: "20px"
+              }}>
+                <FiBarChart size={18} color="#3b82f6" />
+                <h3
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    color: "#1f2937",
+                    margin: 0
+                  }}
+                >
+                  Import Statistics
+                </h3>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#f0f9ff",
+                  borderRadius: "8px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "#0ea5e9" }}>
+                    {purchase.import_stats.processed}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#0369a1" }}>
+                    Total Processed
+                  </div>
+                </div>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#f0fdf4",
+                  borderRadius: "8px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "#22c55e" }}>
+                    {purchase.import_stats.updated}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#15803d" }}>
+                    Updated Products
+                  </div>
+                </div>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#fdf4ff",
+                  borderRadius: "8px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "#a855f7" }}>
+                    {purchase.import_stats.created}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#7c3aed" }}>
+                    New Products
+                  </div>
+                </div>
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#fff7ed",
+                  borderRadius: "8px",
+                  textAlign: "center"
+                }}>
+                  <div style={{ fontSize: "20px", fontWeight: "bold", color: "#f97316" }}>
+                    {purchase.import_stats.categoriesCreated || 0}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#c2410c" }}>
+                    Categories Created
+                  </div>
+                </div>
+              </div>
+
+              {purchase.import_stats.import_date && (
+                <div style={{
+                  padding: "12px",
+                  backgroundColor: "#f9fafb",
+                  borderRadius: "8px",
+                  marginTop: "12px"
+                }}>
+                  <div style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    marginBottom: "4px"
+                  }}>
+                    <FiDatabase size={14} color="#6b7280" />
+                    <span style={{ fontSize: "12px", fontWeight: "500", color: "#374151" }}>
+                      Import Details
+                    </span>
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                    Imported on: {new Date(purchase.import_stats.import_date).toLocaleString()}
+                  </div>
+                  {purchase.import_stats.reference_number && (
+                    <div style={{ fontSize: "12px", color: "#6b7280" }}>
+                      Reference: {purchase.import_stats.reference_number}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Supplier Information */}
           <div
@@ -643,10 +742,11 @@ function PurchaseDetails() {
                 <FiUser size={20} color="#6b7280" />
                 <div>
                   <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {purchase.supplierName}
+                    {purchase.supplierName || purchase.supplier?.name || 'Unknown Supplier'}
                   </div>
                   <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                    Supplier ID: {purchase.supplierId}
+                    {purchase.supplierId ? `Supplier ID: ${purchase.supplierId}` : 
+                     purchase.is_import ? 'Import Source' : 'Supplier'}
                   </div>
                 </div>
               </div>
@@ -657,7 +757,7 @@ function PurchaseDetails() {
                 <FiPhone size={20} color="#6b7280" />
                 <div>
                   <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {purchase.supplierContact?.phone || "Not provided"}
+                    {purchase.supplierContact?.phone || purchase.supplier?.phone || "Not provided"}
                   </div>
                   <div style={{ fontSize: "14px", color: "#6b7280" }}>
                     Phone Number
@@ -671,7 +771,7 @@ function PurchaseDetails() {
                 <FiMail size={20} color="#6b7280" />
                 <div>
                   <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {purchase.supplierContact?.email || "Not provided"}
+                    {purchase.supplierContact?.email || purchase.supplier?.email || "Not provided"}
                   </div>
                   <div style={{ fontSize: "14px", color: "#6b7280" }}>
                     Email Address
@@ -679,27 +779,29 @@ function PurchaseDetails() {
                 </div>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "12px",
-                }}
-              >
-                <FiMapPin
-                  size={20}
-                  color="#6b7280"
-                  style={{ marginTop: "2px" }}
-                />
-                <div>
-                  <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                    {purchase.supplierContact?.address || "Not provided"}
-                  </div>
-                  <div style={{ fontSize: "14px", color: "#6b7280" }}>
-                    Address
+              {(purchase.supplierContact?.address || purchase.supplier?.contact) && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                  }}
+                >
+                  <FiMapPin
+                    size={20}
+                    color="#6b7280"
+                    style={{ marginTop: "2px" }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: "600", color: "#1f2937" }}>
+                      {purchase.supplierContact?.address || purchase.supplier?.contact || "Not provided"}
+                    </div>
+                    <div style={{ fontSize: "14px", color: "#6b7280" }}>
+                      Contact / Address
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

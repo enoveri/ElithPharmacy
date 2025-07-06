@@ -147,6 +147,31 @@ export const dataService = {
     },
   },
 
+  // Suppliers
+  suppliers: {
+    getAll: async () => {
+      const { data, error } = await dbHelpers.getSuppliers();
+      if (error) throw error;
+      return data || [];
+    },
+
+    getById: async (id) => {
+      return await dbHelpers.getSupplierById(id);
+    },
+
+    create: async (supplier) => {
+      return await dbHelpers.createSupplier(supplier);
+    },
+
+    update: async (id, updates) => {
+      return await dbHelpers.updateSupplier(id, updates);
+    },
+
+    delete: async (id) => {
+      return await dbHelpers.deleteSupplier(id);
+    },
+  },
+
   // Purchases
   purchases: {
     getAll: async () => {

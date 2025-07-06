@@ -220,7 +220,20 @@ const MobileInventory = () => {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-2 gap-3 mt-3">
+        <div className="grid grid-cols-3 gap-2 mt-3">
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/inventory/receive")}
+            className="mobile-action-button secondary"
+            style={{ 
+              backgroundColor: "#10b981",
+              color: "white",
+              border: "none"
+            }}
+          >
+            <FiPackage size={18} />
+            Receive
+          </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/inventory/audit")}
@@ -231,16 +244,16 @@ const MobileInventory = () => {
               border: "none"
             }}
           >
-            <FiClock size={20} />
-            Stock Audit
+            <FiClock size={18} />
+            Audit
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => navigate("/inventory/add")}
             className="mobile-action-button"
           >
-            <FiPlus size={20} />
-            Add Product
+            <FiPlus size={18} />
+            Add
           </motion.button>
         </div>
       </div>

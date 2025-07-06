@@ -2567,6 +2567,339 @@ export const dbHelpers = {
       return { success: false, error };
     }
   },
+
+  // Purchase management functions
+  getPurchases: async () => {
+    try {
+      console.log("📦 [DB] Fetching all purchases");
+      
+      const { data, error } = await supabase
+        .from("purchases")
+        .select(`
+          *,
+          purchase_items (
+            *,
+            product:products (*)
+          )
+        `)
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ [DB] Error fetching purchases:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Purchases fetched:", data?.length || 0);
+      return { success: true, data: data || [] };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getPurchases:", error);
+      return { success: false, error };
+    }
+  },
+
+  getPurchaseById: async (id) => {
+    try {
+      console.log("📦 [DB] Fetching purchase by ID:", id);
+      
+      const { data, error } = await supabase
+        .from("purchases")
+        .select(`
+          *,
+          purchase_items (
+            *,
+            product:products (*)
+          )
+        `)
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error fetching purchase:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Purchase fetched:", data?.purchase_number);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getPurchaseById:", error);
+      return { success: false, error };
+    }
+  },
+
+  createPurchase: async (purchase) => {
+    try {
+      console.log("📦 [DB] Creating purchase:", purchase);
+      
+      const purchaseData = {
+        purchase_number: purchase.purchase_number || purchase.purchaseNumber,
+        supplier_name: purchase.supplier_name || purchase.supplierName,
+        supplier_contact: purchase.supplier_contact,
+        supplier_email: purchase.supplier_email,
+        supplier_phone: purchase.supplier_phone,
+        order_date: purchase.order_date || purchase.orderDate,
+        delivery_date: purchase.delivery_date || purchase.deliveryDate,
+        expected_delivery: purchase.expected_delivery || purchase.expectedDelivery,
+        actual_delivery: purchase.actual_delivery || purchase.actualDelivery,
+        status: purchase.status || "pending",
+        total_amount: purchase.total_amount || purchase.totalAmount,
+        total_items: purchase.total_items,
+        notes: purchase.notes,
+        type: purchase.type || "purchase",
+        is_stock_receipt: purchase.is_stock_receipt || false,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data: purchaseResult, error: purchaseError } = await supabase
+        .from("purchases")
+        .insert(purchaseData)
+        .select()
+        .single();
+
+      if (purchaseError) {
+        console.error("❌ [DB] Error creating purchase:", purchaseError);
+        return { success: false, error: purchaseError };
+      }
+
+      // Create purchase items if provided
+      if (purchase.purchase_items || purchase.items) {
+        const items = purchase.purchase_items || purchase.items;
+        const purchaseItems = items.map(item => ({
+          purchase_id: purchaseResult.id,
+          product_id: item.product_id,
+          product_name: item.product_name,
+          quantity_ordered: item.quantity_ordered || item.quantityReceived,
+          quantity_received: item.quantity_received || item.quantityReceived,
+          cost_price: item.cost_price,
+          selling_price: item.selling_price,
+          line_total: item.line_total,
+          batch_number: item.batch_number,
+          expiry_date: item.expiry_date,
+          manufacturer: item.manufacturer,
+          volume: item.volume,
+          notes: item.notes,
+          created_at: new Date().toISOString()
+        }));
+
+        const { error: itemsError } = await supabase
+          .from("purchase_items")
+          .insert(purchaseItems);
+
+        if (itemsError) {
+          console.error("❌ [DB] Error creating purchase items:", itemsError);
+          // Continue anyway, don't fail the whole purchase
+        }
+      }
+
+      console.log("✅ [DB] Purchase created:", purchaseResult?.purchase_number);
+      return { success: true, data: purchaseResult, id: purchaseResult.id };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in createPurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  updatePurchase: async (id, updates) => {
+    try {
+      console.log("📦 [DB] Updating purchase:", id, updates);
+      
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("purchases")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error updating purchase:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Purchase updated:", data?.purchase_number);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in updatePurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  deletePurchase: async (id) => {
+    try {
+      console.log("📦 [DB] Deleting purchase:", id);
+      
+      // Delete purchase items first
+      await supabase
+        .from("purchase_items")
+        .delete()
+        .eq("purchase_id", id);
+
+      // Delete purchase
+      const { data, error } = await supabase
+        .from("purchases")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error deleting purchase:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Purchase deleted:", data?.purchase_number);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deletePurchase:", error);
+      return { success: false, error };
+    }
+  },
+
+  // Supplier management functions
+  getSuppliers: async () => {
+    try {
+      console.log("🏢 [DB] Fetching all suppliers");
+      
+      const { data, error } = await supabase
+        .from("suppliers")
+        .select("*")
+        .order("name");
+
+      if (error) {
+        console.error("❌ [DB] Error fetching suppliers:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Suppliers fetched:", data?.length || 0);
+      return { success: true, data: data || [] };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getSuppliers:", error);
+      return { success: false, error };
+    }
+  },
+
+  getSupplierById: async (id) => {
+    try {
+      console.log("🏢 [DB] Fetching supplier by ID:", id);
+      
+      const { data, error } = await supabase
+        .from("suppliers")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error fetching supplier:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Supplier fetched:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getSupplierById:", error);
+      return { success: false, error };
+    }
+  },
+
+  createSupplier: async (supplier) => {
+    try {
+      console.log("🏢 [DB] Creating supplier:", supplier);
+      
+      const supplierData = {
+        name: supplier.name,
+        contact: supplier.contact,
+        email: supplier.email,
+        phone: supplier.phone,
+        address: supplier.address,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("suppliers")
+        .insert(supplierData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error creating supplier:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Supplier created:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in createSupplier:", error);
+      return { success: false, error };
+    }
+  },
+
+  updateSupplier: async (id, updates) => {
+    try {
+      console.log("🏢 [DB] Updating supplier:", id, updates);
+      
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("suppliers")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error updating supplier:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Supplier updated:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in updateSupplier:", error);
+      return { success: false, error };
+    }
+  },
+
+  deleteSupplier: async (id) => {
+    try {
+      console.log("🏢 [DB] Deleting supplier:", id);
+      
+      const { data, error } = await supabase
+        .from("suppliers")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error deleting supplier:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Supplier deleted:", data?.name);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteSupplier:", error);
+      return { success: false, error };
+    }
+  },
 };
 
 export default dbHelpers;
