@@ -563,24 +563,70 @@ function ReceiveStock() {
     setError("");
 
     try {
-      // Create the stock receive record
+      // Create the stock receive record with proper field mapping for Purchases page
       const receiveData = {
-        reference_number: referenceNumber,
+        // Core purchase fields
+        purchase_number: referenceNumber,
+        purchaseNumber: referenceNumber, // Alternative field name
+        
+        // Supplier information
         supplier_name: supplier.name,
+        supplierName: supplier.name, // Alternative field name
         supplier_contact: supplier.contact,
         supplier_email: supplier.email,
         supplier_phone: supplier.phone,
-        delivery_date: deliveryDate,
-        notes: notes,
+        
+        // Dates
+        order_date: new Date().toISOString().split('T')[0], // Today as order date
+        orderDate: new Date().toISOString().split('T')[0], // Alternative field name
+        delivery_date: deliveryDate, // Keep original for reference
+        expected_delivery: deliveryDate,
+        expectedDelivery: deliveryDate, // Alternative field name
+        actual_delivery: deliveryDate, // Mark as delivered immediately for stock receipts
+        actualDelivery: deliveryDate, // Alternative field name
+        
+        // Financial totals
         total_items: calculateTotals().totalItems,
         total_cost: calculateTotals().totalCost,
-        products: selectedProducts.map(product => ({
+        total_amount: calculateTotals().totalCost,
+        totalAmount: calculateTotals().totalCost, // Alternative field name
+        
+        // Status and type
+        status: "delivered", // Stock receipts are automatically delivered
+        type: "stock_receipt", // Identify this as a stock receipt vs regular purchase order
+        is_stock_receipt: true,
+        
+        // Notes
+        notes: notes,
+        
+        // Product items in the format expected by Purchases page
+        purchase_items: selectedProducts.map(product => ({
           product_id: product.id,
+          product_name: product.name,
           quantity_received: product.quantityReceived,
+          quantity_ordered: product.quantityReceived, // Same as received for stock receipts
           cost_price: product.costPrice,
+          selling_price: product.sellingPrice,
           batch_number: product.batchNumber,
           expiry_date: product.expiryDate,
-          notes: product.notes
+          manufacturer: product.manufacturer,
+          volume: product.volume,
+          notes: product.notes,
+          line_total: product.quantityReceived * product.costPrice
+        })),
+        items: selectedProducts.map(product => ({ // Alternative field name
+          product_id: product.id,
+          product_name: product.name,
+          quantity_received: product.quantityReceived,
+          quantity_ordered: product.quantityReceived,
+          cost_price: product.costPrice,
+          selling_price: product.sellingPrice,
+          batch_number: product.batchNumber,
+          expiry_date: product.expiryDate,
+          manufacturer: product.manufacturer,
+          volume: product.volume,
+          notes: product.notes,
+          line_total: product.quantityReceived * product.costPrice
         }))
       };
 
@@ -633,9 +679,14 @@ function ReceiveStock() {
         
         setSuccess(true);
         
-        // Reset form after successful submission
+        // Reset form and redirect to purchases page
         setTimeout(() => {
-          navigate("/inventory");
+          navigate("/purchases", { 
+            state: { 
+              message: "Stock received successfully!",
+              newPurchaseId: result.id 
+            } 
+          });
         }, 2000);
       } else {
         throw new Error("Failed to submit stock receive record");
