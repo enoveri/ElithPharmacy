@@ -26,7 +26,6 @@ import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
 
 function ViewProduct() {
-  // Mobile detection hook
   const isMobile = useIsMobile();
   const { id } = useParams();
   const navigate = useNavigate();
@@ -60,7 +59,6 @@ function ViewProduct() {
         const productData = await dataService.products.getById(id);
         setProduct(productData);
 
-        // Load analytics data
         const analytics = await loadProductAnalytics(id);
         setProductAnalytics(analytics);
       } catch (error) {
@@ -78,7 +76,6 @@ function ViewProduct() {
 
   const loadProductAnalytics = async (productId) => {
     try {
-      // Mock analytics data - replace with actual data service calls
       const salesData = await dataService.sales.getAll();
       const productSales = salesData.filter((sale) =>
         sale.items?.some(
@@ -102,8 +99,6 @@ function ViewProduct() {
           const revenue =
             (productItem.price || 0) * (productItem.quantity || 0);
           totalRevenue += revenue;
-
-          // Calculate profit (assuming cost price is available)
           const cost =
             (product?.costPrice || product?.cost_price || 0) *
             (productItem.quantity || 0);
@@ -120,16 +115,15 @@ function ViewProduct() {
         }
       });
 
-      // Sort recent sales by date
       recentSales.sort((a, b) => new Date(b.date) - new Date(a.date));
 
       return {
         totalSold,
         totalRevenue,
         totalProfit,
-        averageRating: 4.2, // Mock rating
+        averageRating: 4.2,
         recentSales: recentSales.slice(0, 10),
-        topCustomers: [], // Mock customers
+        topCustomers: [],
       };
     } catch (error) {
       console.error("Error loading analytics:", error);
@@ -150,9 +144,6 @@ function ViewProduct() {
 
   const validateBeforeDelete = async (productId) => {
     try {
-      console.log("🔍 [ViewProduct] Validating product for deletion:", productId);
-      
-      // Use the new relations function for better validation
       const relations = await dataService.products.getRelations(productId);
       
       if (!relations) {
@@ -180,7 +171,6 @@ function ViewProduct() {
         warnings.push(`Product has ${relations.recentSalesCount} recent sales in the last 30 days.`);
       }
       
-      // Allow deletion with cascade
       const canDelete = true;
       
       const validation = {
@@ -194,12 +184,11 @@ function ViewProduct() {
         relations
       };
       
-      console.log("✅ [ViewProduct] Validation result:", validation);
       setDeleteValidation(validation);
       return validation;
       
     } catch (error) {
-      console.error("❌ [ViewProduct] Error validating product:", error);
+      console.error("Error validating product:", error);
       setDeleteValidation({
         hasSales: false,
         hasActiveOrders: false,
@@ -212,7 +201,6 @@ function ViewProduct() {
   };
 
   const showDeleteConfirmation = async () => {
-    console.log("🗑️ [ViewProduct] Initiating delete confirmation for product:", id);
     setShowDeleteModal(true);
     await validateBeforeDelete(id);
   };
@@ -225,13 +213,9 @@ function ViewProduct() {
 
     setIsDeleting(true);
     try {
-      console.log("🗑️ [ViewProduct] Deleting product:", id);
       const result = await dataService.products.delete(id, { cascadeDelete: true });
       
       if (result) {
-        console.log("✅ [ViewProduct] Product deleted successfully:", result);
-        
-        // Show success message with details
         setShowDeleteModal(false);
         const message = result.affectedSales > 0 
           ? `Product deleted successfully along with ${result.affectedSales} related sales!`
@@ -242,7 +226,7 @@ function ViewProduct() {
         throw new Error("Delete operation failed");
       }
     } catch (error) {
-      console.error("❌ [ViewProduct] Error deleting product:", error);
+      console.error("Error deleting product:", error);
       alert("Error deleting product. Please try again.");
     } finally {
       setIsDeleting(false);
@@ -252,15 +236,12 @@ function ViewProduct() {
   const handleArchive = async () => {
     setIsDeleting(true);
     try {
-      console.log("📦 [ViewProduct] Archiving product:", id);
       const result = await dataService.products.archive(id, { 
         archiveRelatedSales: true,
         reason: 'Manual archive from ViewProduct'
       });
       
       if (result) {
-        console.log("✅ [ViewProduct] Product archived successfully:", result);
-        
         setShowDeleteModal(false);
         alert("Product archived successfully! It will no longer appear in active inventory.");
         navigate("/inventory");
@@ -268,7 +249,7 @@ function ViewProduct() {
         throw new Error("Archive operation failed");
       }
     } catch (error) {
-      console.error("❌ [ViewProduct] Error archiving product:", error);
+      console.error("Error archiving product:", error);
       alert("Error archiving product. Please try again.");
     } finally {
       setIsDeleting(false);
@@ -540,44 +521,14 @@ function ViewProduct() {
                 </div>
               </div>
             )}
-
-            {/* Top Customers */}
-            {productAnalytics.topCustomers.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Top Customers
-                </h3>
-                <div className="space-y-3">
-                  {productAnalytics.topCustomers
-                    .slice(0, 5)
-                    .map((customer, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between"
-                      >
-                        <div className="flex items-center">
-                          <FiUser className="h-4 w-4 text-gray-400 mr-2" />
-                          <span className="text-sm text-gray-900">
-                            {customer.name}
-                          </span>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {currency} {(customer.totalSpent || 0).toFixed(2)}
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Improved Delete Confirmation Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-96 overflow-y-auto">
-            {/* Modal Header */}
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b border-gray-200">
               <div className="flex items-center">
                 <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
@@ -587,127 +538,139 @@ function ViewProduct() {
                   <h3 className="text-lg font-medium text-gray-900">
                     Delete Product
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-gray-500 mt-1">
                     This action cannot be undone
                   </p>
                 </div>
               </div>
               <button
                 onClick={closeDeleteModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 transition-colors"
                 disabled={isDeleting}
               >
                 <FiX className="w-6 h-6" />
               </button>
             </div>
 
-            {/* Modal Body */}
-            <div className="p-6">
-              <div className="mb-4">
-                <p className="text-sm text-gray-700 mb-3">
-                  Are you sure you want to delete <strong>{product?.name}</strong>?
-                </p>
-                
-                {/* Warnings */}
-                {deleteValidation.warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 mb-4">
-                    <div className="flex">
-                      <FiAlertTriangle className="w-5 h-5 text-yellow-400 mt-0.5 mr-2 flex-shrink-0" />
-                      <div className="text-sm">
-                        <p className="font-medium text-yellow-800 mb-2">
-                          Warning: This product has dependencies
-                        </p>
-                        <ul className="text-yellow-700 space-y-1">
-                          {deleteValidation.warnings.map((warning, index) => (
-                            <li key={index} className="flex items-start">
-                              <span className="mr-2">•</span>
-                              <span>{warning}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Impact Summary */}
-                <div className="bg-gray-50 border border-gray-200 rounded-md p-4 mb-4">
-                  <h4 className="font-medium text-gray-900 mb-2">Impact Summary:</h4>
-                  <div className="text-sm text-gray-600 space-y-1">
-                    <p>• Sales History: {deleteValidation.salesCount || 0} records</p>
-                    <p>• Current Stock: {product?.quantity || 0} units</p>
-                    <p>• Recent Sales: {deleteValidation.recentSalesCount || 0} (last 30 days)</p>
-                  </div>
-                </div>
-
-                {/* Action Options */}
-                <div className="text-sm text-gray-600 mb-4">
-                  <p className="mb-2">Choose an action:</p>
-                  <div className="space-y-2">
-                    <div className="flex items-center p-3 border border-blue-200 rounded-md bg-blue-50">
-                      <FiArchive className="w-4 h-4 text-blue-600 mr-2" />
-                      <div>
-                        <p className="font-medium text-blue-900">Archive (Recommended)</p>
-                        <p className="text-blue-700 text-xs">Hide from inventory but keep all data</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center p-3 border border-red-200 rounded-md bg-red-50">
-                      <FiTrash2 className="w-4 h-4 text-red-600 mr-2" />
-                      <div>
-                        <p className="font-medium text-red-900">Permanent Delete</p>
-                        <p className="text-red-700 text-xs">Remove product but keep sales history</p>
-                      </div>
+            <div className="p-6 space-y-4">
+              <p className="text-base text-gray-700">
+                Are you sure you want to delete <strong className="font-semibold">{product?.name}</strong>?
+              </p>
+              
+              {deleteValidation.warnings.length > 0 && (
+                <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-md p-4">
+                  <div className="flex">
+                    <FiAlertTriangle className="flex-shrink-0 w-5 h-5 text-yellow-500 mt-0.5 mr-3" />
+                    <div>
+                      <h4 className="font-medium text-yellow-800 mb-2">
+                        Warning: This product has dependencies
+                      </h4>
+                      <ul className="text-yellow-700 space-y-2 text-sm">
+                        {deleteValidation.warnings.map((warning, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="mr-2">•</span>
+                            <span>{warning}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                 </div>
+              )}
+
+              <div className="bg-gray-50 rounded-md p-4 border border-gray-200">
+                <h4 className="font-medium text-gray-900 mb-3">Impact Summary:</h4>
+                <ul className="text-sm text-gray-700 space-y-2">
+                  <li className="flex items-center">
+                    <FiBarChart className="w-4 h-4 text-gray-500 mr-2" />
+                    <span>Sales History: {deleteValidation.salesCount || 0} records</span>
+                  </li>
+                  <li className="flex items-center">
+                    <FiPackage className="w-4 h-4 text-gray-500 mr-2" />
+                    <span>Current Stock: {product?.quantity || 0} units</span>
+                  </li>
+                  <li className="flex items-center">
+                    <FiCalendar className="w-4 h-4 text-gray-500 mr-2" />
+                    <span>Recent Sales: {deleteValidation.recentSalesCount || 0} (last 30 days)</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="space-y-3">
+                <h4 className="text-sm font-medium text-gray-700">Choose an action:</h4>
+                <button
+                  onClick={handleArchive}
+                  className="w-full text-left p-3 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <FiArchive className="w-5 h-5 text-blue-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-blue-900">Archive (Recommended)</p>
+                      <p className="text-blue-700 text-xs mt-1">Hide from inventory but keep all data</p>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="w-full text-left p-3 border border-red-200 rounded-md bg-red-50 hover:bg-red-100 transition-colors"
+                >
+                  <div className="flex items-center">
+                    <FiTrash2 className="w-5 h-5 text-red-600 mr-3" />
+                    <div>
+                      <p className="font-medium text-red-900">Permanent Delete</p>
+                      <p className="text-red-700 text-xs mt-1">Remove product and all associated data</p>
+                    </div>
+                  </div>
+                </button>
               </div>
             </div>
 
-            {/* Modal Footer */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end space-x-3">
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
               <button
                 onClick={closeDeleteModal}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
                 disabled={isDeleting}
               >
                 Cancel
               </button>
-              <button
-                onClick={handleArchive}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                disabled={isDeleting}
-              >
-                {isDeleting ? (
-                  <>
-                    <FiLoader className="w-4 h-4 mr-2 animate-spin" />
-                    Archiving...
-                  </>
-                ) : (
-                  <>
-                    <FiArchive className="w-4 h-4 mr-2" />
-                    Archive Product
-                  </>
-                )}
-              </button>
-              {deleteValidation.canDelete && (
+              <div className="space-x-3">
                 <button
-                  onClick={handleDelete}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+                  onClick={handleArchive}
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                   disabled={isDeleting}
                 >
                   {isDeleting ? (
                     <>
                       <FiLoader className="w-4 h-4 mr-2 animate-spin" />
-                      Deleting...
+                      Archiving...
                     </>
                   ) : (
                     <>
-                      <FiTrash2 className="w-4 h-4 mr-2" />
-                      Delete Forever
+                      <FiArchive className="w-4 h-4 mr-2" />
+                      Archive
                     </>
                   )}
                 </button>
-              )}
+                {deleteValidation.canDelete && (
+                  <button
+                    onClick={handleDelete}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    disabled={isDeleting}
+                  >
+                    {isDeleting ? (
+                      <>
+                        <FiLoader className="w-4 h-4 mr-2 animate-spin" />
+                        Deleting...
+                      </>
+                    ) : (
+                      <>
+                        <FiTrash2 className="w-4 h-4 mr-2" />
+                        Delete Forever
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

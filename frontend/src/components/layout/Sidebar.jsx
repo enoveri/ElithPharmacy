@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 import { useAuth } from "../../contexts/AuthContext";
 import { useUserRole } from "../../hooks/useUserRole";
+import logo from '/logo.png';
 
 const Sidebar = ({
   collapsed = false,
@@ -101,12 +102,13 @@ const Sidebar = ({
         {(!collapsed || isMobile) && (
           <div className="flex items-center ml-10 transition-all duration-300">
             <div
-              className="rounded-xl w-12 h-12 flex items-center justify-center text-white font-bold shadow-lg text-xl"
-              style={{
-                background: "var(--color-bg-gradient-secondary)",
-              }}
+              className="w-16 h-13 flex items-center justify-center"
             >
-              E
+              <img src={logo} alt="Elith Pharmacy Logo" 
+              style={{
+                paddingLeft: "20px",
+              }}
+              />
             </div>
             <div className="ml-4">
               <h1
@@ -114,13 +116,17 @@ const Sidebar = ({
                 style={{
                   color: "var(--color-sidebar-text-active)",
                   fontFamily: "var(--font-family-sans)",
+                  paddingLeft: "20px",
                 }}
               >
                 Elith Pharmacy
               </h1>
               <p
                 className="text-sm"
-                style={{ color: "var(--color-sidebar-text)" }}
+                style={{
+                   color: "var(--color-sidebar-text)",
+                   paddingLeft: "20px",
+                  }}
               >
                 Management System
               </p>
