@@ -25,6 +25,12 @@ import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
 
+const OVERLAY = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4";
+const MODAL  = "bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden";
+const HEADER = "flex items-center justify-between px-6 py-4 border-b border-gray-200";
+const BODY   = "p-6 space-y-6";
+const FOOTER = "flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200";  
+
 function ViewProduct() {
   const isMobile = useIsMobile();
   const { id } = useParams();
@@ -321,7 +327,7 @@ function ViewProduct() {
   return (
     <div className="max-w-4xl mx-auto p-6">
       {/* Header with Actions */}
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex justify-between items-center p-10">
         <button
           onClick={() => navigate("/inventory")}
           className="inline-flex items-center text-blue-600 hover:text-blue-800"
@@ -329,7 +335,7 @@ function ViewProduct() {
           <FiArrowLeft className="w-4 h-4 mr-2" />
           Back to Inventory
         </button>
-        <div className="flex space-x-3">
+        <div className="flex gap-6 space-x-3 pt-16">
           <button
             onClick={handleEdit}
             className="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
@@ -349,9 +355,9 @@ function ViewProduct() {
 
       {/* Product Details */}
       <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 p-6">
           {/* Product Information */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-3">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
@@ -362,7 +368,7 @@ function ViewProduct() {
                     {product.manufacturer || product.category}
                   </p>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="grid grid-cols-2 md:grid-cols-6 ">
                     <div>
                       <p className="text-sm font-medium text-gray-500">
                         Selling Price
@@ -415,7 +421,7 @@ function ViewProduct() {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 text-sm">
                     <div>
                       <p className="font-medium text-gray-500">SKU</p>
                       <p className="text-gray-900">
@@ -449,12 +455,12 @@ function ViewProduct() {
               </div>
             </div>
           </div>
-
+                   
           {/* Analytics Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
+            <div className="p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">
                 Performance
               </h3>
               <div className="space-y-4">
