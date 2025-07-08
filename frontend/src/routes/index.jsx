@@ -20,6 +20,7 @@ import Signup from "../pages/Signup";
 import AddProduct from "../pages/AddProduct";
 import EditProduct from "../pages/EditProduct";
 import SaleDetails from "../pages/SaleDetails";
+import EditSale from "../pages/EditSale";
 import ResponsiveRefunds from "../components/responsive/ResponsiveRefunds";
 import EditCustomer from "../pages/EditCustomer";
 import ViewCustomer from "../pages/ViewCustomer";
@@ -82,6 +83,10 @@ export const router = createBrowserRouter([
       {
         path: "/sales/:id",
         element: <SaleDetails />,
+      },
+      {
+        path: "/sales/edit/:id",
+        element: <EditSale />,
       },
       {
         path: "/refunds",
