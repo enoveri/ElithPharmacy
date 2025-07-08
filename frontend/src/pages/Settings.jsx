@@ -79,6 +79,7 @@ const Settings = () => {
           pharmacy_license: "",
           currency: "UGX",
           tax_rate: 18,
+          disable_tax: false,
           timezone: "Africa/Kampala",
           date_format: "DD/MM/YYYY",
           low_stock_threshold: 10,
@@ -668,26 +669,69 @@ const Settings = () => {
                             type="number"
                           value={formSettings.tax_rate || 18}
                           onChange={(e) => updateFormSetting("tax_rate", parseFloat(e.target.value))}
+                          disabled={formSettings.disable_tax}
                           style={{
                             width: "100%",
                             padding: "12px 16px",
                             border: "1px solid #d1d5db",
                             borderRadius: "8px",
                             fontSize: "14px",
-                            backgroundColor: "#f9fafb",
+                            backgroundColor: formSettings.disable_tax ? "#f3f4f6" : "#f9fafb",
                             transition: "all 0.2s",
+                            opacity: formSettings.disable_tax ? 0.6 : 1,
                           }}
                             placeholder="18"
                           onFocus={(e) => {
-                            e.target.style.borderColor = "#3b82f6";
-                            e.target.style.backgroundColor = "white";
+                            if (!formSettings.disable_tax) {
+                              e.target.style.borderColor = "#3b82f6";
+                              e.target.style.backgroundColor = "white";
+                            }
                           }}
                           onBlur={(e) => {
                             e.target.style.borderColor = "#d1d5db";
-                            e.target.style.backgroundColor = "#f9fafb";
+                            e.target.style.backgroundColor = formSettings.disable_tax ? "#f3f4f6" : "#f9fafb";
                           }}
                           />
                         </div>
+
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "16px" }}>
+                            <div>
+                            <p style={{ fontSize: "14px", fontWeight: "500", color: "#374151", margin: "0" }}>
+                                Disable Tax Calculation
+                            </p>
+                            <p style={{ fontSize: "12px", color: "#6b7280", margin: "0" }}>
+                                When enabled, tax will not be calculated or displayed anywhere
+                            </p>
+                              </div>
+                          <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={formSettings.disable_tax || false}
+                              onChange={(e) => updateFormSetting("disable_tax", e.target.checked)}
+                              style={{ display: "none" }}
+                            />
+                            <div style={{
+                              width: "44px",
+                              height: "24px",
+                              backgroundColor: formSettings.disable_tax ? "#3b82f6" : "#d1d5db",
+                              borderRadius: "12px",
+                              position: "relative",
+                              transition: "all 0.2s",
+                            }}>
+                              <div style={{
+                                width: "20px",
+                                height: "20px",
+                                backgroundColor: "white",
+                                borderRadius: "50%",
+                                position: "absolute",
+                                top: "2px",
+                                left: formSettings.disable_tax ? "22px" : "2px",
+                                transition: "all 0.2s",
+                                boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                              }} />
+                            </div>
+                          </label>
+                          </div>
                       </div>
 
                       <div>

@@ -18,7 +18,7 @@ import { useSettingsStore } from "../../store";
 const MobilePOS = () => {
   // Get settings for currency and tax rate
   const { settings } = useSettingsStore();
-  const { currency = "UGX", taxRate = 18 } = settings;
+  const { currency = "UGX", taxRate = 18, disableTax = false } = settings;
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -242,7 +242,7 @@ const MobilePOS = () => {
     (sum, item) => sum + (item.total || (item.price || 0) * item.quantity),
     0
   );
-  const tax = subtotal * (taxRate / 100); // Use Uganda VAT rate (18%)
+  const tax = disableTax ? 0 : subtotal * (taxRate / 100); // Use Uganda VAT rate (18%)
   const total = subtotal + tax;
 
   // Complete sale with better data structure like desktop
@@ -669,13 +669,15 @@ const MobilePOS = () => {
                         {subtotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="cart-total-row">
-                      <span>Tax ({taxRate}%):</span>
-                      <span className="font-semibold">
-                        {currency}
-                        {tax.toFixed(2)}
-                      </span>
-                    </div>
+                    {!disableTax && (
+                      <div className="cart-total-row">
+                        <span>Tax ({taxRate}%):</span>
+                        <span className="font-semibold">
+                          {currency}
+                          {tax.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
                     <div className="cart-total-row final">
                       <span>Total:</span>
                       <span>

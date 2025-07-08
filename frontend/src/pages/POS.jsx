@@ -342,7 +342,7 @@ if (typeof document !== "undefined") {
 function POS() {
   // Settings store for currency and receipt settings
   const { settings } = useSettingsStore();
-  const { currency, taxRate, receiptHeader, receiptFooter } = settings;
+  const { currency, taxRate, disableTax, receiptHeader, receiptFooter } = settings;
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -600,7 +600,7 @@ function POS() {
       console.log("🛒 [POS] Cart items:", cart);
 
       const subtotal = getCartTotal();
-      const tax = subtotal * (taxRate || 0.1); // Use settings tax rate or default 10%
+      const tax = disableTax ? 0 : subtotal * ((taxRate || 18) / 100); // Use settings tax rate or default 18%
       const totalAmount = subtotal + tax;
 
       // Generate transaction number
