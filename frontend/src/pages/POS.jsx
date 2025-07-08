@@ -601,7 +601,7 @@ function POS() {
 
       const subtotal = getCartTotal();
       const tax = disableTax ? 0 : subtotal * ((taxRate || 18) / 100); // Use settings tax rate or default 18%
-      const totalAmount = subtotal + tax;
+      const totalAmount = disableTax ? subtotal : subtotal + tax;
 
       // Generate transaction number
       const transactionNumber = `TXN-${Date.now()}`;
