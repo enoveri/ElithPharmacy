@@ -32,7 +32,7 @@ function SaleDetails() {
 
   // Settings store for currency
   const { settings } = useSettingsStore();
-  const { currency } = settings;
+  const { currency, disableTax = false } = settings;
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -258,7 +258,7 @@ function SaleDetails() {
         )
         .join("\n")}
         ------      Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
-      Tax: ${currency} ${(sale.tax || 0).toFixed(2)}
+      ${!disableTax ? `Tax: ${currency} ${(sale.tax || 0).toFixed(2)}` : ''}
       ${(sale.discount || 0) > 0 ? `Discount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
       Total: ${currency} ${(sale.totalAmount || 0).toFixed(2)}
         Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
@@ -427,10 +427,12 @@ function SaleDetails() {
                 <span>Subtotal:</span>
                 <span>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
+              ${!disableTax ? `
               <div class="total-row">
                 <span>Tax:</span>
                 <span>{currency} {(sale.tax || 0).toFixed(2)}</span>
               </div>
+              ` : ''}
               ${
                 (sale.discount || 0) > 0
                   ? `
@@ -521,7 +523,7 @@ ${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item
 
 PAYMENT SUMMARY:
 Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
-Tax: ${currency} ${(sale.tax || 0).toFixed(2)}${(sale.discount || 0) > 0 ? `\nDiscount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
+      ${!disableTax ? `Tax: ${currency} ${(sale.tax || 0).toFixed(2)}` : ''}${(sale.discount || 0) > 0 ? `\nDiscount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
 TOTAL: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
 
 Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
@@ -834,10 +836,12 @@ Email: info@elithpharmacy.com`;
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>
                 <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.tax || 0).toFixed(2)}</span>
-              </div>
+              {!disableTax && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Tax:</span>
+                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.tax || 0).toFixed(2)}</span>
+                </div>
+              )}
               {(sale.discount || 0) > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#6b7280" }}>Discount:</span>
@@ -1462,12 +1466,14 @@ Email: info@elithpharmacy.com`;
                   Ush {(sale.subtotal || 0).toFixed(2)}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  Ush{(sale.tax || 0).toFixed(2)}
-                </span>
-              </div>
+              {!disableTax && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Tax:</span>
+                  <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                    Ush{(sale.tax || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
               {(sale.discount || 0) > 0 && (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
