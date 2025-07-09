@@ -25,11 +25,12 @@ import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
 import "../styles/mobile.css";
 
-const OVERLAY = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4";
-const MODAL  = "bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden";
-const HEADER = "flex items-center justify-between px-6 py-4 border-b border-gray-200";
+// Overlay and Modal style constants
+const OVERLAY = "fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-200";
+const MODAL  = "bg-white rounded-xl shadow-2xl max-w-lg w-full overflow-hidden border border-gray-200";
+const HEADER = "flex items-center justify-between px-6 py-4 border-b border-gray-100";
 const BODY   = "p-6 space-y-6";
-const FOOTER = "flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-200";  
+const FOOTER = "flex justify-end space-x-3 px-6 py-4 bg-gray-50 border-t border-gray-100";
 
 function ViewProduct() {
   const isMobile = useIsMobile();
@@ -291,7 +292,7 @@ function ViewProduct() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -299,15 +300,11 @@ function ViewProduct() {
 
   if (!product) {
     return (
-      <div className="p-6">
-        <div className="text-center">
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white shadow-lg rounded-xl p-8 text-center">
           <FiPackage className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">
-            Product not found
-          </h3>
-          <p className="mt-1 text-sm text-gray-500">
-            The product you're looking for doesn't exist.
-          </p>
+          <h3 className="mt-2 text-lg font-bold text-gray-900">Product not found</h3>
+          <p className="mt-1 text-sm text-gray-500">The product you're looking for doesn't exist.</p>
           <div className="mt-6">
             <button
               onClick={() => navigate("/inventory")}
@@ -325,364 +322,265 @@ function ViewProduct() {
   const stockStatus = getStockStatus(product.quantity || 0);
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header with Actions */}
-      <div className="mb-6 flex justify-between items-center p-10">
-        <button
-          onClick={() => navigate("/inventory")}
-          className="inline-flex items-center text-blue-600 hover:text-blue-800"
-        >
-          <FiArrowLeft className="w-4 h-4 mr-2" />
-          Back to Inventory
-        </button>
-        <div className="flex gap-6 space-x-3 pt-16">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-center py-8 w-full">
+      {/* Nav-style Action Buttons above the card */}
+      <div className="w-full max-w-lg flex justify-between items-center mb-6 px-2 md:px-0">
+        <div className="flex-1 flex justify-start">
+          <button
+            onClick={() => navigate("/inventory")}
+            className="px-6 py-2 rounded-md border border-gray-300 bg-gray-50 text-gray-700 font-mono hover:bg-gray-100 transition flex items-center"
+          >
+            <FiArrowLeft className="inline mr-2" />Back
+          </button>
+        </div>
+        <div className="flex-1 flex justify-center">
           <button
             onClick={handleEdit}
-            className="inline-flex items-center px-4 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-white hover:bg-blue-50"
+            className="px-6 py-2 rounded-md border border-blue-300 bg-blue-50 text-blue-700 font-mono hover:bg-blue-100 transition flex items-center"
           >
-            <FiEdit className="w-4 h-4 mr-2" />
-            Edit Product
+            <FiEdit className="inline mr-2" />Edit
           </button>
+        </div>
+        <div className="flex-1 flex justify-end">
           <button
             onClick={showDeleteConfirmation}
-            className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700"
+            className="px-6 py-2 rounded-md border border-red-300 bg-red-50 text-red-700 font-mono hover:bg-red-100 transition flex items-center"
           >
-            <FiTrash2 className="w-4 h-4 mr-2" />
-            Delete Product
+            <FiTrash2 className="inline mr-2" />Delete
           </button>
         </div>
       </div>
-
-      {/* Product Details */}
-      <div className="bg-white shadow-lg rounded-lg overflow-hidden">
-        <div className="grid grid-cols-1 lg:grid-cols-3 p-6">
-          {/* Product Information */}
-          <div className="lg:col-span-3">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-6">
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                    {product.name}
-                  </h1>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {product.manufacturer || product.category}
-                  </p>
-
-                  <div className="grid grid-cols-2 md:grid-cols-6 ">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Selling Price
-                      </p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {currency} {(product.price || 0).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Cost Price
-                      </p>
-                      <p className="text-lg font-semibold text-gray-900">
-                        {currency}{" "}
-                        {(product.costPrice || product.cost_price || 0).toFixed(
-                          2
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">
-                        Profit Margin
-                      </p>
-                      <p className="text-lg font-semibold text-green-600">
-                        {currency}
-                        {(
-                          (product.price || 0) -
-                          (product.costPrice || product.cost_price || 0)
-                        ).toFixed(2)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Stock</p>
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}
-                      >
-                        {product.quantity || 0} units
-                      </span>
-                    </div>
-                  </div>
-
-                  {product.description && (
-                    <div className="mb-6">
-                      <h3 className="text-sm font-medium text-gray-900 mb-2">
-                        Description
-                      </h3>
-                      <p className="text-sm text-gray-600">
-                        {product.description}
-                      </p>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 text-sm">
-                    <div>
-                      <p className="font-medium text-gray-500">SKU</p>
-                      <p className="text-gray-900">
-                        {product.sku || product.barcode || "N/A"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-500">Category</p>
-                      <p className="text-gray-900">
-                        {product.category || "Uncategorized"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-500">Status</p>
-                      <span
-                        className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stockStatus.bg} ${stockStatus.color}`}
-                      >
-                        {stockStatus.status}
-                      </span>
-                    </div>
-                    {product.expiry_date && (
-                      <div>
-                        <p className="font-medium text-gray-500">Expiry Date</p>
-                        <p className="text-gray-900">
-                          {new Date(product.expiry_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
+      <div className="w-full max-w-lg bg-white shadow-2xl rounded-2xl border border-gray-200 flex flex-col receipt-font p-4 md:p-8" style={{ minHeight: '90vh' }}>
+        {/* Enhanced Receipt Header */}
+        <div className="pt-4 pb-4 border-b border-dashed border-gray-300 text-center bg-gradient-to-r from-gray-50 to-white px-2 md:px-8">
+          <h1 className="text-3xl font-extrabold tracking-widest text-gray-900 mb-1">{product.name}</h1>
+          <p className="text-xs uppercase tracking-wider text-gray-500">{product.manufacturer || product.category}</p>
+          <div className="mt-2">
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${stockStatus.color === 'text-green-600' ? 'bg-green-100 text-green-800' : stockStatus.color === 'text-red-600' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}`}>{stockStatus.status}</span>
           </div>
-                   
-          {/* Analytics Sidebar */}
-          <div className="space-y-6 w-full">
-            {/* Quick Stats */}
-            <div className="p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">
-                Performance
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FiShoppingCart className="h-5 w-5 text-blue-600 mr-2" />
-                    <span className="text-sm text-gray-600">Total Sold</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {productAnalytics.totalSold} units
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FiDollarSign className="h-5 w-5 text-green-600 mr-2" />
-                    <span className="text-sm text-gray-600">Revenue</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {currency} {(productAnalytics.totalRevenue || 0).toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <FiTrendingUp className="h-5 w-5 text-purple-600 mr-2" />
-                    <span className="text-sm text-gray-600">Profit</span>
-                  </div>
-                  <span className="text-sm font-medium text-gray-900">
-                    {currency} {(productAnalytics.totalProfit || 0).toFixed(2)}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Recent Sales */}
-            {productAnalytics.recentSales.length > 0 && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">
-                  Recent Sales
-                </h3>
-                <div className="space-y-3">
-                  {productAnalytics.recentSales.slice(0, 5).map((sale, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0"
-                    >
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900">
-                          {sale.quantity} units
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {new Date(sale.date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm font-medium text-gray-900">
-                          {currency} {(sale.revenue || 0).toFixed(2)}
-                        </p>
-                        <p className="text-xs text-green-600">
-                          {currency} {(sale.profit || 0).toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        </div>
+        {/* Improved Product Details Grid with HRs */}
+        <div className="py-4 border-b border-dashed border-gray-300 px-2 md:px-8">
+          <div className="grid grid-cols-2 gap-y-2 gap-x-6 text-sm">
+            <div className="font-mono text-gray-600">Selling Price:</div>
+            <div className="font-mono text-right text-gray-900">{currency} {(product.price || 0).toFixed(2)}</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">Cost Price:</div>
+            <div className="font-mono text-right text-gray-900">{currency} {(product.costPrice || product.cost_price || 0).toFixed(2)}</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">Profit Margin:</div>
+            <div className="font-mono text-right text-green-600">{currency}{((product.price || 0) - (product.costPrice || product.cost_price || 0)).toFixed(2)}</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">Stock:</div>
+            <div className={`font-mono text-right ${product.quantity <= 5 ? 'text-yellow-700 font-semibold' : 'text-gray-900'}`}>{product.quantity || 0} units</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">SKU:</div>
+            <div className="font-mono text-right text-gray-900">{product.sku || product.barcode || "N/A"}</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">Category:</div>
+            <div className="font-mono text-right text-gray-900">{product.category || "Uncategorized"}</div>
+            <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+            <div className="font-mono text-gray-600">Status:</div>
+            <div className={`font-mono text-right ${stockStatus.color}`}>{stockStatus.status}</div>
+            {product.expiry_date && (
+              <>
+                <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+                <div className="font-mono text-gray-600">Expiry Date:</div>
+                <div className={`font-mono text-right ${new Date(product.expiry_date) < new Date() ? 'text-red-600 font-semibold' : 'text-gray-900'}`}>{new Date(product.expiry_date).toLocaleDateString()}</div>
+                <div className="col-span-2"><hr className="border-t border-gray-200 my-1" /></div>
+              </>
             )}
           </div>
         </div>
-      </div>
-
-      {/* Improved Delete Confirmation Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <div className="flex items-center">
-                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <FiAlertTriangle className="w-6 h-6 text-red-600" />
-                </div>
-                <div className="ml-4">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Delete Product
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    This action cannot be undone
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closeDeleteModal}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
-                disabled={isDeleting}
-              >
-                <FiX className="w-6 h-6" />
-              </button>
+        {/* Description Section with Toggle */}
+        {product.description && (
+          <div className="py-4 border-b border-dashed border-gray-300 px-2 md:px-8">
+            <div className="flex justify-between items-center cursor-pointer" onClick={() => setIsDescExpanded(!isDescExpanded)}>
+              <h3 className="text-xs font-bold text-gray-700 mb-1 tracking-wider">Description</h3>
+              <FiChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${isDescExpanded ? 'transform rotate-180' : ''}`} />
             </div>
-
-            <div className="p-6 space-y-4">
-              <p className="text-base text-gray-700">
-                Are you sure you want to delete <strong className="font-semibold">{product?.name}</strong>?
-              </p>
-              
-              {deleteValidation.warnings.length > 0 && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-md p-4">
-                  <div className="flex">
-                    <FiAlertTriangle className="flex-shrink-0 w-5 h-5 text-yellow-500 mt-0.5 mr-3" />
-                    <div>
-                      <h4 className="font-medium text-yellow-800 mb-2">
-                        Warning: This product has dependencies
-                      </h4>
-                      <ul className="text-yellow-700 space-y-2 text-sm">
-                        {deleteValidation.warnings.map((warning, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="mr-2">•</span>
-                            <span>{warning}</span>
-                          </li>
-                        ))}
-                      </ul>
+            <div className={`font-mono text-gray-600 text-sm transition-all overflow-hidden ${isDescExpanded ? 'max-h-96 mt-2' : 'max-h-0'}`}>{product.description}</div>
+          </div>
+        )}
+        {/* Performance Summary with Visual Metrics */}
+        <div className="py-6 bg-gray-50 px-2 md:px-8">
+          <h3 className="text-center text-lg font-bold tracking-widest text-gray-800 mb-4 relative">
+            <span className="relative z-10 px-4 bg-gray-50">Performance Summary</span>
+            <span className="absolute top-1/2 left-0 right-0 h-px bg-gray-300 -z-0"></span>
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-2">
+            {/* Total Sold Card */}
+            <div className="bg-white p-3 rounded border border-gray-200 shadow-xs flex flex-col items-center justify-center pt-6">
+              <div className="p-1 rounded-full bg-blue-100 text-blue-600 mb-1"><FiShoppingCart className="w-5 h-5" /></div>
+              <p className="text-xs text-gray-500">Total Sold</p>
+              <p className="text-base font-semibold">{productAnalytics.totalSold} units</p>
+            </div>
+            {/* Revenue Card */}
+            <div className="bg-white p-3 rounded border border-gray-200 shadow-xs flex flex-col items-center justify-center">
+              <div className="p-1 rounded-full bg-green-100 text-green-600 mb-1"><FiDollarSign className="w-5 h-5" /></div>
+              <p className="text-xs text-gray-500">Revenue</p>
+              <p className="text-base font-semibold">{currency} {(productAnalytics.totalRevenue || 0).toFixed(2)}</p>
+            </div>
+            {/* Profit Card */}
+            <div className="bg-white p-3 rounded border border-gray-200 shadow-xs flex flex-col items-center justify-center">
+              <div className="p-1 rounded-full bg-purple-100 text-purple-600 mb-1"><FiTrendingUp className="w-5 h-5" /></div>
+              <p className="text-xs text-gray-500">Profit</p>
+              <p className="text-base font-semibold">{currency} {(productAnalytics.totalProfit || 0).toFixed(2)}</p>
+            </div>
+          </div>
+          {/* Recent Sales with Hover Effects */}
+          {productAnalytics.recentSales.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-xs font-bold text-gray-700 mb-2 tracking-wider">Recent Sales</h4>
+              <div className="space-y-2">
+                {productAnalytics.recentSales.slice(0, 3).map((sale, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2 rounded-lg hover:bg-white hover:shadow-xs transition-all">
+                    <div className="flex items-center">
+                      <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mr-2"><FiDollarSign className="w-3 h-3 text-blue-600" /></div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-900">{new Date(sale.date).toLocaleDateString()}</p>
+                        <p className="text-xxs text-gray-500">{sale.quantity}u sold</p>
+                      </div>
                     </div>
+                    <span className="text-sm font-medium text-gray-900">{currency} {(sale.revenue || 0).toFixed(2)}</span>
                   </div>
-                </div>
-              )}
-
-              <div className="bg-gray-50 rounded-md p-4 border border-gray-200">
-                <h4 className="font-medium text-gray-900 mb-3">Impact Summary:</h4>
-                <ul className="text-sm text-gray-700 space-y-2">
-                  <li className="flex items-center">
-                    <FiBarChart className="w-4 h-4 text-gray-500 mr-2" />
-                    <span>Sales History: {deleteValidation.salesCount || 0} records</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FiPackage className="w-4 h-4 text-gray-500 mr-2" />
-                    <span>Current Stock: {product?.quantity || 0} units</span>
-                  </li>
-                  <li className="flex items-center">
-                    <FiCalendar className="w-4 h-4 text-gray-500 mr-2" />
-                    <span>Recent Sales: {deleteValidation.recentSalesCount || 0} (last 30 days)</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-700">Choose an action:</h4>
-                <button
-                  onClick={handleArchive}
-                  className="w-full text-left p-3 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <FiArchive className="w-5 h-5 text-blue-600 mr-3" />
-                    <div>
-                      <p className="font-medium text-blue-900">Archive (Recommended)</p>
-                      <p className="text-blue-700 text-xs mt-1">Hide from inventory but keep all data</p>
-                    </div>
-                  </div>
-                </button>
-                <button
-                  onClick={handleDelete}
-                  className="w-full text-left p-3 border border-red-200 rounded-md bg-red-50 hover:bg-red-100 transition-colors"
-                >
-                  <div className="flex items-center">
-                    <FiTrash2 className="w-5 h-5 text-red-600 mr-3" />
-                    <div>
-                      <p className="font-medium text-red-900">Permanent Delete</p>
-                      <p className="text-red-700 text-xs mt-1">Remove product and all associated data</p>
-                    </div>
-                  </div>
-                </button>
+                ))}
               </div>
             </div>
-
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between">
-              <button
-                onClick={closeDeleteModal}
-                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <div className="space-x-3">
+          )}
+        </div>
+        {/* Delete Modal */}
+        {showDeleteModal && (
+          <div className={OVERLAY}>
+            <div className={MODAL}>
+              <div className={HEADER}>
+                <div className="flex items-center">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <FiAlertTriangle className="w-6 h-6 text-red-600" />
+                  </div>
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-gray-900">Delete Product</h3>
+                    <p className="text-sm text-gray-500 mt-1">This action cannot be undone</p>
+                  </div>
+                </div>
                 <button
-                  onClick={handleArchive}
-                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                  onClick={closeDeleteModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                   disabled={isDeleting}
                 >
-                  {isDeleting ? (
-                    <>
-                      <FiLoader className="w-4 h-4 mr-2 animate-spin" />
-                      Archiving...
-                    </>
-                  ) : (
-                    <>
-                      <FiArchive className="w-4 h-4 mr-2" />
-                      Archive
-                    </>
-                  )}
+                  <FiX className="w-6 h-6" />
                 </button>
-                {deleteValidation.canDelete && (
+              </div>
+              <div className={BODY + " flex flex-col gap-6"}>
+                <p className="text-base text-gray-700 mb-2">
+                  Are you sure you want to delete <strong className="font-semibold">{product?.name}</strong>?
+                </p>
+                {deleteValidation.warnings.length > 0 && (
+                  <div className="bg-yellow-50 border-l-4 border-yellow-400 rounded-md p-4 mb-2">
+                    <div className="flex">
+                      <FiAlertTriangle className="flex-shrink-0 w-5 h-5 text-yellow-500 mt-0.5 mr-3" />
+                      <div>
+                        <h4 className="font-medium text-yellow-800 mb-2">Warning: This product has dependencies</h4>
+                        <ul className="text-yellow-700 space-y-2 text-sm">
+                          {deleteValidation.warnings.map((warning, index) => (
+                            <li key={index} className="flex items-start">
+                              <span className="mr-2">•</span>
+                              <span>{warning}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="bg-gray-50 rounded-md p-4 border border-gray-200 mb-2 py-4">
+                  <h4 className="font-medium text-gray-900 mb-3">Impact Summary:</h4>
+                  <ul className="text-sm text-gray-700 space-y-2">
+                    <li className="flex items-center"><FiBarChart className="w-4 h-4 text-gray-500 mr-2" /><span>Sales History: {deleteValidation.salesCount || 0} records</span></li>
+                    <li className="flex items-center"><FiPackage className="w-4 h-4 text-gray-500 mr-2" /><span>Current Stock: {product?.quantity || 0} units</span></li>
+                    <li className="flex items-center"><FiCalendar className="w-4 h-4 text-gray-500 mr-2" /><span>Recent Sales: {deleteValidation.recentSalesCount || 0} (last 30 days)</span></li>
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-4 mb-2">
+                  <h4 className="text-sm font-medium text-gray-700 mb-1">Choose an action:</h4>
+                  <button
+                    onClick={handleArchive}
+                    className="w-full text-left p-4 border border-blue-200 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors mb-2"
+                  >
+                    <div className="flex items-center">
+                      <FiArchive className="w-5 h-5 text-blue-600 mr-3" />
+                      <div>
+                        <p className="font-medium text-blue-900">Archive (Recommended)</p>
+                        <p className="text-blue-700 text-xs mt-1">Hide from inventory but keep all data</p>
+                      </div>
+                    </div>
+                  </button>
                   <button
                     onClick={handleDelete}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+                    className="w-full text-left p-4 border border-red-200 rounded-md bg-red-50 hover:bg-red-100 transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <FiTrash2 className="w-5 h-5 text-red-600 mr-3" />
+                      <div>
+                        <p className="font-medium text-red-900">Permanent Delete</p>
+                        <p className="text-red-700 text-xs mt-1">Remove product and all associated data</p>
+                      </div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+              <div className={FOOTER + " flex flex-wrap gap-4 justify-between mt-2"}>
+                <button
+                  onClick={closeDeleteModal}
+                  className="px-5 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors cursor-pointer"
+                  disabled={isDeleting}
+                >
+                  Cancel
+                </button>
+                <div className="flex gap-4">
+                  <button
+                    onClick={handleArchive}
+                    className="inline-flex items-center px-5 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors cursor-pointer"
                     disabled={isDeleting}
                   >
                     {isDeleting ? (
                       <>
                         <FiLoader className="w-4 h-4 mr-2 animate-spin" />
-                        Deleting...
+                        Archiving...
                       </>
                     ) : (
                       <>
-                        <FiTrash2 className="w-4 h-4 mr-2" />
-                        Delete Forever
+                        <FiArchive className="w-4 h-4 mr-2" />
+                        Archive
                       </>
                     )}
                   </button>
-                )}
+                  {deleteValidation.canDelete && (
+                    <button
+                      onClick={handleDelete}
+                      className="inline-flex items-center px-5 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors cursor-pointer"
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (
+                        <>
+                          <FiLoader className="w-4 h-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <FiTrash2 className="w-4 h-4 mr-2" />
+                          Delete Forever
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
-
-export default ViewProduct;
+  export default ViewProduct;
