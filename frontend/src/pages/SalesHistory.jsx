@@ -1242,6 +1242,154 @@ function SalesHistory() {
       </div>
     )}
 
+    {/* Delete Confirmation Modal */}
+    {showDeleteModal && saleToDelete && (
+      <div
+        style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}
+        onClick={cancelDelete}
+      >
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "24px",
+            maxWidth: "400px",
+            width: "90%",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div style={{ marginBottom: "16px" }}>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#1f2937",
+                marginBottom: "8px",
+              }}
+            >
+              Delete Sale
+            </h3>
+            <p style={{ color: "#6b7280", fontSize: "14px" }}>
+              Are you sure you want to delete this sale? This action cannot be undone.
+            </p>
+          </div>
+
+          <div
+            style={{
+              padding: "12px",
+              backgroundColor: "#f3f4f6",
+              borderRadius: "8px",
+              marginBottom: "20px",
+            }}
+          >
+            <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "4px" }}>
+              {saleToDelete.transactionNumber ||
+                saleToDelete.transaction_number ||
+                `Transaction #${saleToDelete.id}`}
+            </div>
+            <div style={{ fontSize: "14px", color: "#6b7280" }}>
+              {getCustomerName(saleToDelete.customerId || saleToDelete.customer_id)} •{" "}
+              {currency}
+              {(saleToDelete.subtotal || saleToDelete.total_amount || saleToDelete.totalAmount || 0).toFixed(2)}
+            </div>
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "flex-end",
+            }}
+          >
+            <button
+              onClick={cancelDelete}
+              disabled={deleteLoading}
+              style={{
+                padding: "10px 16px",
+                backgroundColor: "#f3f4f6",
+                color: "#374151",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: deleteLoading ? "not-allowed" : "pointer",
+                opacity: deleteLoading ? 0.6 : 1,
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!deleteLoading) {
+                  e.target.style.backgroundColor = "#e5e7eb";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!deleteLoading) {
+                  e.target.style.backgroundColor = "#f3f4f6";
+                }
+              }}
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={confirmDelete}
+              disabled={deleteLoading}
+              style={{
+                padding: "10px 16px",
+                backgroundColor: "#ef4444",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: deleteLoading ? "not-allowed" : "pointer",
+                opacity: deleteLoading ? 0.6 : 1,
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                if (!deleteLoading) {
+                  e.target.style.backgroundColor = "#dc2626";
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!deleteLoading) {
+                  e.target.style.backgroundColor = "#ef4444";
+                }
+              }}
+            >
+              {deleteLoading && (
+                <div
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    border: "2px solid #ffffff40",
+                    borderTop: "2px solid #ffffff",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+              )}
+              {deleteLoading ? "Deleting..." : "Delete Sale"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
     
     <style>
       {`
