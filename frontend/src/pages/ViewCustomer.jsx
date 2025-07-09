@@ -158,7 +158,7 @@ function ViewCustomer() {
   const getCustomerStats = () => {
     const totalPurchases = purchaseHistory.length;
     const totalSpent = purchaseHistory.reduce((sum, sale) => {
-      return sum + (sale.total_amount || sale.totalAmount || 0);
+      return sum + (sale.subtotal || sale.total_amount || sale.totalAmount || 0);
     }, 0);
     
     // Get last purchase date
