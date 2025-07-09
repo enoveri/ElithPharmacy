@@ -173,7 +173,7 @@ function MobileSalesHistory() {
 
   // Summary stats (safe defaults)
   const totalRevenue = filteredSales.reduce(
-    (sum, sale) => (sale.status === "completed" ? sum + (sale.total || 0) : sum),
+    (sum, sale) => (sale.status === "completed" ? sum + (sale.subtotal || sale.totalAmount || sale.total || 0) : sum),
     0
   );
   const totalTransactions = filteredSales.filter(

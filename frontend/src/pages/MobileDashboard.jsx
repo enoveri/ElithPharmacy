@@ -77,11 +77,11 @@ const MobileDashboard = () => {
         const saleDate = sale.date ? new Date(sale.date).toLocaleDateString() : "";
         return saleDate === todaysDate;
       });
-      const todaysSales = todaysSalesList.reduce((sum, sale) => sum + (sale.totalAmount || sale.total || 0), 0);
+      const todaysSales = todaysSalesList.reduce((sum, sale) => sum + (sale.subtotal || sale.totalAmount || sale.total || 0), 0);
       const todaysTransactions = todaysSalesList.length;
       const totalProducts = products ? products.length : 0;
       const totalCustomers = customers ? customers.length : 0;
-      const totalRevenue = (sales || []).reduce((sum, sale) => sum + (sale.totalAmount || sale.total || 0), 0);
+      const totalRevenue = (sales || []).reduce((sum, sale) => sum + (sale.subtotal || sale.totalAmount || sale.total || 0), 0);
       const lowStockProductsList = (products || []).filter(p => (p.quantity || 0) < 10);
       const lowStockItems = lowStockProductsList.length;
       // Dummy monthly growth for now (could be improved)

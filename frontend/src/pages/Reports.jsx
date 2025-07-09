@@ -187,7 +187,7 @@ function Reports() {
         .sort((a, b) => b.amount - a.amount);
 
       const totalSales = filteredSales.reduce(
-        (sum, sale) => sum + (sale.totalAmount || sale.total_amount || 0),
+        (sum, sale) => sum + (sale.subtotal || sale.totalAmount || sale.total_amount || 0),
         0
       );
       const totalTransactions = filteredSales.length;
