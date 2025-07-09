@@ -14,8 +14,8 @@ import {
   FiAlertTriangle,
   FiInfo,
 } from "react-icons/fi";
-import { dataService } from "../services";
-import { useNotificationsStore, useSettingsStore } from "../store";
+  import { dataService } from "../services";
+  import { useNotificationsStore, useSettingsStore } from "../store";
 
 // Enhanced Error Modal Component
 const ErrorModal = ({ isOpen, onClose, title, message, type = "error" }) => {
@@ -342,7 +342,7 @@ if (typeof document !== "undefined") {
 function POS() {
   // Settings store for currency and receipt settings
   const { settings } = useSettingsStore();
-  const { currency, taxRate, receiptHeader, receiptFooter } = settings;
+  const { currency, taxRate, disableTax, receiptHeader, receiptFooter } = settings;
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -550,58 +550,24 @@ function POS() {
     return cart.reduce((total, item) => total + item.total, 0);
   };
   const completeSale = async () => {
-    // Basic validation
     if (cart.length === 0) {
-      showError(
-        "Cart Empty",
-        "Please add some items to the cart before completing the sale."
-      );
+      showError("Empty Cart", "Please add items to the cart before completing the sale.");
       return;
     }
 
-    // Stock validation
-    const stockErrors = [];
-    for (const cartItem of cart) {
-      const product = products.find((p) => p.id === cartItem.id);
-      if (!product) {
-        stockErrors.push(`Product "${cartItem.name}" not found in inventory.`);
-        continue;
-      }
-
-      const availableStock = product.quantity || 0;
-      if (cartItem.quantity > availableStock) {
-        stockErrors.push(
-          `Insufficient stock for "${cartItem.name}". Available: ${availableStock}, Requested: ${cartItem.quantity}`
-        );
-      }
-    }
-
-    if (stockErrors.length > 0) {
-      showError(
-        "Insufficient Stock",
-        `The following items have insufficient stock:\n\n${stockErrors.join("\n")}\n\nPlease adjust quantities or remove items from cart.`
-      );
-      return;
-    }
-
-    // Payment method validation
     if (!paymentMethod) {
-      showError(
-        "Payment Method Required",
-        "Please select a payment method before completing the sale."
-      );
+      showError("Payment Method", "Please select a payment method.");
       return;
     }
 
-    setProcessing(true);
+          try {
+        setProcessing(true);
+        console.log("🚀 [POS] Starting sale completion...");
+        console.log("🛒 [POS] Cart items:", cart);
 
-    try {
-      console.log("🚀 [POS] Starting sale completion...");
-      console.log("🛒 [POS] Cart items:", cart);
-
-      const subtotal = getCartTotal();
-      const tax = subtotal * (taxRate || 0.1); // Use settings tax rate or default 10%
-      const totalAmount = subtotal + tax;
+        const subtotal = getCartTotal();
+        const tax = disableTax ? 0 : subtotal * (taxRate / 100); // Use settings tax rate only when enabled
+        const totalAmount = subtotal + tax;
 
       // Generate transaction number
       const transactionNumber = `TXN-${Date.now()}`;

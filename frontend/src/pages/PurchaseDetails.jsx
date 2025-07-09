@@ -28,7 +28,7 @@ function PurchaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { settings } = useSettingsStore();
-  const { currency = "UGX" } = settings;
+  const { currency = "UGX", disableTax } = settings;
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -549,13 +549,15 @@ function PurchaseDetails() {
                   {(purchase.subtotal || 0).toFixed(2)}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  {currency}
-                  {(purchase.tax || 0).toFixed(2)}
-                </span>
-              </div>
+              {!disableTax && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Tax:</span>
+                  <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                    {currency}
+                    {(purchase.tax || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
               {purchase.discount > 0 && (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}

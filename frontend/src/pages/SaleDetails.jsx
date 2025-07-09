@@ -17,6 +17,9 @@ import {
   FiShare2,
   FiMessageCircle,
   FiX,
+  FiEdit3,
+  FiSave,
+  FiTrash2,
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useSalesStore, useSettingsStore } from "../store";
@@ -29,10 +32,11 @@ function SaleDetails() {
 
   // Settings store for currency
   const { settings } = useSettingsStore();
-  const { currency } = settings;
+  const { currency, disableTax } = settings;
 
   const { id } = useParams();
   const navigate = useNavigate();
+  const { updateSale } = useSalesStore();
   const [sale, setSale] = useState(null);
   const [customer, setCustomer] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,12 @@ function SaleDetails() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [generatingPDF, setGeneratingPDF] = useState(false);
   const [sharingMethod, setSharingMethod] = useState(""); // 'whatsapp' or 'email'
+  
+  // Edit functionality states
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingSale, setEditingSale] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState(null);
 
   useEffect(() => {
     const loadSaleDetails = async () => {
@@ -78,6 +88,141 @@ function SaleDetails() {
     };
     loadSaleDetails();
   }, [id]);
+
+  // Start editing mode
+  const handleStartEdit = () => {
+    setEditingSale({
+      ...sale,
+      items: [...sale.items],
+      discount: sale.discount || 0,
+      notes: sale.notes || "",
+      paymentMethod: sale.paymentMethod || sale.payment_method || "cash",
+    });
+    setIsEditing(true);
+    setEditError(null);
+  };
+
+  // Cancel editing
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setEditingSale(null);
+    setEditError(null);
+  };
+
+  // Update item quantity
+  const handleItemQuantityChange = (itemIndex, newQuantity) => {
+    if (newQuantity <= 0) return;
+    
+    setEditingSale(prev => ({
+      ...prev,
+      items: prev.items.map((item, index) => {
+        if (index === itemIndex) {
+          return {
+            ...item,
+            quantity: newQuantity,
+            total: (item.price || 0) * newQuantity
+          };
+        }
+        return item;
+      })
+    }));
+  };
+
+  // Remove item from sale
+  const handleRemoveItem = (itemIndex) => {
+    setEditingSale(prev => ({
+      ...prev,
+      items: prev.items.filter((_, index) => index !== itemIndex)
+    }));
+  };
+
+  // Update discount
+  const handleDiscountChange = (newDiscount) => {
+    setEditingSale(prev => ({
+      ...prev,
+      discount: Math.max(0, Math.min(100, newDiscount))
+    }));
+  };
+
+  // Update payment method
+  const handlePaymentMethodChange = (newMethod) => {
+    setEditingSale(prev => ({
+      ...prev,
+      paymentMethod: newMethod
+    }));
+  };
+
+  // Update notes
+  const handleNotesChange = (newNotes) => {
+    setEditingSale(prev => ({
+      ...prev,
+      notes: newNotes
+    }));
+  };
+
+  // Calculate totals for editing
+  const calculateEditTotals = () => {
+    if (!editingSale) return { subtotal: 0, discountAmount: 0, total: 0 };
+    
+    const subtotal = editingSale.items.reduce((sum, item) => sum + (item.total || 0), 0);
+    const discountAmount = (subtotal * editingSale.discount) / 100;
+    const total = subtotal - discountAmount;
+    
+    return { subtotal, discountAmount, total };
+  };
+
+  // Save edited sale
+  const handleSaveEdit = async () => {
+    if (!editingSale || editingSale.items.length === 0) {
+      setEditError("Sale must have at least one item");
+      return;
+    }
+
+    setSaving(true);
+    setEditError(null);
+
+    try {
+      const { total } = calculateEditTotals();
+      
+      // Calculate tax based on settings
+      const { subtotal, discountAmount } = calculateEditTotals();
+      const taxAmount = disableTax ? 0 : (subtotal - discountAmount) * (settings.taxRate || 0) / 100;
+      
+      const updatedSaleData = {
+        ...editingSale,
+        totalAmount: total,
+        subtotal: subtotal,
+        tax: taxAmount,
+        discount: editingSale.discount,
+        notes: editingSale.notes,
+        paymentMethod: editingSale.paymentMethod,
+        updatedAt: new Date().toISOString()
+      };
+
+      // Update the sale in the database
+      await dataService.sales.update(id, updatedSaleData);
+      
+      // Update local state
+      setSale(updatedSaleData);
+      setIsEditing(false);
+      setEditingSale(null);
+      
+      // Show success message
+      alert("Sale updated successfully!");
+      
+    } catch (error) {
+      console.error("Error updating sale:", error);
+      setEditError("Failed to update sale. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Navigate to full edit page
+  const handleNavigateToEdit = () => {
+    navigate(`/sales/edit/${id}`);
+  };
+
   const getProductName = (productId, saleItem = null) => {
     // If the sale item has product information from the join, use it
     if (saleItem && saleItem.products && saleItem.products.name) {
@@ -117,7 +262,7 @@ function SaleDetails() {
         )
         .join("\n")}
         ------      Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
-      Tax: ${currency} ${(sale.tax || 0).toFixed(2)}
+      ${!disableTax ? `Tax: ${currency} ${(sale.tax || 0).toFixed(2)}` : ''}
       ${(sale.discount || 0) > 0 ? `Discount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
       Total: ${currency} ${(sale.totalAmount || 0).toFixed(2)}
         Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
@@ -286,10 +431,12 @@ function SaleDetails() {
                 <span>Subtotal:</span>
                 <span>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
+              ${!disableTax ? `
               <div class="total-row">
                 <span>Tax:</span>
                 <span>{currency} {(sale.tax || 0).toFixed(2)}</span>
               </div>
+              ` : ''}
               ${
                 (sale.discount || 0) > 0
                   ? `
@@ -302,7 +449,7 @@ function SaleDetails() {
               }
               <div class="total-row final">
                 <span>TOTAL:</span>
-                <span>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
+                <span>{currency} {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -341,7 +488,7 @@ function SaleDetails() {
     setGeneratingPDF(true);
 
     try {
-      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
+      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ${currency} ${(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
 
       const phoneNumber = customer?.phone?.replace(/[^\d]/g, "") || "";
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -379,9 +526,7 @@ ITEMS PURCHASED:
 ${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}
 
 PAYMENT SUMMARY:
-Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
-Tax: ${currency} ${(sale.tax || 0).toFixed(2)}${(sale.discount || 0) > 0 ? `\nDiscount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
-TOTAL: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+${(sale.discount || 0) > 0 ? `Discount: -${currency} ${(sale.discount || 0).toFixed(2)}\n` : ""}TOTAL: ${currency} ${(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}
 
 Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
 
@@ -603,6 +748,21 @@ Email: info@elithpharmacy.com`;
               >
                 <FiMail size={16} /> Email
               </button>
+              <button
+                onClick={handleStartEdit}
+                className="mobile-action-button"
+                style={{ background: "#f59e0b", color: "#fff" }}
+                disabled={isEditing}
+              >
+                <FiEdit3 size={16} /> Edit
+              </button>
+              <button
+                onClick={handleNavigateToEdit}
+                className="mobile-action-button"
+                style={{ background: "#8b5cf6", color: "#fff" }}
+              >
+                <FiEdit3 size={16} /> Full Edit
+              </button>
             </div>
           </div>
 
@@ -678,10 +838,7 @@ Email: info@elithpharmacy.com`;
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>
                 <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.tax || 0).toFixed(2)}</span>
-              </div>
+
               {(sale.discount || 0) > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#6b7280" }}>Discount:</span>
@@ -690,7 +847,7 @@ Email: info@elithpharmacy.com`;
               )}
               <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#1f2937" }}>Total:</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#10b981" }}>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
+                <span style={{ fontSize: 16, fontWeight: "bold", color: "#10b981" }}>{currency} {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
@@ -991,6 +1148,66 @@ Email: info@elithpharmacy.com`;
               </>
             )}
           </button>
+
+          <button
+            onClick={handleStartEdit}
+            disabled={isEditing}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 16px",
+              backgroundColor: "#8b5cf6",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: isEditing ? "not-allowed" : "pointer",
+              opacity: isEditing ? 0.7 : 1,
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              if (!isEditing) {
+                e.target.style.backgroundColor = "#7c3aed";
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isEditing) {
+                e.target.style.backgroundColor = "#8b5cf6";
+              }
+            }}
+          >
+            <FiEdit3 size={16} />
+            Quick Edit
+          </button>
+
+          <button
+            onClick={handleNavigateToEdit}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 16px",
+              backgroundColor: "#6366f1",
+              color: "white",
+              border: "none",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "500",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = "#5856eb";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = "#6366f1";
+            }}
+          >
+            <FiEdit3 size={16} />
+            Full Edit
+          </button>
         </div>
       </div>
 
@@ -1246,12 +1463,14 @@ Email: info@elithpharmacy.com`;
                   Ush {(sale.subtotal || 0).toFixed(2)}
                 </span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#6b7280" }}>Tax:</span>
-                <span style={{ fontWeight: "600", color: "#1f2937" }}>
-                  Ush{(sale.tax || 0).toFixed(2)}
-                </span>
-              </div>
+              {!disableTax && (
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Tax:</span>
+                  <span style={{ fontWeight: "600", color: "#1f2937" }}>
+                    Ush{(sale.tax || 0).toFixed(2)}
+                  </span>
+                </div>
+              )}
               {(sale.discount || 0) > 0 && (
                 <div
                   style={{ display: "flex", justifyContent: "space-between" }}
@@ -1520,6 +1739,310 @@ Email: info@elithpharmacy.com`;
         </div>
       </div>
         </>
+      )}
+
+      {/* Inline Editing Interface */}
+      {isEditing && editingSale && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            zIndex: 1000,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              maxWidth: "600px",
+              width: "100%",
+              maxHeight: "90vh",
+              overflowY: "auto",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            }}
+          >
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+              <h2 style={{ fontSize: "20px", fontWeight: "600", color: "#1f2937" }}>
+                Edit Sale - {editingSale.transactionNumber || editingSale.transaction_number}
+              </h2>
+              <button
+                onClick={handleCancelEdit}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "24px",
+                  cursor: "pointer",
+                  color: "#6b7280",
+                }}
+              >
+                <FiX />
+              </button>
+            </div>
+
+            {/* Error Message */}
+            {editError && (
+              <div
+                style={{
+                  backgroundColor: "#fef2f2",
+                  border: "1px solid #fecaca",
+                  color: "#dc2626",
+                  padding: "12px",
+                  borderRadius: "8px",
+                  marginBottom: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                <FiAlertCircle size={16} />
+                {editError}
+              </div>
+            )}
+
+            {/* Items Section */}
+            <div style={{ marginBottom: "24px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "16px", color: "#1f2937" }}>
+                Items ({editingSale.items.length})
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {editingSale.items.map((item, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      padding: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "12px",
+                    }}
+                  >
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: "600", color: "#1f2937", marginBottom: "4px" }}>
+                        {getProductName(item.productId || item.product_id, item)}
+                      </div>
+                      <div style={{ fontSize: "14px", color: "#6b7280" }}>
+                        {currency} {(item.price || 0).toFixed(2)} each
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <button
+                        onClick={() => handleItemQuantityChange(index, (item.quantity || 1) - 1)}
+                        disabled={(item.quantity || 1) <= 1}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "4px",
+                          border: "1px solid #d1d5db",
+                          backgroundColor: "white",
+                          cursor: (item.quantity || 1) <= 1 ? "not-allowed" : "pointer",
+                          opacity: (item.quantity || 1) <= 1 ? 0.5 : 1,
+                        }}
+                      >
+                        <FiMinus size={14} />
+                      </button>
+                      <span style={{ minWidth: "40px", textAlign: "center", fontWeight: "600" }}>
+                        {item.quantity || 1}
+                      </span>
+                      <button
+                        onClick={() => handleItemQuantityChange(index, (item.quantity || 1) + 1)}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "4px",
+                          border: "1px solid #d1d5db",
+                          backgroundColor: "white",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <FiPlus size={14} />
+                      </button>
+                      <span style={{ fontWeight: "600", color: "#10b981", minWidth: "80px", textAlign: "right" }}>
+                        {currency} {(item.total || 0).toFixed(2)}
+                      </span>
+                      <button
+                        onClick={() => handleRemoveItem(index)}
+                        style={{
+                          width: "32px",
+                          height: "32px",
+                          borderRadius: "4px",
+                          border: "1px solid #fecaca",
+                          backgroundColor: "#fef2f2",
+                          color: "#dc2626",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <FiTrash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Payment and Discount Section */}
+            <div style={{ marginBottom: "24px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "16px", color: "#1f2937" }}>
+                Payment & Discount
+              </h3>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "8px", color: "#374151" }}>
+                    Payment Method
+                  </label>
+                  <select
+                    value={editingSale.paymentMethod || "cash"}
+                    onChange={(e) => handlePaymentMethodChange(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    <option value="cash">Cash</option>
+                    <option value="card">Card</option>
+                    <option value="transfer">Transfer</option>
+                    <option value="mobile_money">Mobile Money</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "8px", color: "#374151" }}>
+                    Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={editingSale.discount || 0}
+                    onChange={(e) => handleDiscountChange(parseFloat(e.target.value) || 0)}
+                    style={{
+                      width: "100%",
+                      padding: "8px 12px",
+                      border: "1px solid #d1d5db",
+                      borderRadius: "6px",
+                      fontSize: "14px",
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Notes Section */}
+            <div style={{ marginBottom: "24px" }}>
+              <label style={{ display: "block", fontSize: "14px", fontWeight: "500", marginBottom: "8px", color: "#374151" }}>
+                Notes
+              </label>
+              <textarea
+                value={editingSale.notes || ""}
+                onChange={(e) => handleNotesChange(e.target.value)}
+                rows={3}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  resize: "vertical",
+                }}
+                placeholder="Add any notes about this sale..."
+              />
+            </div>
+
+            {/* Totals Section */}
+            <div style={{ marginBottom: "24px", padding: "16px", backgroundColor: "#f9fafb", borderRadius: "8px" }}>
+              <h3 style={{ fontSize: "16px", fontWeight: "600", marginBottom: "12px", color: "#1f2937" }}>
+                Order Summary
+              </h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Subtotal:</span>
+                  <span style={{ fontWeight: "600" }}>{currency} {calculateEditTotals().subtotal.toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#6b7280" }}>Discount ({editingSale.discount || 0}%):</span>
+                  <span style={{ fontWeight: "600", color: "#ef4444" }}>
+                    -{currency} {calculateEditTotals().discountAmount.toFixed(2)}
+                  </span>
+                </div>
+                <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: "8px", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: "16px", fontWeight: "600", color: "#1f2937" }}>Total:</span>
+                  <span style={{ fontSize: "18px", fontWeight: "bold", color: "#10b981" }}>
+                    {currency} {calculateEditTotals().total.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                onClick={handleCancelEdit}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: "white",
+                  color: "#6b7280",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                disabled={saving || editingSale.items.length === 0}
+                style={{
+                  padding: "12px 24px",
+                  backgroundColor: saving || editingSale.items.length === 0 ? "#9ca3af" : "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: saving || editingSale.items.length === 0 ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {saving ? (
+                  <>
+                    <div
+                      style={{
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid white",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite",
+                      }}
+                    />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FiSave size={16} />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <style>{`

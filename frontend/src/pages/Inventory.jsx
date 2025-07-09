@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
+import { removeTaxContamination } from "../utils/priceUtils";
 
 // Inventory page
 function Inventory() {
@@ -218,10 +219,12 @@ function Inventory() {
     (p) => (p.quantity || 0) <= (p.minStockLevel || p.min_stock_level || 0)
   );
   const outOfStockProducts = products.filter((p) => (p.quantity || 0) === 0);
-  const totalValue = products.reduce(
-    (sum, p) => sum + (p.quantity || 0) * (p.costPrice || p.cost_price || 0),
-    0
-  );
+  const totalValue = products.reduce((sum, p) => {
+    const rawCostPrice = p.costPrice || p.cost_price || 0;
+    const cleanCostPrice = removeTaxContamination(rawCostPrice);
+    return sum + (p.quantity || 0) * cleanCostPrice;
+  }, 0);
+
   const expiringProducts = products.filter((p) => {
     const expiryDate = p.expiryDate || p.expiry_date;
     if (!expiryDate) return false;

@@ -71,7 +71,8 @@ function MobileSettings() {
           email: user?.email || "",
           pharmacy_license: "",
           currency: "UGX",
-          tax_rate: 18,
+          tax_rate: 0,
+          disable_tax: true,
           timezone: "Africa/Kampala",
           date_format: "DD/MM/YYYY",
           low_stock_threshold: 10,
@@ -252,6 +253,7 @@ function MobileSettings() {
     onChange,
     type = "text",
     placeholder,
+    disabled = false,
   }) => (
     <div className="py-3">
       <label className="block text-base font-semibold text-gray-700 mb-3">
@@ -262,7 +264,12 @@ function MobileSettings() {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full px-4 py-4 text-base border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50/50 hover:bg-gray-50/70 transition-all duration-200"
+        disabled={disabled}
+        className={`w-full px-4 py-4 text-base border border-gray-300 rounded-xl transition-all duration-200 ${
+          disabled 
+            ? "bg-gray-100 opacity-60 cursor-not-allowed" 
+            : "bg-gray-50/50 hover:bg-gray-50/70 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        }`}
       />
     </div>
   );
@@ -444,10 +451,17 @@ function MobileSettings() {
             />
             <InputField
               label="Tax Rate (%)"
-              value={formSettings.tax_rate || 18}
+              value={formSettings.tax_rate || 0}
               onChange={(value) => updateFormSetting("tax_rate", parseFloat(value))}
               type="number"
-              placeholder="18"
+              placeholder="0"
+              disabled={formSettings.disable_tax}
+            />
+            <ToggleSwitch
+              enabled={formSettings.disable_tax || false}
+              onChange={(value) => updateFormSetting("disable_tax", value)}
+              label="Disable Tax Calculation"
+              description="When enabled, tax will not be calculated or displayed anywhere"
             />
             <InputField
               label="Low Stock Threshold"

@@ -173,7 +173,7 @@ function MobileSalesHistory() {
 
   // Summary stats (safe defaults)
   const totalRevenue = filteredSales.reduce(
-    (sum, sale) => (sale.status === "completed" ? sum + (sale.total || 0) : sum),
+    (sum, sale) => (sale.status === "completed" ? sum + (sale.subtotal || sale.totalAmount || sale.total || 0) : sum),
     0
   );
   const totalTransactions = filteredSales.filter(
@@ -185,7 +185,8 @@ function MobileSalesHistory() {
   // Sale card
   const SaleCard = ({ sale }) => {
     const saleDate = new Date(sale.date);
-    const safeTotal = typeof sale.total === "number" ? sale.total : 0;
+    // Always show subtotal only - completely tax-free display
+    const safeTotal = sale.subtotal || sale.total_amount || sale.totalAmount || sale.total || 0;
     const safeItems = typeof sale.items === "number" ? sale.items : 0;
     return (
       <motion.div
@@ -480,7 +481,7 @@ function MobileSalesHistory() {
                         }}
                       >
                         {currency}
-                        {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                        {(sale.subtotal || sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                       </div>
                     </div>
 

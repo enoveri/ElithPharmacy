@@ -412,7 +412,7 @@ const Dashboard = () => {
                   </div>{" "}
                   <div style={{ fontWeight: "bold", color: "#10b981" }}>
                     {currency}
-                    {(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
+                                          {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}
                   </div>
                 </div>
               ))
