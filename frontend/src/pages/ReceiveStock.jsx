@@ -21,6 +21,7 @@ import {
 import { dataService } from "../services";
 import { useSettingsStore } from "../store";
 import { useIsMobile } from "../hooks/useIsMobile";
+import { removeTaxContamination } from "../utils/priceUtils";
 
 function ReceiveStock() {
   const navigate = useNavigate();
@@ -219,7 +220,10 @@ function ReceiveStock() {
 
   const calculateTotals = () => {
     const totalItems = selectedProducts.reduce((sum, product) => sum + product.quantityReceived, 0);
-    const totalCost = selectedProducts.reduce((sum, product) => sum + (product.quantityReceived * product.costPrice), 0);
+    const totalCost = selectedProducts.reduce((sum, product) => {
+      const cleanCostPrice = removeTaxContamination(product.costPrice);
+      return sum + (product.quantityReceived * cleanCostPrice);
+    }, 0);
     
     return { totalItems, totalCost };
   };

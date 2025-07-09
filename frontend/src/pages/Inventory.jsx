@@ -23,6 +23,7 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
+import { removeTaxContamination } from "../utils/priceUtils";
 
 // Inventory page
 function Inventory() {
@@ -218,76 +219,12 @@ function Inventory() {
     (p) => (p.quantity || 0) <= (p.minStockLevel || p.min_stock_level || 0)
   );
   const outOfStockProducts = products.filter((p) => (p.quantity || 0) === 0);
-  const totalValue = products.reduce(
-    (sum, p) => sum + (p.quantity || 0) * (p.costPrice || p.cost_price || 0),
-    0
-  );
-  
-  // Debug: Check for products with decimal costPrice values
-  const productsWithDecimals = products.filter(p => {
-    const costPrice = p.costPrice || p.cost_price || 0;
-    return costPrice % 1 !== 0; // Has decimal places
-  });
-  
-  if (productsWithDecimals.length > 0) {
-    console.warn("🔍 [Inventory] Products with decimal costPrice detected:");
-    productsWithDecimals.forEach(p => {
-      const costPrice = p.costPrice || p.cost_price || 0;
-      const contribution = (p.quantity || 0) * costPrice;
-      console.warn(`   - ${p.name}: costPrice=${costPrice}, quantity=${p.quantity}, contribution=${contribution}`);
-    });
-  }
-  
-  // Analyze for tax contamination
-  useEffect(() => {
-    if (products.length > 0) {
-      import('../utils/priceUtils.js').then(({ analyzeProductTaxContamination, generateTaxCleanupSQL }) => {
-        const analysis = analyzeProductTaxContamination(products);
-        
-        if (analysis.contaminatedProducts > 0) {
-          console.warn("💰 [Inventory] Tax Contamination Analysis:");
-          console.warn(`   - Total products: ${analysis.totalProducts}`);
-          console.warn(`   - Clean products: ${analysis.cleanProducts}`);
-          console.warn(`   - Contaminated products: ${analysis.contaminatedProducts}`);
-          console.warn(`   - Need cost price cleanup: ${analysis.summary.needsCostPriceCleanup}`);
-          console.warn(`   - Need selling price cleanup: ${analysis.summary.needsSellingPriceCleanup}`);
-          
-          console.group("💰 [Inventory] Contaminated Products Details:");
-          analysis.contaminated.forEach(p => {
-            console.warn(`${p.name}:`, {
-              originalCost: p.originalCostPrice,
-              cleanCost: p.cleanCostPrice,
-              originalPrice: p.originalSellingPrice,
-              cleanPrice: p.cleanSellingPrice,
-              costNeedsCleanup: p.costContaminated,
-              priceNeedsCleanup: p.priceContaminated
-            });
-          });
-          console.groupEnd();
-          
-          // Generate SQL cleanup commands
-          const sqlCommands = generateTaxCleanupSQL(analysis.contaminated);
-          if (sqlCommands) {
-            console.warn("💰 [Inventory] SQL Cleanup Commands:");
-            console.warn(sqlCommands);
-            
-            // Calculate total value after cleanup
-            const cleanTotalValue = products.reduce((sum, p) => {
-              const costPrice = p.costPrice || p.cost_price || 0;
-              const cleanCostPrice = analysis.contaminated.find(c => c.id === p.id)?.cleanCostPrice || costPrice;
-              return sum + (p.quantity || 0) * cleanCostPrice;
-            }, 0);
-            
-            console.warn(`💰 [Inventory] Current Total Value: UGX ${totalValue.toLocaleString()}`);
-            console.warn(`💰 [Inventory] Clean Total Value: UGX ${cleanTotalValue.toLocaleString()}`);
-            console.warn(`💰 [Inventory] Difference: UGX ${(totalValue - cleanTotalValue).toLocaleString()}`);
-          }
-        } else {
-          console.log("✅ [Inventory] No tax contamination detected in product pricing");
-        }
-      });
-    }
-  }, [products, totalValue]);
+  const totalValue = products.reduce((sum, p) => {
+    const rawCostPrice = p.costPrice || p.cost_price || 0;
+    const cleanCostPrice = removeTaxContamination(rawCostPrice);
+    return sum + (p.quantity || 0) * cleanCostPrice;
+  }, 0);
+
   const expiringProducts = products.filter((p) => {
     const expiryDate = p.expiryDate || p.expiry_date;
     if (!expiryDate) return false;
