@@ -669,20 +669,11 @@ const MobilePOS = () => {
                         {subtotal.toFixed(2)}
                       </span>
                     </div>
-                    {!disableTax && (
-                      <div className="cart-total-row">
-                        <span>Tax ({taxRate}%):</span>
-                        <span className="font-semibold">
-                          {currency}
-                          {tax.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
                     <div className="cart-total-row final">
                       <span>Total:</span>
                       <span>
                         {currency}
-                        {total.toFixed(2)}
+                        {subtotal.toFixed(2)}
                       </span>
                     </div>
                   </div>
