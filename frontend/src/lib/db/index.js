@@ -2900,6 +2900,143 @@ export const dbHelpers = {
       return { success: false, error };
     }
   },
+
+  // Admin user management functions
+  getAdminUsers: async () => {
+    try {
+      console.log("👤 [DB] Fetching all admin users");
+      
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ [DB] Error fetching admin users:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Admin users fetched:", data?.length || 0);
+      return { success: true, data: data || [] };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getAdminUsers:", error);
+      return { success: false, error };
+    }
+  },
+
+  getAdminUserByEmail: async (email) => {
+    try {
+      console.log("👤 [DB] Fetching admin user by email:", email);
+      
+      const { data, error } = await supabase
+        .from("admin_users")
+        .select("*")
+        .eq("email", email)
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error fetching admin user:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Admin user fetched:", data?.email);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getAdminUserByEmail:", error);
+      return { success: false, error };
+    }
+  },
+
+  createAdminUser: async (adminUser) => {
+    try {
+      console.log("👤 [DB] Creating admin user:", adminUser.email);
+      
+      const adminUserData = {
+        email: adminUser.email,
+        full_name: adminUser.full_name,
+        role: adminUser.role || 'admin',
+        is_active: adminUser.is_active !== undefined ? adminUser.is_active : true,
+        auth_id: adminUser.auth_id || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("admin_users")
+        .insert(adminUserData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error creating admin user:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Admin user created:", data?.email);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in createAdminUser:", error);
+      return { success: false, error };
+    }
+  },
+
+  updateAdminUser: async (id, updates) => {
+    try {
+      console.log("👤 [DB] Updating admin user:", id, updates);
+      
+      const updateData = {
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
+
+      const { data, error } = await supabase
+        .from("admin_users")
+        .update(updateData)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error updating admin user:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Admin user updated:", data?.email);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in updateAdminUser:", error);
+      return { success: false, error };
+    }
+  },
+
+  deleteAdminUser: async (id) => {
+    try {
+      console.log("👤 [DB] Deleting admin user:", id);
+      
+      const { data, error } = await supabase
+        .from("admin_users")
+        .delete()
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error("❌ [DB] Error deleting admin user:", error);
+        return { success: false, error };
+      }
+
+      console.log("✅ [DB] Admin user deleted:", data?.email);
+      return { success: true, data };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in deleteAdminUser:", error);
+      return { success: false, error };
+    }
+  },
 };
 
 export default dbHelpers;

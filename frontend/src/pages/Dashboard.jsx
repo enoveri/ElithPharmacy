@@ -14,6 +14,7 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useNotificationsStore, useSettingsStore } from "../store";
+import AdminRoleDebug from "../components/AdminRoleDebug";
 
 const Dashboard = () => {
   // Settings store for currency
@@ -156,6 +157,9 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+
+      {/* Admin Debug Section (temporary) */}
+      <AdminRoleDebug />
 
       {/* Key Metrics from database */}
       <div
