@@ -65,7 +65,6 @@ const AdminRoleDebug = () => {
         full_name: user.user_metadata?.full_name || 'Admin User',
         role: 'admin',
         is_active: true,
-        auth_id: user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -149,7 +148,7 @@ const AdminRoleDebug = () => {
                 <ul className="ml-4 space-y-1">
                   <li>Role: {adminData[0].role}</li>
                   <li>Active: {adminData[0].is_active ? '✅' : '❌'}</li>
-                  <li>Auth ID: {adminData[0].auth_id || 'None'}</li>
+                  <li>Email: {adminData[0].email}</li>
                 </ul>
               </div>
             )}
