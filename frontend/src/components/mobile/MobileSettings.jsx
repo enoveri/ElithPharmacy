@@ -71,8 +71,8 @@ function MobileSettings() {
           email: user?.email || "",
           pharmacy_license: "",
           currency: "UGX",
-          tax_rate: 18,
-          disable_tax: false,
+          tax_rate: 0,
+          disable_tax: true,
           timezone: "Africa/Kampala",
           date_format: "DD/MM/YYYY",
           low_stock_threshold: 10,
@@ -451,10 +451,10 @@ function MobileSettings() {
             />
             <InputField
               label="Tax Rate (%)"
-              value={formSettings.tax_rate || 18}
+              value={formSettings.tax_rate || 0}
               onChange={(value) => updateFormSetting("tax_rate", parseFloat(value))}
               type="number"
-              placeholder="18"
+              placeholder="0"
               disabled={formSettings.disable_tax}
             />
             <ToggleSwitch

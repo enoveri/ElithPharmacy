@@ -32,7 +32,7 @@ function SaleDetails() {
 
   // Settings store for currency
   const { settings } = useSettingsStore();
-  const { currency, disableTax = false } = settings;
+  const { currency, disableTax } = settings;
 
   const { id } = useParams();
   const navigate = useNavigate();
@@ -184,11 +184,15 @@ function SaleDetails() {
     try {
       const { total } = calculateEditTotals();
       
+      // Calculate tax based on settings
+      const { subtotal, discountAmount } = calculateEditTotals();
+      const taxAmount = disableTax ? 0 : (subtotal - discountAmount) * (settings.taxRate || 0) / 100;
+      
       const updatedSaleData = {
         ...editingSale,
         totalAmount: total,
-        subtotal: calculateEditTotals().subtotal,
-        tax: 0, // Assuming no tax for simplicity
+        subtotal: subtotal,
+        tax: taxAmount,
         discount: editingSale.discount,
         notes: editingSale.notes,
         paymentMethod: editingSale.paymentMethod,

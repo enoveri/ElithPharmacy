@@ -78,8 +78,8 @@ const Settings = () => {
           email: user?.email || "",
           pharmacy_license: "",
           currency: "UGX",
-          tax_rate: 18,
-          disable_tax: false,
+          tax_rate: 0,
+          disable_tax: true,
           timezone: "Africa/Kampala",
           date_format: "DD/MM/YYYY",
           low_stock_threshold: 10,
@@ -667,7 +667,7 @@ const Settings = () => {
                           </label>
                           <input
                             type="number"
-                          value={formSettings.tax_rate || 18}
+                          value={formSettings.tax_rate || 0}
                           onChange={(e) => updateFormSetting("tax_rate", parseFloat(e.target.value))}
                           disabled={formSettings.disable_tax}
                           style={{
@@ -680,7 +680,7 @@ const Settings = () => {
                             transition: "all 0.2s",
                             opacity: formSettings.disable_tax ? 0.6 : 1,
                           }}
-                            placeholder="18"
+                            placeholder="0"
                           onFocus={(e) => {
                             if (!formSettings.disable_tax) {
                               e.target.style.borderColor = "#3b82f6";
