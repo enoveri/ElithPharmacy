@@ -185,7 +185,8 @@ function MobileSalesHistory() {
   // Sale card
   const SaleCard = ({ sale }) => {
     const saleDate = new Date(sale.date);
-    const safeTotal = typeof sale.total === "number" ? sale.total : 0;
+    // Always show subtotal only - completely tax-free display
+    const safeTotal = sale.subtotal || sale.total_amount || sale.totalAmount || sale.total || 0;
     const safeItems = typeof sale.items === "number" ? sale.items : 0;
     return (
       <motion.div
@@ -480,7 +481,7 @@ function MobileSalesHistory() {
                         }}
                       >
                         {currency}
-                        {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+                        {(sale.subtotal || sale.totalAmount || sale.total_amount || 0).toFixed(2)}
                       </div>
                     </div>
 

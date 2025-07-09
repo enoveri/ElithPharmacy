@@ -304,7 +304,7 @@ function SalesHistory() {
                         }}
                       >
                         {currency}
-                        {(sale.totalAmount || sale.total_amount || 0).toFixed(
+                        {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(
                           2
                         )}
                       </div>

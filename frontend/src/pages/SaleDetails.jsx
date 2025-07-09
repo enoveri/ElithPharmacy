@@ -449,7 +449,7 @@ function SaleDetails() {
               }
               <div class="total-row final">
                 <span>TOTAL:</span>
-                <span>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
+                <span>{currency} {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}</span>
               </div>
             </div>
 
@@ -488,7 +488,7 @@ function SaleDetails() {
     setGeneratingPDF(true);
 
     try {
-      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
+      const message = `*ELITH PHARMACY RECEIPT*\n\nReceipt: ${sale.transactionNumber || sale.transaction_number}\nDate: ${new Date(sale.date).toLocaleDateString()}\nTotal: ${currency} ${(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}\n\n${customer ? `Customer: ${customer.firstName || customer.first_name} ${customer.lastName || customer.last_name}\n` : ""}Items:\n${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}\n\nThank you for choosing Elith Pharmacy!`;
 
       const phoneNumber = customer?.phone?.replace(/[^\d]/g, "") || "";
       const whatsappURL = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
@@ -526,9 +526,7 @@ ITEMS PURCHASED:
 ${(sale.items || sale.sale_items || []).map((item) => `• ${getProductName(item.productId || item.product_id, item)} x${item.quantity} - ${currency} ${(item.total || 0).toFixed(2)}`).join("\n")}
 
 PAYMENT SUMMARY:
-Subtotal: ${currency} ${(sale.subtotal || 0).toFixed(2)}
-      ${!disableTax ? `Tax: ${currency} ${(sale.tax || 0).toFixed(2)}` : ''}${(sale.discount || 0) > 0 ? `\nDiscount: -${currency} ${(sale.discount || 0).toFixed(2)}` : ""}
-TOTAL: ${currency} ${(sale.totalAmount || sale.total_amount || 0).toFixed(2)}
+${(sale.discount || 0) > 0 ? `Discount: -${currency} ${(sale.discount || 0).toFixed(2)}\n` : ""}TOTAL: ${currency} ${(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}
 
 Payment Method: ${(sale.paymentMethod || sale.payment_method || "N/A").toUpperCase()}
 
@@ -840,12 +838,7 @@ Email: info@elithpharmacy.com`;
                 <span style={{ color: "#6b7280" }}>Subtotal:</span>
                 <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.subtotal || 0).toFixed(2)}</span>
               </div>
-              {!disableTax && (
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#6b7280" }}>Tax:</span>
-                  <span style={{ fontWeight: 600, color: "#1f2937" }}>{currency} {(sale.tax || 0).toFixed(2)}</span>
-                </div>
-              )}
+
               {(sale.discount || 0) > 0 && (
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
                   <span style={{ color: "#6b7280" }}>Discount:</span>
@@ -854,7 +847,7 @@ Email: info@elithpharmacy.com`;
               )}
               <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 8, display: "flex", justifyContent: "space-between" }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#1f2937" }}>Total:</span>
-                <span style={{ fontSize: 16, fontWeight: "bold", color: "#10b981" }}>{currency} {(sale.totalAmount || sale.total_amount || 0).toFixed(2)}</span>
+                <span style={{ fontSize: 16, fontWeight: "bold", color: "#10b981" }}>{currency} {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}</span>
               </div>
             </div>
           </div>
