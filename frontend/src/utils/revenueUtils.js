@@ -1,25 +1,40 @@
 /**
  * Revenue calculation utilities
- * Ensures consistent revenue calculations without tax across the application
+ * Ensures completely tax-free revenue calculations across the application
+ * CLIENT REQUIREMENT: No tax should appear anywhere in the frontend
  */
 
 /**
- * Calculate revenue from a sale record, prioritizing subtotal over totalAmount
+ * Calculate revenue from a sale record, using only subtotal (completely ignoring tax)
  * @param {Object} sale - Sale record
- * @returns {number} - Revenue amount without tax
+ * @returns {number} - Revenue amount without any tax component
  */
 export const getSaleRevenue = (sale) => {
   if (!sale) return 0;
   
-  // Priority: subtotal (without tax) > totalAmount (may include tax) > total (legacy)
-  return sale.subtotal || sale.totalAmount || sale.total_amount || sale.total || 0;
+  // ALWAYS use subtotal only - completely ignore tax component
+  // Priority: subtotal > fallback to totalAmount only if subtotal unavailable
+  return sale.subtotal || sale.total_amount || sale.totalAmount || sale.total || 0;
 };
 
 /**
- * Calculate total revenue from an array of sales
+ * Get the display amount for a sale (what customer sees/pays)
+ * CLIENT REQUIREMENT: Show subtotal only, never include tax
+ * @param {Object} sale - Sale record  
+ * @returns {number} - Amount to display (subtotal only)
+ */
+export const getSaleDisplayAmount = (sale) => {
+  if (!sale) return 0;
+  
+  // ALWAYS show subtotal only - completely tax-free display
+  return sale.subtotal || 0;
+};
+
+/**
+ * Calculate total revenue from an array of sales (tax-free)
  * @param {Array} sales - Array of sale records
  * @param {string} statusFilter - Filter by status (optional)
- * @returns {number} - Total revenue without tax
+ * @returns {number} - Total revenue without any tax
  */
 export const calculateTotalRevenue = (sales, statusFilter = null) => {
   if (!Array.isArray(sales)) return 0;
@@ -33,9 +48,9 @@ export const calculateTotalRevenue = (sales, statusFilter = null) => {
 };
 
 /**
- * Calculate revenue statistics for a given sales array
+ * Calculate revenue statistics for a given sales array (completely tax-free)
  * @param {Array} sales - Array of sale records
- * @returns {Object} - Revenue statistics
+ * @returns {Object} - Revenue statistics (all tax-free)
  */
 export const calculateRevenueStats = (sales) => {
   if (!Array.isArray(sales)) {
@@ -59,7 +74,7 @@ export const calculateRevenueStats = (sales) => {
 };
 
 /**
- * Calculate today's revenue from sales array
+ * Calculate today's revenue from sales array (tax-free)
  * @param {Array} sales - Array of sale records
  * @returns {number} - Today's revenue without tax
  */

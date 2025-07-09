@@ -804,8 +804,8 @@ function ViewCustomer() {
                     alignSelf: isMobile ? "flex-end" : "auto",
                   }}
                 >
-                  {currency}
-                  {(sale.total_amount || sale.totalAmount || 0).toFixed(2)}
+                                          {currency}
+                        {(sale.subtotal || sale.total_amount || sale.totalAmount || 0).toFixed(2)}
                 </div>
               </div>
 
