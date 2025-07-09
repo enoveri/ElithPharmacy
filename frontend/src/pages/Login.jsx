@@ -57,7 +57,7 @@ const Login = () => {
     setError('');
     
     try {
-      console.log('🔄 [Login] Attempting login...');
+
       
       // First, try to sign in with Supabase Auth
       const { data: authData, error: authError } = await signIn(formData.email, formData.password);
@@ -183,7 +183,7 @@ const Login = () => {
 
   const handleGoogleLogin = () => {
     // Add Google OAuth logic here
-    console.log('Google login attempt');
+    
   };
 
   return (

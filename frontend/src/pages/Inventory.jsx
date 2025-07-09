@@ -65,9 +65,7 @@ function Inventory() {
   });
 
   useEffect(() => {
-    console.log("🔄 [Inventory] Starting to fetch products...");
-    console.log("📊 [Inventory] Current products state:", products);
-    console.log("⏳ [Inventory] Loading state:", isLoading);
+    
     fetchProducts();
   }, [fetchProducts]);
 

@@ -356,7 +356,7 @@ const useNotificationsStore = create((set, get) => ({
       return { success: false, error };
     }
   },
-  // Manual notification creation for debugging
+  // Manual notification creation
   createManualNotifications: async () => {
     try {
       // First, try to create a simple test notification

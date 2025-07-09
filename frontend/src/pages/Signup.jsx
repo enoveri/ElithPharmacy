@@ -58,7 +58,7 @@ const Signup = () => {
     setError('');
 
     try {
-      console.log('🔄 [Signup] Creating new user...');
+
 
       // Create user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -77,7 +77,7 @@ const Signup = () => {
         throw authError;
       }
 
-      console.log('✅ [Signup] User created in auth:', authData.user?.id);
+      
 
       // Create user record in admin_users table
       const { error: adminUserError } = await supabase
@@ -96,7 +96,7 @@ const Signup = () => {
         throw adminUserError;
       }
 
-      console.log('✅ [Signup] User record created successfully');
+      
 
       // Redirect to login
       navigate('/login', { 

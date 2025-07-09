@@ -256,14 +256,10 @@ export const dataService = {
   notifications: {
     // Basic CRUD operations
     getAll: async () => {
-      console.log("🔄 [Service] notifications.getAll called");
       const { data, error } = await dbHelpers.getNotifications();
-      console.log("🔍 [Service] getNotifications result:", { data, error });
       if (error) {
-        console.error("❌ [Service] Error in getNotifications:", error);
         throw error;
       }
-      console.log("✅ [Service] Returning notifications:", data);
       return data || [];
     },
 
@@ -276,9 +272,7 @@ export const dataService = {
     },
 
     create: async (notification) => {
-      console.log("🔄 [Service] Creating notification:", notification);
       const result = await dbHelpers.createNotification(notification);
-      console.log("🔍 [Service] Create notification result:", result);
       return result;
     },
 
@@ -298,7 +292,7 @@ export const dataService = {
       return await dbHelpers.deleteAllNotifications();
     },
 
-    // Enhanced notification methods using the comprehensive service
+    // Enhanced notification methods
     runComprehensiveCheck: async () => {
       return await notificationService.runComprehensiveCheck();
     },
@@ -364,9 +358,7 @@ export const dataService = {
       );
     }, // Legacy method for backward compatibility
     checkAutoNotifications: async () => {
-      console.log(
-        "🔄 [Service] Running legacy checkAutoNotifications (redirecting to comprehensive check)..."
-      );
+
       return await notificationService.runComprehensiveCheck();
     },
   },
@@ -401,12 +393,7 @@ export const dataService = {
     },
   },
 
-  // Debug utilities
-  debug: {
-    salesData: async () => {
-      return await dbHelpers.debugSalesData();
-    },
-  },
+
 };
 
 export default dataService;

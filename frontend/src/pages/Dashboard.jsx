@@ -14,7 +14,7 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useNotificationsStore, useSettingsStore } from "../store";
-import AdminRoleDebug from "../components/AdminRoleDebug";
+
 
 const Dashboard = () => {
   // Settings store for currency
@@ -74,8 +74,7 @@ const Dashboard = () => {
             lowStockCount: 0,
           };
         }
-        console.log("📊 [Dashboard] Stats received:", stats);
-        console.log("📊 [Dashboard] Setting dashboard stats to:", stats);
+        
         setDashboardStats(stats);
         setRecentSales(salesData || []);
         setLowStockProducts(stockData || []);
@@ -158,8 +157,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Admin Debug Section (temporary) */}
-      <AdminRoleDebug />
+      
 
       {/* Key Metrics from database */}
       <div

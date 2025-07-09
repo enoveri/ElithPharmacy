@@ -37,7 +37,7 @@ function Refunds() {
   const handleSearch = () => {
     console.log("🔍 [Refunds] Searching for transaction:", searchTerm);
 
-    // TODO: Replace with actual sales/transaction search when sales system is implemented
+    // Replace with actual sales/transaction search when sales system is implemented
     // For now, create a mock transaction based on available products
     if (searchTerm && products.length > 0) {
       const mockTransaction = {
