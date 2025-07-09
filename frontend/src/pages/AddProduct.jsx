@@ -14,7 +14,7 @@ function AddProduct() {
 
   // Settings store for currency
   const { settings } = useSettingsStore();
-  const { currency } = settings;
+  const { currency, disableTax, taxRate } = settings;
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -1191,7 +1191,7 @@ function AddProduct() {
           expectedDelivery: purchaseDetails.expectedDelivery,
           actualDelivery: null,
           status: "ordered",
-          totalAmount: productData.costPrice * purchaseDetails.quantity,
+          totalAmount: productData.costPrice * purchaseDetails.quantity + (disableTax ? 0 : productData.costPrice * purchaseDetails.quantity * ((taxRate || 0) / 100)),
           items: [
             {
               productId: newProduct.id,
@@ -1202,7 +1202,7 @@ function AddProduct() {
             },
           ],
           subtotal: productData.costPrice * purchaseDetails.quantity,
-          tax: productData.costPrice * purchaseDetails.quantity * 0.1,
+          tax: disableTax ? 0 : productData.costPrice * purchaseDetails.quantity * ((taxRate || 0) / 100),
           discount: 0,
           notes:
             purchaseDetails.notes || "Product added through purchase order",

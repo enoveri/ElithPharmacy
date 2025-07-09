@@ -350,8 +350,8 @@ export const useSettingsStore = create(
 
         // Business Settings
         currency: "UGX", // Uganda Shillings
-        taxRate: 18, // Uganda VAT rate (percentage)
-        disableTax: false, // Option to disable tax calculation
+        taxRate: 0, // Tax rate (percentage) - disabled by default
+        disableTax: true, // Option to disable tax calculation - disabled by default
         timezone: "Africa/Kampala",
         fiscalYearStart: "July",
 
@@ -444,8 +444,8 @@ export const useSettingsStore = create(
           email: "",
           pharmacyLicense: "",
           currency: "UGX",
-          taxRate: 18,
-          disableTax: false,
+          taxRate: 0,
+          disableTax: true,
           timezone: "Africa/Kampala",
           fiscalYearStart: "July",
           theme: "light",

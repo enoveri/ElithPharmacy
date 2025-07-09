@@ -28,7 +28,7 @@ function PurchaseDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { settings } = useSettingsStore();
-  const { currency = "UGX", disableTax = false } = settings;
+  const { currency = "UGX", disableTax } = settings;
   const [purchase, setPurchase] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
