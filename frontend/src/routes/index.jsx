@@ -28,6 +28,7 @@ import CustomerSales from "../pages/CustomerSales";
 import ViewProduct from "../pages/ViewProduct";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
+import Categories from '../pages/Categories';
 
 import AdminSetup from "../pages/AdminSetup";
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
       {
         path: "/inventory/edit/:id",
         element: <EditProduct />,
+      },
+      {
+        path: "/categories",
+        element: <Categories />
       },
       {
         path: "/inventory/audit",

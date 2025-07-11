@@ -20,6 +20,7 @@ import {
   FiX,
   FiArchive,
   FiLoader,
+  FiTag, // Add this import for categories icon
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useProductsStore, useSettingsStore } from "../store";
@@ -369,7 +370,7 @@ function Inventory() {
         
         // Show detailed success message
         let message = `Successfully ${bulkDeleteType === 'archive' ? 'archived' : 'deleted'} ${successful.length} products!`;
-        
+                
         if (failed.length > 0) {
           message += `\n${failed.length} operations failed. Please check the console for details.`;
         }
@@ -818,6 +819,25 @@ function Inventory() {
         }}
       >
         <button
+          onClick={() => navigate("/categories")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 20px",
+            backgroundColor: "#8b5cf6",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            fontSize: "14px",
+            fontWeight: "500",
+            cursor: "pointer",
+          }}
+        >
+          <FiTag size={16} />
+          Manage Categories
+        </button>
+        <button
           onClick={() => navigate("/inventory/receive")}
           style={{
             display: "flex",
@@ -862,7 +882,7 @@ function Inventory() {
             alignItems: "center",
             gap: "8px",
             padding: "12px 20px",
-            backgroundColor: "var(--color-primary-600)",
+                        backgroundColor: "var(--color-primary-600)",
             color: "white",
             border: "none",
             borderRadius: "8px",
@@ -1335,7 +1355,7 @@ function Inventory() {
                   <label className="flex items-center p-3 border border-red-200 rounded-md bg-red-50 cursor-pointer">
                     <input
                       type="radio"
-                      name="bulkAction"
+                                           name="bulkAction"
                       value="delete"
                       checked={bulkDeleteType === 'delete'}
                       onChange={(e) => setBulkDeleteType(e.target.value)}
