@@ -1376,43 +1376,89 @@ function Reports() {
             </div>
           </div>
 
-          {/* Mini Chart */}
+          {/* Mini Chart with labels */}
           <div
             style={{
-              height: "200px",
+              height: "250px",
               display: "flex",
-              alignItems: "end",
-              justifyContent: "space-between",
+              flexDirection: "column",
               padding: "20px 0",
             }}
           >
-            {[
-              65, 85, 75, 95, 115, 90, 125, 110, 95, 130, 140, 155, 145, 170,
-            ].map((height, index) => (
+            {/* Y-axis labels */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                height: "200px",
+                marginBottom: "10px",
+                position: "relative",
+              }}
+            >
+              {/* Y-axis values */}
               <div
-                key={index}
                 style={{
-                  width: "18px",
-                  height: `${height}px`,
-                  backgroundColor: index === 13 ? "#10b981" : "#d1fae5",
-                  borderRadius: "2px",
-                  margin: "0 2px",
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                  color: "#6b7280",
+                  width: "30px",
                 }}
-              />
-            ))}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12px",
-              color: "#6b7280",
-              marginTop: "8px",
-            }}
-          >
-            <span>2 weeks ago</span>
-            <span>Today</span>
+              >
+                <span>170</span>
+                <span>130</span>
+                <span>90</span>
+                <span>50</span>
+                <span>0</span>
+              </div>
+              
+              {/* Chart bars */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "end",
+                  justifyContent: "space-between",
+                  height: "100%",
+                  width: "100%",
+                  paddingLeft: "40px",
+                }}
+              >
+                {[
+                  65, 85, 75, 95, 115, 90, 125, 110, 95, 130, 140, 155, 145, 170,
+                ].map((height, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      width: "18px",
+                      height: `${height}px`,
+                      backgroundColor: index === 13 ? "#10b981" : "#d1fae5",
+                      borderRadius: "2px",
+                      margin: "0 2px",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* X-axis labels */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingLeft: "40px",
+                fontSize: "12px",
+                color: "#6b7280",
+              }}
+            >
+              <span>2 weeks ago</span>
+              <span>Today</span>
+            </div>
           </div>
         </div>
 

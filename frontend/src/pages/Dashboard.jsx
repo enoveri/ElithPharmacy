@@ -522,28 +522,98 @@ const Dashboard = () => {
           >
             Sales Overview
           </h3>
-          {/* Simple bar chart */}
+          {/* Simple bar chart with labels */}
           <div
             style={{
               display: "flex",
-              alignItems: "end",
-              justifyContent: "space-between",
-              height: "200px",
+              flexDirection: "column",
+              height: "250px",
               padding: "20px 0",
             }}
           >
-            {[40, 60, 80, 100, 70, 90, 120].map((height, index) => (
+            {/* Y-axis labels */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                height: "200px",
+                marginBottom: "10px",
+                position: "relative",
+              }}
+            >
+              {/* Y-axis values */}
               <div
-                key={index}
                 style={{
+                  position: "absolute",
+                  left: "0",
+                  top: "0",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  fontSize: "12px",
+                  color: "#6b7280",
                   width: "30px",
-                  height: `${height}px`,
-                  backgroundColor: "#10b981",
-                  borderRadius: "4px 4px 0 0",
-                  margin: "0 4px",
                 }}
-              />
-            ))}
+              >
+                <span>120</span>
+                <span>90</span>
+                <span>60</span>
+                <span>30</span>
+                <span>0</span>
+              </div>
+              
+              {/* Chart bars */}
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "end",
+                  justifyContent: "space-between",
+                  height: "100%",
+                  width: "100%",
+                  paddingLeft: "40px",
+                }}
+              >
+                {[40, 60, 80, 100, 70, 90, 120].map((height, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      width: "30px",
+                      height: `${height}px`,
+                      backgroundColor: "#10b981",
+                      borderRadius: "4px 4px 0 0",
+                      margin: "0 4px",
+                      position: "relative",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            
+            {/* X-axis labels */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                paddingLeft: "40px",
+                fontSize: "12px",
+                color: "#6b7280",
+              }}
+            >
+              {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, index) => (
+                <div
+                  key={index}
+                  style={{
+                    width: "30px",
+                    textAlign: "center",
+                    margin: "0 4px",
+                  }}
+                >
+                  {day}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
