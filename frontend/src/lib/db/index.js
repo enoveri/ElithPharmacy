@@ -195,16 +195,20 @@ export const dbHelpers = {
     }
   },
 
-  // Get total revenue
+  // Get total revenue (tax-free for Uganda businesses)
   getTotalRevenue: async () => {
-    const { data, error } = await supabase.from("sales").select("total_amount");
+    const { data, error } = await supabase
+      .from("sales")
+      .select("subtotal")
+      .eq("status", "completed");
 
     if (error) {
       console.error("Error calculating total revenue:", error);
       return 0;
     }
 
-    return data.reduce((total, sale) => total + sale.total_amount, 0);
+    // Use subtotal (tax-free) instead of total_amount
+    return data.reduce((total, sale) => total + (sale.subtotal || 0), 0);
   },
   // Get products needing reorder
   getProductsToReorder: async () => {
@@ -4597,6 +4601,143 @@ export const dbHelpers = {
     } catch (error) {
       console.error("❌ [DB] Error in deleteAdminUser:", error);
       return { success: false, error };
+    }
+  },
+
+  // Dashboard statistics (tax-free calculations for Uganda businesses)
+  getDashboardStats: async () => {
+    try {
+      console.log("📊 [DB] Calculating dashboard statistics (tax-free)...");
+      
+      // Get all data in parallel for better performance
+      const [
+        { data: salesData, error: salesError },
+        { data: productsData, error: productsError },
+        { data: customersData, error: customersError }
+      ] = await Promise.all([
+        supabase.from("sales").select("*").eq("status", "completed"),
+        supabase.from("products").select("*"),
+        supabase.from("customers").select("*")
+      ]);
+
+      if (salesError) {
+        console.error("❌ [DB] Error fetching sales:", salesError);
+        return { success: false, error: salesError };
+      }
+
+      if (productsError) {
+        console.error("❌ [DB] Error fetching products:", productsError);
+        return { success: false, error: productsError };
+      }
+
+      if (customersError) {
+        console.error("❌ [DB] Error fetching customers:", customersError);
+        return { success: false, error: customersError };
+      }
+
+      const sales = salesData || [];
+      const products = productsData || [];
+      const customers = customersData || [];
+
+      // Calculate today's date boundaries
+      const today = new Date();
+      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+      // Filter today's sales
+      const todaysSales = sales.filter(sale => {
+        const saleDate = new Date(sale.date || sale.created_at);
+        return saleDate >= todayStart && saleDate < todayEnd;
+      });
+
+      // Calculate today's statistics (tax-free)
+      const todaysSalesAmount = todaysSales.reduce((sum, sale) => {
+        // Use subtotal (tax-free) instead of total_amount or totalAmount
+        return sum + (sale.subtotal || 0);
+      }, 0);
+
+      const todaysTransactions = todaysSales.length;
+
+      // Calculate total revenue (tax-free)
+      const totalRevenue = sales.reduce((sum, sale) => {
+        // Use subtotal (tax-free) instead of total_amount or totalAmount
+        return sum + (sale.subtotal || 0);
+      }, 0);
+
+      // Calculate total sales count
+      const totalSales = sales.length;
+
+      // Calculate average order value (tax-free)
+      const averageOrderValue = totalSales > 0 ? totalRevenue / totalSales : 0;
+
+      // Calculate low stock items
+      const lowStockItems = products.filter(product => {
+        const quantity = product.quantity || 0;
+        const minStock = product.min_stock_level || product.minStockLevel || 0;
+        return quantity <= minStock;
+      });
+
+      const lowStockCount = lowStockItems.length;
+
+      // Get counts
+      const totalProducts = products.length;
+      const totalCustomers = customers.length;
+
+      const stats = {
+        // Today's statistics (tax-free)
+        todaysSales: todaysSalesAmount,
+        todaysTransactions,
+        
+        // Overall statistics (tax-free)
+        totalProducts,
+        totalCustomers,
+        totalSales,
+        totalRevenue,
+        averageOrderValue,
+        
+        // Inventory statistics
+        lowStockItems: lowStockCount,
+        lowStockCount,
+        
+        // Additional fields that might be used
+        monthlyRevenue: totalRevenue, // Could be enhanced to filter by month
+        monthlyGrowth: 0, // Could be enhanced to calculate growth
+        recentSales: Math.min(totalSales, 10),
+        recentRevenue: totalRevenue
+      };
+
+      console.log("✅ [DB] Dashboard statistics calculated (tax-free):", {
+        todaysSales: stats.todaysSales,
+        todaysTransactions: stats.todaysTransactions,
+        totalRevenue: stats.totalRevenue,
+        totalSales: stats.totalSales,
+        lowStockCount: stats.lowStockCount
+      });
+
+      return { success: true, data: stats };
+
+    } catch (error) {
+      console.error("❌ [DB] Error in getDashboardStats:", error);
+      return { 
+        success: false, 
+        error,
+        // Return default values to prevent dashboard crashes
+        data: {
+          todaysSales: 0,
+          todaysTransactions: 0,
+          totalProducts: 0,
+          totalCustomers: 0,
+          totalSales: 0,
+          totalRevenue: 0,
+          averageOrderValue: 0,
+          lowStockItems: 0,
+          lowStockCount: 0,
+          monthlyRevenue: 0,
+          monthlyGrowth: 0,
+          recentSales: 0,
+          recentRevenue: 0
+        }
+      };
     }
   },
 };
