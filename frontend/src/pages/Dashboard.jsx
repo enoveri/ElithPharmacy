@@ -14,6 +14,7 @@ import {
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useNotificationsStore, useSettingsStore } from "../store";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from "recharts";
 
 
 const Dashboard = () => {
@@ -43,6 +44,7 @@ const Dashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const { fetchNotifications } = useNotificationsStore();
+  const [weeklySales, setWeeklySales] = useState([]);
 
   // Fetch data using the unified data service
   useEffect(() => {
@@ -53,7 +55,7 @@ const Dashboard = () => {
         const [statsResult, salesData, stockData, customerData] =
           await Promise.all([
             dataService.dashboard.getStats(),
-            dataService.sales.getRecent(3),
+            dataService.sales.getRecent(50), // Fetch more to cover 7 days
             dataService.products.getLowStock(),
             dataService.customers.getTop(3),
           ]);
@@ -79,6 +81,25 @@ const Dashboard = () => {
         setRecentSales(salesData || []);
         setLowStockProducts(stockData || []);
         setTopCustomers(customerData || []);
+
+        // --- Aggregate last 7 days sales ---
+        const today = new Date();
+        const days = Array.from({ length: 7 }).map((_, i) => {
+          const d = new Date(today);
+          d.setDate(today.getDate() - (6 - i));
+          return d;
+        });
+        const salesByDay = days.map((date) => {
+          const dayStr = date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+          const total = (salesData || []).filter(sale => {
+            const saleDate = new Date(sale.date || sale.created_at);
+            return saleDate.getFullYear() === date.getFullYear() &&
+                   saleDate.getMonth() === date.getMonth() &&
+                   saleDate.getDate() === date.getDate();
+          }).reduce((sum, sale) => sum + (sale.subtotal || 0), 0);
+          return { day: dayStr, amount: total };
+        });
+        setWeeklySales(salesByDay);
 
         // Also fetch notifications
         fetchNotifications();
@@ -522,29 +543,17 @@ const Dashboard = () => {
           >
             Sales Overview
           </h3>
-          {/* Simple bar chart */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "end",
-              justifyContent: "space-between",
-              height: "200px",
-              padding: "20px 0",
-            }}
-          >
-            {[40, 60, 80, 100, 70, 90, 120].map((height, index) => (
-              <div
-                key={index}
-                style={{
-                  width: "30px",
-                  height: `${height}px`,
-                  backgroundColor: "#10b981",
-                  borderRadius: "4px 4px 0 0",
-                  margin: "0 4px",
-                }}
-              />
-            ))}
-          </div>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={weeklySales} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="day" tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={v => v === 0 ? 0 : v.toLocaleString()} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={v => `${currency}${v.toLocaleString()}`} />
+              <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]}>
+                <LabelList dataKey="amount" position="top" formatter={v => `${currency}${v.toLocaleString()}`} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Top Customers */}
