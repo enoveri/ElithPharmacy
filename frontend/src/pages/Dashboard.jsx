@@ -544,7 +544,7 @@ const Dashboard = () => {
             Sales Overview
           </h3>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={weeklySales} margin={{ top: 10, right: 20, left: 0, bottom: 20 }}>
+            <BarChart data={weeklySales} margin={{ top: 10, right: 20, left: 60, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="day" tick={{ fontSize: 12 }} />
               <YAxis tickFormatter={v => v === 0 ? 0 : v.toLocaleString()} tick={{ fontSize: 12 }} />
