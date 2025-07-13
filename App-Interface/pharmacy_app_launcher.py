@@ -27,7 +27,7 @@ from loading_overlay import LoadingOverlay, LoadingOverlayThread
 
 # Application constants
 APP_NAME = "Elith Pharmacy"
-APP_URL = "http://localhost:5173"
+APP_URL = "http://elith-pharmacy.vercel.app/"
 SUPABASE_STUDIO_URL = "http://localhost:54322"
 SUPABASE_PORT = 54321
 FRONTEND_PORT = 5173
@@ -628,6 +628,9 @@ class PharmacyAppLauncher(QMainWindow):
         # Create loading overlay
         self.loading_thread = None
         
+        # option use a browser setup
+        self.start_services_ = False
+
         # Create service threads
         self.start_services_thread = None
         self.stop_services_thread = None
@@ -696,15 +699,18 @@ class PharmacyAppLauncher(QMainWindow):
     
     def check_services_status(self):
         """Check if services are already running on startup"""
-        if self.is_supabase_running() and self.is_frontend_running():
-            self.status_update.emit("Services already running")
-            self.update_ui_for_running_services()
-            self.browser.setUrl(QUrl(APP_URL))
+        if self.start_services_:
+            if self.is_supabase_running() and self.is_frontend_running():
+                self.status_update.emit("Services already running")
+                self.update_ui_for_running_services()
+                self.browser.setUrl(QUrl(APP_URL))
+            else:
+                self.status_update.emit("Services not running, starting automatically...")
+                # Automatically start services on launch
+                QTimer.singleShot(500, self.start_services)
         else:
-            self.status_update.emit("Services not running, starting automatically...")
-            # Automatically start services on launch
-            QTimer.singleShot(500, self.start_services)
-    
+            self.browser.setUrl(QUrl(APP_URL))
+
     def get_welcome_html(self):
         """Return welcome HTML to display when services aren't running"""
         return f"""
@@ -1082,44 +1088,48 @@ class PharmacyAppLauncher(QMainWindow):
     
     def start_services(self):
         """Start the pharmacy application services"""
-        self.start_action.setEnabled(False)
-        self.refresh_action.setEnabled(False)
-        
-        # Show progress bar
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
-        
-        # Show loading overlay
-        self.loading_thread = LoadingOverlayThread(loading_text="Starting Services")
-        self.loading_thread.start()
-        
-        # Create and start the services thread
-        self.start_services_thread = StartServicesThread(self)
-        self.start_services_thread.status_update.connect(self.update_status)
-        self.start_services_thread.progress_update.connect(self.update_progress)
-        self.start_services_thread.service_status.connect(self.handle_service_status)
-        self.start_services_thread.error_occurred.connect(self.handle_error)
-        self.start_services_thread.start()
+        if self.start_services_:
+            self.start_action.setEnabled(False)
+            self.refresh_action.setEnabled(False)
+            
+            # Show progress bar
+            self.progress_bar.setValue(0)
+            self.progress_bar.setVisible(True)
+            
+            # Show loading overlay
+            self.loading_thread = LoadingOverlayThread(loading_text="Starting Services")
+            self.loading_thread.start()
+            
+            # Create and start the services thread
+            self.start_services_thread = StartServicesThread(self)
+            self.start_services_thread.status_update.connect(self.update_status)
+            self.start_services_thread.progress_update.connect(self.update_progress)
+            self.start_services_thread.service_status.connect(self.handle_service_status)
+            self.start_services_thread.error_occurred.connect(self.handle_error)
+            self.start_services_thread.start()
+        else:
+            self.browser.setUrl(QUrl(APP_URL))
     
     def stop_services(self):
         """Stop the pharmacy application services"""
-        self.stop_action.setEnabled(False)
-        
-        # Show progress bar
-        self.progress_bar.setValue(0)
-        self.progress_bar.setVisible(True)
-        
-        # Show loading overlay
-        self.loading_thread = LoadingOverlayThread(loading_text="Stopping Services")
-        self.loading_thread.start()
-        
-        # Create and start the services thread
-        self.stop_services_thread = StopServicesThread(self)
-        self.stop_services_thread.status_update.connect(self.update_status)
-        self.stop_services_thread.progress_update.connect(self.update_progress)
-        self.stop_services_thread.service_status.connect(self.handle_service_status)
-        self.stop_services_thread.error_occurred.connect(self.handle_error)
-        self.stop_services_thread.start()
+        if self.start_services_:
+            self.stop_action.setEnabled(False)
+            
+            # Show progress bar
+            self.progress_bar.setValue(0)
+            self.progress_bar.setVisible(True)
+            
+            # Show loading overlay
+            self.loading_thread = LoadingOverlayThread(loading_text="Stopping Services")
+            self.loading_thread.start()
+            
+            # Create and start the services thread
+            self.stop_services_thread = StopServicesThread(self)
+            self.stop_services_thread.status_update.connect(self.update_status)
+            self.stop_services_thread.progress_update.connect(self.update_progress)
+            self.stop_services_thread.service_status.connect(self.handle_service_status)
+            self.stop_services_thread.error_occurred.connect(self.handle_error)
+            self.stop_services_thread.start()
     
     def handle_service_status(self, is_running, message):
         """Handle service status updates"""
@@ -1207,9 +1217,10 @@ class PharmacyAppLauncher(QMainWindow):
     def closeEvent(self, event):
         """Handle window close event"""
         # Check if services are running and automatically stop them
-        if self.is_supabase_running() or self.is_frontend_running():
-            # Launch the stop_pharmacy_app.py script as a detached process
-            self._launch_shutdown_process()
+        if self.start_services_:
+            if self.is_supabase_running() or self.is_frontend_running():
+                # Launch the stop_pharmacy_app.py script as a detached process
+                self._launch_shutdown_process()
         
         # Clean up
         if self.loading_thread:
@@ -1425,7 +1436,7 @@ def main():
     
     # Create and show the main window
     main_window = PharmacyAppLauncher()
-    main_window.show()
+    main_window.showMaximized()
     
     # Start the application event loop
     sys.exit(app.exec_())
