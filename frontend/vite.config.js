@@ -4,9 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react({
-    include: "**/*.{jsx,js}",
-  }), tailwindcss()],
+  plugins: [react()],
   resolve: {
     extensions: ['.js', '.jsx']
   },
@@ -16,14 +14,15 @@ export default defineConfig({
     minify: 'terser',
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          supabase: ['@supabase/supabase-js'],
-          router: ['react-router-dom'],
-          icons: ['react-icons'],
-          ui: ['zustand']
-        }
-      }
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) return 'react-vendor';
+            if (id.includes('recharts')) return 'charts';
+            if (id.includes('supabase')) return 'supabase';
+            return 'vendor';
+          }
+        },
+      },
     },
     chunkSizeWarningLimit: 1000
   },
