@@ -18,6 +18,7 @@ import {
 import { exportToCSV, exportToPDF } from "../utils/exportUtils";
 import { dataService } from "../services";
 import { useSettingsStore } from "../store";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, LabelList } from "recharts";
 
 function Reports() {
   // Settings store for currency
@@ -83,6 +84,63 @@ function Reports() {
       categories: [],
     },
   });
+
+  const quickRanges = [
+    { label: "This Week", value: "this_week" },
+    { label: "Last Week", value: "last_week" },
+    { label: "This Month", value: "this_month" },
+    { label: "This Year", value: "this_year" },
+    { label: "Custom", value: "custom" },
+  ];
+  const [rangeType, setRangeType] = useState("this_week");
+
+  // Helper to get start/end dates for quick ranges
+  function getRangeDates(type) {
+    const today = new Date();
+    let start, end;
+    switch (type) {
+      case "this_week": {
+        const day = today.getDay();
+        const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday as first day
+        start = new Date(today.setDate(diff));
+        end = new Date();
+        break;
+      }
+      case "last_week": {
+        const day = today.getDay();
+        const lastMonday = new Date(today.setDate(today.getDate() - day - 6));
+        start = new Date(lastMonday);
+        end = new Date(lastMonday);
+        end.setDate(start.getDate() + 6);
+        break;
+      }
+      case "this_month": {
+        start = new Date(today.getFullYear(), today.getMonth(), 1);
+        end = new Date();
+        break;
+      }
+      case "this_year": {
+        start = new Date(today.getFullYear(), 0, 1);
+        end = new Date();
+        break;
+      }
+      default: {
+        start = new Date(dateRange.startDate);
+        end = new Date(dateRange.endDate);
+      }
+    }
+    // Format as yyyy-mm-dd
+    const pad = n => n.toString().padStart(2, '0');
+    const fmt = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return { startDate: fmt(start), endDate: fmt(end) };
+  }
+
+  // Update dateRange when rangeType changes
+  useEffect(() => {
+    if (rangeType !== "custom") {
+      setDateRange(getRangeDates(rangeType));
+    }
+  }, [rangeType]);
 
   // Load report data from database
   useEffect(() => {
@@ -221,7 +279,7 @@ function Reports() {
         ...prev,
         sales: {
           dailySales: salesReport.dailySales || [],
-          monthlySales: [], // Would need historical data
+          monthlySales: salesReport.monthlySales || [],
         },
       }));
     } catch (error) {
@@ -231,11 +289,51 @@ function Reports() {
 
   const loadInventoryData = async () => {
     try {
-      const inventoryReport = await dataService.reports.getInventoryReport();
+      // Always use all products for stock status
+      const products = await dataService.products.getAll();
+      // Calculate stock status
+      const inStock = products.filter(p => (p.quantity || 0) > (p.minStockLevel || p.min_stock_level || 0)).length;
+      const lowStock = products.filter(p => (p.quantity || 0) > 0 && (p.quantity || 0) <= (p.minStockLevel || p.min_stock_level || 0)).length;
+      const outOfStock = products.filter(p => (p.quantity || 0) === 0).length;
+      const totalProducts = products.length;
+
+      // --- Product movement (units sold in date range) ---
+      const sales = await dataService.sales.getAll();
+      const filteredSales = sales.filter((sale) => {
+        const saleDate = new Date(sale.date);
+        return (
+          saleDate >= new Date(dateRange.startDate) &&
+          saleDate <= new Date(dateRange.endDate)
+        );
+      });
+      // Aggregate movement by productId
+      const movementMap = {};
+      filteredSales.forEach(sale => {
+        (sale.items || sale.sale_items || []).forEach(item => {
+          const productId = item.productId || item.product_id;
+          if (!movementMap[productId]) movementMap[productId] = 0;
+          movementMap[productId] += item.quantity || 0;
+        });
+      });
+      // Build topMovingProducts array
+      const topMovingProducts = products.map(product => ({
+        id: product.id,
+        name: product.name,
+        movement: movementMap[product.id] || 0,
+      })).sort((a, b) => b.movement - a.movement);
 
       setReportData((prev) => ({
         ...prev,
-        inventory: inventoryReport,
+        inventory: {
+          stockStatus: {
+            inStock,
+            lowStock,
+            outOfStock,
+            totalProducts,
+          },
+          topMovingProducts,
+          expiringProducts: [],
+        },
       }));
     } catch (error) {
       console.error("Error loading inventory data:", error);
@@ -244,7 +342,10 @@ function Reports() {
 
   const loadCustomerData = async () => {
     try {
-      const customerReport = await dataService.reports.getCustomerReport();
+      const customerReport = await dataService.reports.getCustomerReport(
+        dateRange.startDate,
+        dateRange.endDate
+      );
 
       setReportData((prev) => ({
         ...prev,
@@ -623,50 +724,23 @@ function Reports() {
         >
           Daily Sales Trend
         </h3>
-        <div
-          style={{
-            height: "250px",
-            display: "flex",
-            alignItems: "end",
-            justifyContent: "space-between",
-            padding: "20px",
-          }}
-        >
-          {reportData.sales.dailySales.map((day, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
-              <div
-                style={{
-                  width: "40px",
-                  height: `${(day.amount / 2500) * 200}px`,
-                  backgroundColor: "#10b981",
-                  borderRadius: "4px 4px 0 0",
-                  display: "flex",
-                  alignItems: "end",
-                  justifyContent: "center",
-                  color: "white",
-                  fontSize: "10px",
-                  paddingBottom: "4px",
-                }}
-              >
-                {currency} {((day.amount || 0) / 1000).toFixed(1)}k
-              </div>
-              <div style={{ fontSize: "10px", color: "#6b7280" }}>
-                {new Date(day.date).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+        {reportData.sales.dailySales.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#6b7280", padding: 32 }}>
+            No data for this period
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={reportData.sales.dailySales} margin={{ top: 10, right: 20, left: 60, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tickFormatter={d => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })} tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={v => v === 0 ? 0 : v.toLocaleString()} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={v => `${currency}${v.toLocaleString()}`} labelFormatter={d => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
+              <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]}>
+                <LabelList dataKey="amount" position="top" formatter={v => `${currency}${v.toLocaleString()}`} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Monthly Summary */}
@@ -854,42 +928,27 @@ function Reports() {
         >
           Product Movement
         </h3>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {reportData.inventory.topMovingProducts.map((product, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "12px",
-                backgroundColor: "#f9fafb",
-                borderRadius: "8px",
-              }}
+        {reportData.inventory.topMovingProducts.length === 0 ? (
+          <div style={{ textAlign: "center", color: "#6b7280", padding: 32 }}>
+            No product movement for this period
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={40 * Math.min(10, reportData.inventory.topMovingProducts.length) + 40}>
+            <BarChart
+              layout="vertical"
+              data={reportData.inventory.topMovingProducts.slice(0, 10)}
+              margin={{ top: 10, right: 20, left: 60, bottom: 20 }}
             >
-              <div>
-                <div style={{ fontWeight: "600", color: "#1f2937" }}>
-                  {product.name}
-                </div>
-                <div style={{ fontSize: "12px", color: "#6b7280" }}>
-                  {product.movement} units moved
-                </div>
-              </div>
-              <div
-                style={{
-                  padding: "4px 8px",
-                  borderRadius: "12px",
-                  backgroundColor:
-                    product.trend === "up" ? "#d1fae5" : "#fecaca",
-                  color: product.trend === "up" ? "#065f46" : "#dc2626",
-                  fontSize: "12px",
-                }}
-              >
-                {product.trend === "up" ? "↗" : "↘"} {product.trend}
-              </div>
-            </div>
-          ))}
-        </div>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" tickFormatter={v => v.toLocaleString()} tick={{ fontSize: 12 }} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={150} />
+              <Tooltip formatter={v => `${v.toLocaleString()} units`} />
+              <Bar dataKey="movement" fill="#10b981" radius={[0, 4, 4, 0]} barSize={24}>
+                <LabelList dataKey="movement" position="right" formatter={v => `${v.toLocaleString()} units`} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </div>
 
       {/* Expiring Products */}
@@ -1331,89 +1390,26 @@ function Reports() {
               marginBottom: "20px",
             }}
           >
-            <h3
-              style={{ fontSize: "18px", fontWeight: "600", color: "#1f2937" }}
-            >
+            <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#1f2937" }}>
               Revenue Performance
             </h3>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                }}
-              >
-                7D
-              </button>
-              <button
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                }}
-              >
-                30D
-              </button>
-              <button
-                style={{
-                  padding: "4px 8px",
-                  backgroundColor: "#f3f4f6",
-                  color: "#374151",
-                  border: "none",
-                  borderRadius: "4px",
-                  fontSize: "12px",
-                }}
-              >
-                90D
-              </button>
+              <button style={{ padding: "4px 8px", backgroundColor: "#10b981", color: "white", border: "none", borderRadius: "4px", fontSize: "12px" }}>7D</button>
+              <button style={{ padding: "4px 8px", backgroundColor: "#f3f4f6", color: "#374151", border: "none", borderRadius: "4px", fontSize: "12px" }}>30D</button>
+              <button style={{ padding: "4px 8px", backgroundColor: "#f3f4f6", color: "#374151", border: "none", borderRadius: "4px", fontSize: "12px" }}>90D</button>
             </div>
           </div>
-
-          {/* Mini Chart */}
-          <div
-            style={{
-              height: "200px",
-              display: "flex",
-              alignItems: "end",
-              justifyContent: "space-between",
-              padding: "20px 0",
-            }}
-          >
-            {[
-              65, 85, 75, 95, 115, 90, 125, 110, 95, 130, 140, 155, 145, 170,
-            ].map((height, index) => (
-              <div
-                key={index}
-                style={{
-                  width: "18px",
-                  height: `${height}px`,
-                  backgroundColor: index === 13 ? "#10b981" : "#d1fae5",
-                  borderRadius: "2px",
-                  margin: "0 2px",
-                }}
-              />
-            ))}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              fontSize: "12px",
-              color: "#6b7280",
-              marginTop: "8px",
-            }}
-          >
-            <span>2 weeks ago</span>
-            <span>Today</span>
-          </div>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={reportData.sales.dailySales.slice(-14)} margin={{ top: 10, right: 20, left: 60, bottom: 20 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" tickFormatter={d => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })} tick={{ fontSize: 12 }} />
+              <YAxis tickFormatter={v => v === 0 ? 0 : v.toLocaleString()} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={v => `${currency}${v.toLocaleString()}`} labelFormatter={d => new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" })} />
+              <Bar dataKey="amount" fill="#10b981" radius={[4, 4, 0, 0]}>
+                <LabelList dataKey="amount" position="top" formatter={v => `${currency}${v.toLocaleString()}`} />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Recent Activity */}
@@ -1748,7 +1744,6 @@ function Reports() {
               ))}
             </select>
           </div>
-
           <div>
             <label
               style={{
@@ -1759,91 +1754,96 @@ function Reports() {
                 marginBottom: "8px",
               }}
             >
-              Start Date
+              Date Range
             </label>
-            <input
-              type="date"
-              value={dateRange.startDate}
-              onChange={(e) =>
-                handleDateRangeChange("startDate", e.target.value)
-              }
+            <select
+              value={rangeType}
+              onChange={e => setRangeType(e.target.value)}
               style={{
                 width: "100%",
                 padding: "8px 12px",
                 border: "1px solid #d1d5db",
                 borderRadius: "6px",
                 fontSize: "14px",
-              }}
-            />
-          </div>
-
-          <div>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: "500",
-                color: "#374151",
-                marginBottom: "8px",
+                backgroundColor: "white",
               }}
             >
-              End Date
-            </label>
-            <input
-              type="date"
-              value={dateRange.endDate}
-              onChange={(e) => handleDateRangeChange("endDate", e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                border: "1px solid #d1d5db",
-                borderRadius: "6px",
-                fontSize: "14px",
-              }}
-            />
+              {quickRanges.map(r => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
           </div>
-
-          <div />
-
-          <button
-            onClick={generateReport}
-            disabled={loading}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              padding: "8px 16px",
-              backgroundColor: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: loading ? "not-allowed" : "pointer",
-              opacity: loading ? 0.7 : 1,
-            }}
-          >
-            {loading ? (
-              <>
-                <div
+          {rangeType === "custom" && (
+            <>
+              <div>
+                <label
                   style={{
-                    width: "16px",
-                    height: "16px",
-                    border: "2px solid white",
-                    borderTop: "2px solid transparent",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "8px",
+                  }}
+                >
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.startDate}
+                  onChange={e => handleDateRangeChange("startDate", e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
                   }}
                 />
-                Generating...
-              </>
-            ) : (
-              <>
-                <FiRefreshCw size={16} />
-                Generate Report
-              </>
-            )}
-          </button>
+              </div>
+              <div>
+                <label
+                  style={{
+                    display: "block",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    color: "#374151",
+                    marginBottom: "8px",
+                  }}
+                >
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  value={dateRange.endDate}
+                  onChange={e => handleDateRangeChange("endDate", e.target.value)}
+                  style={{
+                    width: "100%",
+                    padding: "8px 12px",
+                    border: "1px solid #d1d5db",
+                    borderRadius: "6px",
+                    fontSize: "14px",
+                  }}
+                />
+              </div>
+            </>
+          )}
+          <div style={{ display: "flex", alignItems: "end" }}>
+            <button
+              onClick={generateReport}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: "#10b981",
+                color: "white",
+                border: "none",
+                borderRadius: "8px",
+                fontSize: "16px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              Generate Report
+            </button>
+          </div>
         </div>
       </div>
 
