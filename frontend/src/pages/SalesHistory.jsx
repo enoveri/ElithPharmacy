@@ -12,12 +12,13 @@ import {
   FiPlus,
   FiMinus,
   FiX,
+  FiTrendingUp,
+  FiBarChart2,
 } from "react-icons/fi";
 import { dataService } from "../services";
 import { useSalesStore, useSettingsStore } from "../store";
 
 function SalesHistory() {
-  
   const { settings } = useSettingsStore();
   const { currency } = settings;
 
@@ -25,31 +26,28 @@ function SalesHistory() {
   const navigate = useNavigate();
   const [sales, setSales] = useState([]);
   const [customers, setCustomers] = useState([]);
-  const [products, setProducts] = useState([]); 
+  const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [highlightedSale, setHighlightedSale] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [saleToDelete, setSaleToDelete] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  
-  
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingSale, setEditingSale] = useState(null);
   const [editItems, setEditItems] = useState([]);
   const [updateLoading, setUpdateLoading] = useState(false);
 
-  
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
-        setError(null); 
-        
+        setError(null);
+
         const [salesData, customersData, productsData] = await Promise.all([
           dataService.sales.getAll(),
           dataService.customers.getAll().catch(() => []),
-          dataService.products.getAll().catch(() => []), 
+          dataService.products.getAll().catch(() => []),
         ]);
 
         console.log("✅ [SalesHistory] Sales loaded:", salesData?.length || 0);
@@ -73,7 +71,6 @@ function SalesHistory() {
     loadData();
   }, []);
 
-  
   useEffect(() => {
     if (location.state?.saleId) {
       setHighlightedSale(location.state.saleId);
@@ -87,13 +84,41 @@ function SalesHistory() {
     }
   }, [location.state]);
 
-  
+  const calculateSalesMetrics = () => {
+    const now = new Date();
+    const today = new Date(now.setHours(0, 0, 0, 0));
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const dailySales = sales.filter(sale => {
+      const saleDate = new Date(sale.date);
+      return saleDate >= today;
+    }).reduce((sum, sale) => sum + (sale.totalAmount || sale.total_amount || 0), 0);
+
+    const monthlySales = sales.filter(sale => {
+      const saleDate = new Date(sale.date);
+      return saleDate >= firstDayOfMonth;
+    }).reduce((sum, sale) => sum + (sale.totalAmount || sale.total_amount || 0), 0);
+
+    const totalSales = sales.reduce((sum, sale) => sum + (sale.totalAmount || sale.total_amount || 0), 0);
+
+    return {
+      dailySales,
+      monthlySales,
+      totalSales,
+      dailyCount: sales.filter(sale => new Date(sale.date) >= today).length,
+      monthlyCount: sales.filter(sale => {
+        const saleDate = new Date(sale.date);
+        return saleDate >= firstDayOfMonth;
+      }).length,
+      totalCount: sales.length
+    };
+  };
+
   const getProductName = (productId) => {
     const product = products.find(p => p.id === productId);
     return product ? product.name || product.productName || `Product #${productId}` : `Product #${productId}`;
   };
 
-  
   const handleViewSale = (saleId, e) => {
     e.stopPropagation();
     navigate(`/sales/${saleId}`);
@@ -105,14 +130,12 @@ function SalesHistory() {
     try {
       console.log("🔄 [SalesHistory] Starting edit for sale:", sale.id);
       
-      
       let fullSaleData = sale;
       if (!sale.items && !sale.sale_items) {
         console.log("🔄 [SalesHistory] Fetching full sale data...");
         fullSaleData = await dataService.sales.getById(sale.id);
       }
 
-      
       const items = (fullSaleData.items || fullSaleData.sale_items || []).map(item => ({
         id: item.id || `${item.productId || item.product_id}_${Date.now()}`,
         productId: item.productId || item.product_id,
@@ -143,7 +166,6 @@ function SalesHistory() {
     setShowDeleteModal(true);
   };
 
-  
   const updateItemQuantity = (itemId, newQuantity) => {
     if (newQuantity < 0) return;
     
@@ -183,7 +205,6 @@ function SalesHistory() {
     return { subtotal, totalDiscount, taxAmount, total };
   };
 
-  
   const handleUpdateSale = async () => {
     if (!editingSale) return;
 
@@ -192,7 +213,6 @@ function SalesHistory() {
       console.log("🔄 [SalesHistory] Starting sale update...");
 
       const totals = calculateEditTotals();
-      
       
       const updatedSaleData = {
         id: editingSale.id,
@@ -234,20 +254,17 @@ function SalesHistory() {
 
       console.log("📤 [SalesHistory] Sending update data:", updatedSaleData);
 
-      
       let updateResult = await dataService.sales.update(editingSale.id, updatedSaleData);
       if (!updateResult) {
         throw new Error("Update failed");
       }
 
-      
       setSales(prevSales =>
         prevSales.map(sale =>
           sale.id === editingSale.id
             ? { 
                 ...sale, 
                 ...updatedSaleData,
-                
                 items: updatedSaleData.items,
                 sale_items: updatedSaleData.items 
               }
@@ -257,7 +274,6 @@ function SalesHistory() {
 
       console.log("✅ [SalesHistory] Sale updated successfully:", editingSale.id);
       alert("Sale updated successfully!");
-      
       
       setShowEditModal(false);
       setEditingSale(null);
@@ -287,7 +303,6 @@ function SalesHistory() {
       if (!deleteResult) {
         throw new Error("Delete method not available");
       }
-      
       
       setSales(prevSales => prevSales.filter(sale => sale.id !== saleToDelete.id));
       
@@ -445,6 +460,203 @@ function SalesHistory() {
         </p>
       </div>
 
+      {/* Sales Metrics Cards */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+          gap: "16px",
+          marginBottom: "24px",
+        }}
+      >
+        {/* Daily Sales Card */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+            <div
+              style={{
+                backgroundColor: "#e0f2fe",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiTrendingUp size={20} color="#0ea5e9" />
+            </div>
+            <div>
+              <h3
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                }}
+              >
+                Daily Sales
+              </h3>
+              <p
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                }}
+              >
+                {currency}
+                {calculateSalesMetrics().dailySales.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              color: "#6b7280",
+              borderTop: "1px solid #f3f4f6",
+              paddingTop: "8px",
+            }}
+          >
+            <span>{calculateSalesMetrics().dailyCount} transactions</span>
+            <span>{new Date().toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {/* Monthly Sales Card */}
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+            <div
+              style={{
+                backgroundColor: "#ecfdf5",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiBarChart2 size={20} color="#10b981" />
+            </div>
+            <div>
+              <h3
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                }}
+              >
+                Monthly Sales
+              </h3>
+              <p
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                }}
+              >
+                {currency}
+                {calculateSalesMetrics().monthlySales.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              color: "#6b7280",
+              borderTop: "1px solid #f3f4f6",
+              paddingTop: "8px",
+            }}
+          >
+            <span>{calculateSalesMetrics().monthlyCount} transactions</span>
+            <span>{new Date().toLocaleDateString('default', { month: 'long' })}</span>
+          </div>
+        </div>
+
+       
+        <div
+          style={{
+            backgroundColor: "white",
+            borderRadius: "12px",
+            padding: "20px",
+            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
+            <div
+              style={{
+                backgroundColor: "#f5f3ff",
+                borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: "12px",
+              }}
+            >
+              <FiDollarSign size={20} color="#8b5cf6" />
+            </div>
+            <div>
+              <h3
+                style={{
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  color: "#6b7280",
+                  marginBottom: "4px",
+                }}
+              >
+                Total Sales
+              </h3>
+              <p
+                style={{
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                }}
+              >
+                {currency}
+                {calculateSalesMetrics().totalSales.toFixed(2)}
+              </p>
+            </div>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: "12px",
+              color: "#6b7280",
+              borderTop: "1px solid #f3f4f6",
+              paddingTop: "8px",
+            }}
+          >
+            <span>{calculateSalesMetrics().totalCount} transactions</span>
+            <span>All time</span>
+          </div>
+        </div>
+      </div>
+
+      
       <div
         style={{
           backgroundColor: "white",
@@ -483,12 +695,9 @@ function SalesHistory() {
             </p>
           </div>
         ) : (
-          <div
-            style={{ display: "flex", flexDirection: "column", gap: "16px" }}
-          >
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             {sales
               .map((sale) => {
-                
                 if (!sale || !sale.id) {
                   console.warn("Invalid sale object:", sale);
                   return null;
@@ -521,7 +730,6 @@ function SalesHistory() {
                       e.currentTarget.style.boxShadow = "none";
                     }}
                   >
-                    
                     <div
                       style={{
                         position: "absolute",
@@ -770,7 +978,7 @@ function SalesHistory() {
         )}
       </div>
 
-      
+      {/* Edit Modal */}
       {showEditModal && editingSale && (
         <div
           style={{
@@ -799,7 +1007,6 @@ function SalesHistory() {
               boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
             }}
           >
-            
             <div
               style={{
                 display: "flex",
@@ -849,7 +1056,6 @@ function SalesHistory() {
               </button>
             </div>
 
-            {/* Items List */}
             <div style={{ marginBottom: "24px" }}>
               <h4
                 style={{
@@ -900,7 +1106,6 @@ function SalesHistory() {
                         gap: "12px",
                       }}
                     >
-                      {/* Quantity Controls */}
                       <div
                         style={{
                           display: "flex",
@@ -979,7 +1184,6 @@ function SalesHistory() {
                         </button>
                       </div>
 
-                      
                       <div
                         style={{
                           minWidth: "80px",
@@ -1012,7 +1216,6 @@ function SalesHistory() {
               </div>
             </div>
 
-            
             <div
               style={{
                 backgroundColor: "#f9fafb",
@@ -1096,7 +1299,6 @@ function SalesHistory() {
               })()}
             </div>
 
-            
             <div
               style={{
                 display: "grid",
@@ -1155,7 +1357,6 @@ function SalesHistory() {
               </div>
             </div>
 
-            
             <div
               style={{
                 display: "flex",
@@ -1195,212 +1396,211 @@ function SalesHistory() {
               </button>
               
               <button
-              onClick={handleUpdateSale}
-              disabled={updateLoading}
-              style={{
-              padding: "12px 20px",
-              backgroundColor: "#10b981",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "500",
-              cursor: updateLoading ? "not-allowed" : "pointer",
-              opacity: updateLoading ? 0.6 : 1,
-              display: "flex",
-                alignItems: "center",
+                onClick={handleUpdateSale}
+                disabled={updateLoading}
+                style={{
+                  padding: "12px 20px",
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: updateLoading ? "not-allowed" : "pointer",
+                  opacity: updateLoading ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
                   gap: "8px",
-                transition: "all 0.2s ease",
+                  transition: "all 0.2s ease",
                 }}
                 onMouseEnter={(e) => {
-                if (!updateLoading) {
-                  e.target.style.backgroundColor = "#059669";
-                }
-              }}
-              onMouseLeave={(e) => {
-              if (!updateLoading) {
-                e.target.style.backgroundColor = "#10b981";
-              }
-              }}
+                  if (!updateLoading) {
+                    e.target.style.backgroundColor = "#059669";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!updateLoading) {
+                    e.target.style.backgroundColor = "#10b981";
+                  }
+                }}
               >
-              {updateLoading && (
-              <div
-                style={{
-                  width: "16px",
-                  height: "16px",
-                    border: "2px solid #ffffff40",
+                {updateLoading && (
+                  <div
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      border: "2px solid #ffffff40",
                       borderTop: "2px solid #ffffff",
-                    borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
-              }}
-              />
-              )}
-              {updateLoading ? "Updating..." : "Update Sale"}
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
+                )}
+                {updateLoading ? "Updating..." : "Update Sale"}
               </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    {/* Delete Confirmation Modal */}
-    {showDeleteModal && saleToDelete && (
-      <div
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0, 0, 0, 0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000,
-        }}
-        onClick={cancelDelete}
-      >
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && saleToDelete && (
         <div
           style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            maxWidth: "400px",
-            width: "90%",
-            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
           }}
-          onClick={(e) => e.stopPropagation()}
+          onClick={cancelDelete}
         >
-          <div style={{ marginBottom: "16px" }}>
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#1f2937",
-                marginBottom: "8px",
-              }}
-            >
-              Delete Sale
-            </h3>
-            <p style={{ color: "#6b7280", fontSize: "14px" }}>
-              Are you sure you want to delete this sale? This action cannot be undone.
-            </p>
-          </div>
-
           <div
             style={{
-              padding: "12px",
-              backgroundColor: "#f3f4f6",
-              borderRadius: "8px",
-              marginBottom: "20px",
+              backgroundColor: "white",
+              borderRadius: "12px",
+              padding: "24px",
+              maxWidth: "400px",
+              width: "90%",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
             }}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "4px" }}>
-              {saleToDelete.transactionNumber ||
-                saleToDelete.transaction_number ||
-                `Transaction #${saleToDelete.id}`}
+            <div style={{ marginBottom: "16px" }}>
+              <h3
+                style={{
+                  fontSize: "18px",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "8px",
+                }}
+              >
+                Delete Sale
+              </h3>
+              <p style={{ color: "#6b7280", fontSize: "14px" }}>
+                Are you sure you want to delete this sale? This action cannot be undone.
+              </p>
             </div>
-            <div style={{ fontSize: "14px", color: "#6b7280" }}>
-              {getCustomerName(saleToDelete.customerId || saleToDelete.customer_id)} •{" "}
-              {currency}
-              {(saleToDelete.subtotal || saleToDelete.total_amount || saleToDelete.totalAmount || 0).toFixed(2)}
-            </div>
-          </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              justifyContent: "flex-end",
-            }}
-          >
-            <button
-              onClick={cancelDelete}
-              disabled={deleteLoading}
+            <div
               style={{
-                padding: "10px 16px",
+                padding: "12px",
                 backgroundColor: "#f3f4f6",
-                color: "#374151",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: deleteLoading ? "not-allowed" : "pointer",
-                opacity: deleteLoading ? 0.6 : 1,
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!deleteLoading) {
-                  e.target.style.backgroundColor = "#e5e7eb";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!deleteLoading) {
-                  e.target.style.backgroundColor = "#f3f4f6";
-                }
+                borderRadius: "8px",
+                marginBottom: "20px",
               }}
             >
-              Cancel
-            </button>
+              <div style={{ fontSize: "14px", fontWeight: "500", marginBottom: "4px" }}>
+                {saleToDelete.transactionNumber ||
+                  saleToDelete.transaction_number ||
+                  `Transaction #${saleToDelete.id}`}
+              </div>
+              <div style={{ fontSize: "14px", color: "#6b7280" }}>
+                {getCustomerName(saleToDelete.customerId || saleToDelete.customer_id)} •{" "}
+                {currency}
+                {(saleToDelete.subtotal || saleToDelete.total_amount || saleToDelete.totalAmount || 0).toFixed(2)}
+              </div>
+            </div>
 
-            <button
-              onClick={confirmDelete}
-              disabled={deleteLoading}
+            <div
               style={{
-                padding: "10px 16px",
-                backgroundColor: "#ef4444",
-                color: "white",
-                border: "none",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "500",
-                cursor: deleteLoading ? "not-allowed" : "pointer",
-                opacity: deleteLoading ? 0.6 : 1,
                 display: "flex",
-                alignItems: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!deleteLoading) {
-                  e.target.style.backgroundColor = "#dc2626";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!deleteLoading) {
-                  e.target.style.backgroundColor = "#ef4444";
-                }
+                gap: "12px",
+                justifyContent: "flex-end",
               }}
             >
-              {deleteLoading && (
-                <div
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    border: "2px solid #ffffff40",
-                    borderTop: "2px solid #ffffff",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-              )}
-              {deleteLoading ? "Deleting..." : "Delete Sale"}
-            </button>
+              <button
+                onClick={cancelDelete}
+                disabled={deleteLoading}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#f3f4f6",
+                  color: "#374151",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  opacity: deleteLoading ? 0.6 : 1,
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleteLoading) {
+                    e.target.style.backgroundColor = "#e5e7eb";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleteLoading) {
+                    e.target.style.backgroundColor = "#f3f4f6";
+                  }
+                }}
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={confirmDelete}
+                disabled={deleteLoading}
+                style={{
+                  padding: "10px 16px",
+                  backgroundColor: "#ef4444",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  opacity: deleteLoading ? 0.6 : 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  if (!deleteLoading) {
+                    e.target.style.backgroundColor = "#dc2626";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!deleteLoading) {
+                    e.target.style.backgroundColor = "#ef4444";
+                  }
+                }}
+              >
+                {deleteLoading && (
+                  <div
+                    style={{
+                      width: "14px",
+                      height: "14px",
+                      border: "2px solid #ffffff40",
+                      borderTop: "2px solid #ffffff",
+                      borderRadius: "50%",
+                      animation: "spin 1s linear infinite",
+                    }}
+                  />
+                )}
+                {deleteLoading ? "Deleting..." : "Delete Sale"}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
-    
-    <style>
-      {`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}
-    </style>
-  </div>
-);
+      <style>
+        {`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}
+      </style>
+    </div>
+  );
 }
 
 export default SalesHistory;
