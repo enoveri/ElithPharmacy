@@ -12,6 +12,8 @@ import {
   FiCheck,
   FiX,
   FiLoader,
+  FiArrowRight,
+  FiEye,
 } from "react-icons/fi";
 import { dataService } from "../services";
 
@@ -96,16 +98,16 @@ function Categories() {
       console.error("❌ [Categories] Error loading categories:", error);
       // Fallback categories
       setCategories([
-        { id: 1, name: "Pain Relief", description: "Pain management medications" },
-        { id: 2, name: "Antibiotics", description: "Antibiotic medications" },
-        { id: 3, name: "Vitamins & Supplements", description: "Nutritional supplements" },
-        { id: 4, name: "Cold & Flu", description: "Cold and flu remedies" },
-        { id: 5, name: "Digestive Health", description: "Digestive system medications" },
-        { id: 6, name: "Heart & Blood Pressure", description: "Cardiovascular medications" },
-        { id: 7, name: "Diabetes Care", description: "Diabetes management products" },
-        { id: 8, name: "Skin Care", description: "Dermatological products" },
-        { id: 9, name: "Eye Care", description: "Ophthalmic products" },
-        { id: 10, name: "Other", description: "Miscellaneous products" },
+        { id: 1, name: "Pain Relief", description: "Pain management medications", productCount: 15 },
+        { id: 2, name: "Antibiotics", description: "Antibiotic medications", productCount: 8 },
+        { id: 3, name: "Vitamins & Supplements", description: "Nutritional supplements", productCount: 23 },
+        { id: 4, name: "Cold & Flu", description: "Cold and flu remedies", productCount: 12 },
+        { id: 5, name: "Digestive Health", description: "Digestive system medications", productCount: 7 },
+        { id: 6, name: "Heart & Blood Pressure", description: "Cardiovascular medications", productCount: 11 },
+        { id: 7, name: "Diabetes Care", description: "Diabetes management products", productCount: 9 },
+        { id: 8, name: "Skin Care", description: "Dermatological products", productCount: 18 },
+        { id: 9, name: "Eye Care", description: "Ophthalmic products", productCount: 5 },
+        { id: 10, name: "Other", description: "Miscellaneous products", productCount: 3 },
       ]);
     } finally {
       setIsLoading(false);
@@ -123,7 +125,8 @@ function Categories() {
     setShowAddModal(true);
   };
 
-  const handleEditCategory = (category) => {
+  const handleEditCategory = (e, category) => {
+    e.stopPropagation(); // Prevent category navigation
     setSelectedCategory(category);
     setFormData({
       name: category.name,
@@ -132,9 +135,21 @@ function Categories() {
     setShowEditModal(true);
   };
 
-  const handleDeleteCategory = (category) => {
+  const handleDeleteCategory = (e, category) => {
+    e.stopPropagation(); // Prevent category navigation
     setSelectedCategory(category);
     setShowDeleteModal(true);
+  };
+
+  // Navigate to category products page
+  const handleCategoryClick = (category) => {
+    console.log("🔄 [Categories] Navigating to category:", category.name);
+    navigate(`/categories/${category.id}`, { 
+      state: { 
+        categoryName: category.name,
+        categoryDescription: category.description 
+      } 
+    });
   };
 
   const submitCategory = async () => {
@@ -282,7 +297,7 @@ function Categories() {
         </div>
       </div>
 
-      {/* Categories Grid */}
+            {/* Categories Grid */}
       <div
         style={{
           display: "grid",
@@ -299,6 +314,22 @@ function Categories() {
               padding: "20px",
               boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
               border: "1px solid #e5e7eb",
+              cursor: "pointer",
+              transition: "all 0.2s ease-in-out",
+            }}
+            onClick={() => navigate(`/categories/${category.id}`, {
+              state: {
+                categoryName: category.name,
+                categoryDescription: category.description
+              }
+            })}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-2px)";
+              e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.15)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
             }}
           >
             <div style={{ display: "flex", alignItems: "center", marginBottom: "12px" }}>
@@ -333,12 +364,15 @@ function Categories() {
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <FiPackage size={14} color="#6b7280" />
                 <span style={{ fontSize: "12px", color: "#6b7280" }}>
-                  Products in category
+                  Click to view products
                 </span>
               </div>
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
-                  onClick={() => handleEditCategory(category)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
+                    handleEditCategory(category);
+                  }}
                   style={{
                     padding: "6px",
                     backgroundColor: "#dbeafe",
@@ -352,7 +386,10 @@ function Categories() {
                   <FiEdit size={14} />
                 </button>
                 <button
-                  onClick={() => handleDeleteCategory(category)}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevent card click
+                    handleDeleteCategory(category);
+                  }}
                   style={{
                     padding: "6px",
                     backgroundColor: "#fecaca",
@@ -370,6 +407,54 @@ function Categories() {
           </div>
         ))}
       </div>
+
+
+      {/* Empty State */}
+      {filteredCategories.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 20px" }}>
+          <div
+            style={{
+              width: "80px",
+              height: "80px",
+              backgroundColor: "#f3f4f6",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+            }}
+          >
+            <FiTag size={32} color="#9ca3af" />
+          </div>
+          <h3 style={{ fontSize: "18px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>
+            No categories found
+          </h3>
+          <p style={{ fontSize: "14px", color: "#6b7280", marginBottom: "20px" }}>
+            {searchTerm ? "Try adjusting your search terms" : "Get started by creating your first category"}
+          </p>
+          {!searchTerm && (
+            <button
+              onClick={handleAddCategory}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: "10px 16px",
+                backgroundColor: "#3b82f6",
+                color: "white",
+                border: "none",
+                borderRadius: "6px",
+                fontSize: "14px",
+                fontWeight: "500",
+                cursor: "pointer",
+              }}
+            >
+              <FiPlus size={16} />
+              Add Your First Category
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Add/Edit Modal Dialog */}
       {(showAddModal || showEditModal) && (
@@ -426,7 +511,7 @@ function Categories() {
                   <input
                     ref={nameInputRef}
                     type="text"
-                                        value={formData.name}
+                    value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     onKeyDown={handleKeyDown}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"

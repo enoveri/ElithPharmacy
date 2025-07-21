@@ -29,11 +29,13 @@ import ViewProduct from "../pages/ViewProduct";
 import PurchaseDetails from "../pages/PurchaseDetails";
 import Notifications from "../pages/Notifications";
 import Categories from '../pages/Categories';
+import CategoryDetail from "../pages/CategoryProducts";
 
 import AdminSetup from "../pages/AdminSetup";
 import EnhancedAdminPanel from "../pages/WorkingEnhancedAdminPanel";
 import ResponsiveStockAudit from "../components/responsive/ResponsiveStockAudit";
 import ReceiveStock from "../pages/ReceiveStock";
+import CategoryProducts from "../pages/CategoryProducts";
 
 
 export const router = createBrowserRouter([
@@ -69,6 +71,10 @@ export const router = createBrowserRouter([
         path: "/categories",
         element: <Categories />
       },
+      {
+          path: "/categories/:id",
+          element: <CategoryProducts />,
+        },
       {
         path: "/inventory/audit",
         element: <ResponsiveStockAudit />,
